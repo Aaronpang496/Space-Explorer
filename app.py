@@ -33,19 +33,19 @@ game_html = f"""
         #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}}
         #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}}
         
-        /* Pushed WAY up for Mobile Safari */
-        #joystick-zone {{ position: absolute; bottom: 220px; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
+        /* Position Controls higher up to avoid Safari bar */
+        #joystick-zone {{ position: absolute; bottom: 180px; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
         #joystick-knob {{ position: absolute; top: 30px; left: 30px; width: 46px; height: 46px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
         
-        #throttle-zone {{ position: absolute; bottom: 220px; right: 20px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
+        #throttle-zone {{ position: absolute; bottom: 180px; right: 20px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
         #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: #ef4444; border-radius: 18px;}}
         
         #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 100px; height: 100px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}}
         
         .action-btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 2px solid #38bdf8; padding: 10px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 12px; display: none; z-index: 10000; }}
-        #btn-gear {{ bottom: 220px; right: 80px; color: #22c55e; border-color: #22c55e; }}
-        #btn-retro {{ bottom: 270px; right: 80px; color: #f59e0b; border-color: #f59e0b; }}
-        #btn-reset {{ bottom: 220px; left: 140px; color: #ef4444; border-color: #ef4444; }}
+        #btn-gear {{ bottom: 180px; right: 80px; color: #22c55e; border-color: #22c55e; }}
+        #btn-retro {{ bottom: 230px; right: 80px; color: #f59e0b; border-color: #f59e0b; }}
+        #btn-reset {{ bottom: 180px; left: 140px; color: #ef4444; border-color: #ef4444; }}
         
         #loading {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #38bdf8; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: opacity 1s; }}
         #start-overlay {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; cursor: pointer; }}
@@ -82,25 +82,26 @@ game_html = f"""
 
     <script>
         let state = {{
-            // Starts right on the launch pad
+            // Start exactly on the pad
             x: 0, y: 6371, vx: 0, vy: 0, 
             fuel: 100, throttle: 0, angle: 0, 
             gear: false, exploded: false, started: false
         }};
 
-        // TONED DOWN PHYSICS FOR PLAYABILITY
+        // REALISTIC BUT PLAYABLE PHYSICS
         const G = 6.674e-11;
-        const rocketMass = 200000; 
-        const maxThrust = 80000000; 
+        // We scale down the masses so gravity doesn't instantly crush you
+        const rocketMass = 100000; 
+        const maxThrust = 2000000; 
 
         const planets = {{
-            Earth:   {{ m: 5.97e24, r: 6371, x: 0, y: 0, color: 0x2233ff, soi: 100000 }},
-            Moon:    {{ m: 7.34e22, r: 1737, x: 250000, y: 0, color: 0xaaaaaa, soi: 30000 }},
-            Mars:    {{ m: 6.41e23, r: 3389, x: 500000, y: 0, color: 0xff4400, soi: 60000 }}
+            // Distances are heavily compressed so you can actually fly to them
+            Earth:   {{ m: 5.97e22, r: 6371, x: 0, y: 0, color: 0x2233ff, soi: 50000 }},
+            Moon:    {{ m: 7.34e20, r: 1737, x: 100000, y: 0, color: 0xaaaaaa, soi: 20000 }},
+            Mars:    {{ m: 6.41e21, r: 3389, x: 200000, y: 0, color: 0xff4400, soi: 30000 }}
         }};
 
         const scene = new THREE.Scene();
-        // Zoomed in camera for better control
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000000);
         const renderer = new THREE.WebGLRenderer({{ antialias: true }});
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -113,7 +114,7 @@ game_html = f"""
 
         for (let p in planets) {{
             let geo = new THREE.SphereGeometry(planets[p].r, 32, 32);
-            let mat = new THREE.MeshPhongMaterial({{color: planets[p].color, emissive: planets[p].color, emissiveIntensity: 0.2}});
+            let mat = new THREE.MeshPhongMaterial({{color: planets[p].color}});
             let mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(planets[p].x, planets[p].y, 0);
             scene.add(mesh);
@@ -162,10 +163,10 @@ game_html = f"""
         const ctx = canvas.getContext('2d');
         function drawMinimap() {{
             ctx.clearRect(0, 0, 100, 100);
-            let scale = 100 / 800000; // Fit 800k meters in map
+            let scale = 100 / 300000; // Map fits 300km
             for (let p in planets) {{
                 ctx.beginPath();
-                ctx.arc(50 + planets[p].x * scale, 50 - planets[p].y * scale, Math.max(1, planets[p].r * scale * 3), 0, Math.PI*2);
+                ctx.arc(50 + planets[p].x * scale, 50 - planets[p].y * scale, Math.max(1, planets[p].r * scale * 2), 0, Math.PI*2);
                 ctx.fillStyle = '#' + planets[p].color.toString(16).padStart(6, '0');
                 ctx.fill();
             }}
@@ -248,6 +249,7 @@ game_html = f"""
 
                 if (dist < planets[p].soi) currentZone = p;
 
+                // Gravity acceleration (a = G * m / r^2)
                 let accel = (G * planets[p].m) / distSq;
                 ax += accel * (dx / dist);
                 ay += accel * (dy / dist);
@@ -302,7 +304,8 @@ game_html = f"""
                     rocketGroup.rotation.z = -state.angle; 
                 }}
 
-                // FIXED CAMERA: Stays close to the rocket so you can see it fly
+                // FIXED CAMERA: Stays locked at a reasonable distance (15km)
+                // so you can see the launch pad, the rocket, and the ground.
                 let zoom = 15000; 
                 camera.position.set(state.x, state.y, zoom);
                 camera.lookAt(state.x, state.y, 0);
