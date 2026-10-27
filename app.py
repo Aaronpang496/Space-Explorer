@@ -23,18 +23,29 @@ game_html = f"""
         canvas {{ display: block; }}
         #ui-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }}
         #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; border: 1px solid #38bdf8;}}
-        #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 16px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}}
+        #mission {{ position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 16px; font-weight: bold; text-shadow: 0 0 5px black; width: 80%;}}
+        
+        /* Joystick Base */
         #joystick-zone {{ position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(56,189,248,0.5); border-radius: 50%; pointer-events: auto; touch-action: none;}}
         #joystick-knob {{ position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(56,189,248,0.8); border-radius: 50%; box-shadow: 0 0 10px #38bdf8; }}
+        
+        /* Throttle Slider */
         #throttle-zone {{ position: absolute; bottom: 30px; right: 30px; width: 40px; height: 200px; background: rgba(255,255,255,0.1); border: 2px solid rgba(239,68,68,0.5); border-radius: 20px; pointer-events: auto; touch-action: none;}}
         #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: rgba(239,68,68,0.8); border-radius: 18px;}}
+        
         #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 150px; height: 150px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.6); overflow: hidden; }}
         #minimap {{ width: 100%; height: 100%; }}
+        
         .btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.6); color: white; border: 1px solid #38bdf8; padding: 10px; border-radius: 5px; font-family: inherit; font-weight: bold; }}
         #btn-gear {{ bottom: 30px; left: 160px; color: #22c55e; border-color: #22c55e; }}
         #btn-shield {{ bottom: 80px; left: 160px; color: #f59e0b; border-color: #f59e0b; }}
         #btn-reset {{ top: 10px; right: 170px; color: #ef4444; border-color: #ef4444; }}
+        
         #loading {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #38bdf8; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: opacity 1s; }}
+        
+        /* THE START BUTTON */
+        #start-btn {{ position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 2px solid #38bdf8; padding: 20px 40px; border-radius: 10px; font-family: inherit; font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); transition: all 0.2s; display: block; }}
+        #start-btn:hover {{ background: rgba(56, 189, 248, 0.4); box-shadow: 0 0 30px rgba(56, 189, 248, 0.8); }}
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -43,6 +54,7 @@ game_html = f"""
     <div id="loading">INITIALIZING UNIVERSE...</div>
     
     <div id="ui-layer" style="opacity: 0; transition: opacity 1s;">
+        <button id="start-btn">INITIATE LAUNCH</button>
         <div id="hud">
             ALT: <span id="val-alt">0</span> km<br>
             VEL: <span id="val-vel">0</span> m/s<br>
@@ -50,11 +62,13 @@ game_html = f"""
             <span style="color:white">TARGET: <span id="val-target">Earth</span></span>
         </div>
         <div id="mission">MISSION: Awaiting Launch Sequence...</div>
-        <div id="joystick-zone"><div id="joystick-knob"></div></div>
-        <div id="throttle-zone"><div id="throttle-fill"></div></div>
-        <div id="minimap-container"><div id="minimap"></div></div>
-        <button class="btn" id="btn-gear">GEAR: RETRACTED</button>
-        <button class="btn" id="btn-shield">HEAT SHIELD: ON</button>
+        
+        <div id="joystick-zone" style="display: none;"><div id="joystick-knob"></div></div>
+        <div id="throttle-zone" style="display: none;"><div id="throttle-fill"></div></div>
+        <div id="minimap-container" style="display: none;"><div id="minimap"></div></div>
+        
+        <button class="btn" id="btn-gear" style="display: none;">GEAR: RETRACTED</button>
+        <button class="btn" id="btn-shield" style="display: none;">HEAT SHIELD: ON</button>
         <button class="btn" id="btn-reset">RESET</button>
     </div>
 
@@ -67,7 +81,8 @@ game_html = f"""
             target: "Earth", 
             task: "Awaiting Launch Sequence...",
             missionPhase: 1,
-            cameraMode: "birdseye"
+            cameraMode: "birdseye",
+            started: false // NEW: Tracks if the game has started
         }};
 
         const planets = {{
@@ -108,7 +123,6 @@ game_html = f"""
         const rocketGroup = new THREE.Group();
         scene.add(rocketGroup);
 
-        // --- ENGINE FIRE EFFECT ---
         const fireGeo = new THREE.ConeGeometry(10, 40, 16);
         const fireMat = new THREE.MeshBasicMaterial({{color: 0xffaa00, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending}});
         const engineFire = new THREE.Mesh(fireGeo, fireMat);
@@ -118,7 +132,6 @@ game_html = f"""
         rocketGroup.add(engineFire);
 
         const loader = new THREE.GLTFLoader();
-        // THE PATH IS NOW UPDATED TO LOOK IN THE MAIN FOLDER
         loader.load('app/{model_filename}', function (gltf) {{
             const model = gltf.scene;
             const box = new THREE.Box3().setFromObject(model);
@@ -142,7 +155,6 @@ game_html = f"""
             document.getElementById('loading').style.opacity = 0;
             document.getElementById('ui-layer').style.opacity = 1;
         }}, undefined, function (error) {{
-            console.error('Error loading model:', error);
             const rocketGeo = new THREE.CylinderGeometry(15, 15, 100, 16);
             const rocketMat = new THREE.MeshPhongMaterial({{color: 0xdddddd}});
             const rocket = new THREE.Mesh(rocketGeo, rocketMat);
@@ -173,14 +185,27 @@ game_html = f"""
         const throttleZone = document.getElementById('throttle-zone');
         const throttleFill = document.getElementById('throttle-fill');
 
-        joyZone.addEventListener('pointerdown', (e) => {{ 
-            isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); 
-            if (state.cameraMode === "birdseye") {{ state.cameraMode = "launch"; }}
-        }});
-        joyZone.addEventListener('pointerup', (e) => {{ 
-            isDraggingJoy = false; joyKnob.style.top = '35px'; joyKnob.style.left = '35px'; 
-            state.pitch = 0; state.roll = 0; 
-        }});
+        // --- START BUTTON LOGIC ---
+        document.getElementById('start-btn').onclick = function() {{
+            state.started = true;
+            state.cameraMode = "launch"; // Snap camera to rocket
+            this.style.display = 'none'; // Hide start button
+            
+            // Show game controls
+            document.getElementById('joystick-zone').style.display = 'block';
+            document.getElementById('throttle-zone').style.display = 'block';
+            document.getElementById('minimap-container').style.display = 'block';
+            document.getElementById('btn-gear').style.display = 'block';
+            document.getElementById('btn-shield').style.display = 'block';
+            
+            // Auto-throttle to 100% for the initial launch so it moves immediately
+            state.throttle = 100;
+            document.getElementById('throttle-fill').style.height = '100%';
+            state.task = "LIFTOFF! Monitor your velocity.";
+        }};
+
+        joyZone.addEventListener('pointerdown', (e) => {{ isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); }});
+        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '35px'; joyKnob.style.left = '35px'; state.pitch = 0; state.roll = 0; }});
         joyZone.addEventListener('pointermove', (e) => {{
             if (!isDraggingJoy) return;
             const rect = joyZone.getBoundingClientRect();
@@ -191,10 +216,7 @@ game_html = f"""
             state.roll = (x / 35) * 45; state.pitch = -(y / 35) * 45;
         }});
 
-        throttleZone.addEventListener('pointerdown', (e) => {{ 
-            isDraggingThrottle = true; throttleZone.setPointerCapture(e.pointerId);
-            if (state.cameraMode === "birdseye") {{ state.cameraMode = "launch"; }}
-        }});
+        throttleZone.addEventListener('pointerdown', (e) => {{ isDraggingThrottle = true; throttleZone.setPointerCapture(e.pointerId); }});
         throttleZone.addEventListener('pointerup', () => {{ isDraggingThrottle = false; }});
         throttleZone.addEventListener('pointermove', (e) => {{
             if (!isDraggingThrottle) return;
@@ -215,19 +237,15 @@ game_html = f"""
             this.innerText = "HEAT SHIELD: " + (state.shield ? "ON" : "OFF");
         }};
         document.getElementById('btn-reset').onclick = function() {{
-            state.alt = 0; state.vel = 0; state.fuel = 100; state.throttle = 0;
-            state.exploded = false; state.won = false; state.missionPhase = 1;
-            state.cameraMode = "birdseye"; 
-            state.task = "Awaiting Launch Sequence...";
-            throttleFill.style.height = '0%';
-            rocketGroup.visible = true;
-            rocketGroup.rotation.set(0,0,0);
-            scene.children = scene.children.filter(child => child.type !== 'Points' && child.type !== 'Mesh' || child.geometry.type !== 'SphereGeometry');
+            // Reload the page to hard reset everything cleanly
+            window.location.reload();
         }};
 
         function updatePhysics() {{
-            if (state.exploded || state.won) return;
-            if (state.throttle === 0 && state.vel === 0) return;
+            if (!state.started || state.exploded || state.won) return;
+            
+            // Allow physics if throttle is up OR we are already moving
+            if (state.throttle === 0 && state.vel === 0) return; 
 
             let p = planets[state.target];
             let altKm = state.alt / 1000;
@@ -335,13 +353,16 @@ game_html = f"""
                 }}
             }});
 
-            if (state.cameraMode === "birdseye") {{
+            // Camera Logic
+            if (!state.started) {{
+                // Bird's eye view before game starts
                 const time = Date.now() * 0.0001;
                 camera.position.x = Math.sin(time) * 400000;
                 camera.position.z = Math.cos(time) * 400000;
                 camera.position.y = 150000 + Math.sin(time * 2) * 50000;
                 camera.lookAt(0, 0, 0);
             }} else {{
+                // Launch follow camera
                 camera.position.set(150, visualAlt + 100, 300);
                 camera.lookAt(rocketGroup.position);
             }}
