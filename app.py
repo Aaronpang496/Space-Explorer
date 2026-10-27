@@ -32,17 +32,17 @@ html_template = """
         #hud { position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}
         #mission { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}
         
-        /* Controls placed mid-screen for mobile */
-        #joystick-zone { position: absolute; top: 60%; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}
+        /* Moved UP to top: 40% to guarantee visibility above Safari UI */
+        #joystick-zone { position: absolute; top: 40%; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}
         #joystick-knob { position: absolute; top: 30px; left: 30px; width: 46px; height: 46px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }
         
-        #throttle-zone { position: absolute; top: 50%; right: 20px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}
+        #throttle-zone { position: absolute; top: 40%; right: 20px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}
         #throttle-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: #ef4444; border-radius: 18px;}
         
         .action-btn { position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 2px solid #38bdf8; padding: 10px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 12px; display: none; z-index: 10000; }
-        #btn-gear { top: 60%; right: 80px; color: #22c55e; border-color: #22c55e; }
-        #btn-retro { top: 68%; right: 80px; color: #f59e0b; border-color: #f59e0b; }
-        #btn-reset { top: 60%; left: 140px; color: #ef4444; border-color: #ef4444; }
+        #btn-gear { top: 40%; right: 80px; color: #22c55e; border-color: #22c55e; }
+        #btn-retro { top: 48%; right: 80px; color: #f59e0b; border-color: #f59e0b; }
+        #btn-reset { top: 40%; left: 140px; color: #ef4444; border-color: #ef4444; }
         
         #loading { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #38bdf8; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: opacity 1s; }
         #start-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; cursor: pointer; }
@@ -78,9 +78,8 @@ html_template = """
 
     <script>
         let state = {
-            // Start on the surface of Earth
             x: 0, y: 6371, vx: 0, vy: 0, 
-            rotation: 0, angularVelocity: 0, // REAL physics rotation
+            rotation: 0, angularVelocity: 0,
             fuel: 100, throttle: 0, 
             gear: false, exploded: false, started: false
         };
@@ -88,7 +87,7 @@ html_template = """
         const G = 6.674e-11;
         const EARTH_MASS = 5.97e24;
         const ROCKET_MASS = 100000;
-        const MAX_THRUST = 3500000; // Newtons
+        const MAX_THRUST = 1500000; // Balanced for gameplay
         const EARTH_RADIUS = 6371;
 
         const scene = new THREE.Scene();
@@ -97,7 +96,6 @@ html_template = """
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Background
         scene.add(new THREE.AmbientLight(0x404040));
         const sunLight = new THREE.DirectionalLight(0xffffff, 2);
         sunLight.position.set(5000, 5000, 5000);
@@ -110,7 +108,7 @@ html_template = """
         starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
         scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 5})));
 
-        // Earth (A massive sphere)
+        // Earth
         const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
         const earthMat = new THREE.MeshPhongMaterial({color: 0x1e3a8a, shininess: 10});
         const earth = new THREE.Mesh(earthGeo, earthMat);
@@ -122,26 +120,53 @@ html_template = """
         scene.add(new THREE.Mesh(atmoGeo, atmoMat));
 
         // Launch Pad
-        const padGeo = new THREE.BoxGeometry(100, 10, 100);
+        const padGeo = new THREE.BoxGeometry(50, 5, 50);
         const padMat = new THREE.MeshLambertMaterial({color: 0x555555});
         const pad = new THREE.Mesh(padGeo, padMat);
-        pad.position.set(0, EARTH_RADIUS + 5, 0); // Sit on top of Earth
+        pad.position.set(0, EARTH_RADIUS + 2.5, 0);
         scene.add(pad);
 
-        // Rocket
         const rocketGroup = new THREE.Group();
         scene.add(rocketGroup);
 
-        // REALISTIC PARTICLE FIRE
-        const fireParticles = new THREE.Group();
-        for(let i=0; i<5; i++) {
-            let fGeo = new THREE.ConeGeometry(15, 40, 8);
-            let fMat = new THREE.MeshBasicMaterial({color: i%2==0 ? 0xffaa00 : 0xff3300, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending});
-            let fMesh = new THREE.Mesh(fGeo, fMat);
-            fMesh.rotation.x = Math.PI;
-            fMesh.position.y = -20 - (i*5);
-            fireParticles.add(fMesh);
+        // --- REALISTIC PARTICLE FIRE ---
+        const particleCount = 200;
+        const fireGeo = new THREE.BufferGeometry();
+        const firePositions = new Float32Array(particleCount * 3);
+        const fireVelocities = [];
+        
+        for (let i = 0; i < particleCount; i++) {
+            firePositions[i*3] = 0; firePositions[i*3+1] = 0; firePositions[i*3+2] = 0;
+            fireVelocities.push({
+                x: (Math.random() - 0.5) * 2,
+                y: -Math.random() * 20 - 10, // Shoot downwards
+                z: (Math.random() - 0.5) * 2
+            });
         }
+        fireGeo.setAttribute('position', new THREE.BufferAttribute(firePositions, 3));
+        
+        // Glowing orange/red particle texture
+        const canvas = document.createElement('canvas');
+        canvas.width = 16; canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+        gradient.addColorStop(0, 'rgba(255, 255, 200, 1)');
+        gradient.addColorStop(0.2, 'rgba(255, 150, 0, 1)');
+        gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 16, 16);
+        
+        const fireTexture = new THREE.CanvasTexture(canvas);
+        const fireMaterial = new THREE.PointsMaterial({
+            size: 8,
+            map: fireTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const fireParticles = new THREE.Points(fireGeo, fireMaterial);
+        fireParticles.position.y = -5; // Position at engine nozzle
         fireParticles.visible = false;
         rocketGroup.add(fireParticles);
 
@@ -156,21 +181,20 @@ html_template = """
                 const model = gltf.scene;
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
-                const scaleFactor = 80 / size.y; 
+                const scaleFactor = 40 / size.y; // Make rocket appropriately sized
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.x = -center.x * scaleFactor;
                 model.position.z = -center.z * scaleFactor;
-                model.position.y = (-box.min.y * scaleFactor) + 2; // Lift slightly
+                model.position.y = (-box.min.y * scaleFactor) + 1; 
                 rocketGroup.add(model);
                 document.getElementById('loading').style.opacity = 0;
             });
         }
 
-        // CONTROLS
         let isDraggingJoy = false;
         let isDraggingThrottle = false;
-        let joyX = 0; let joyY = 0;
+        let joyX = 0; 
 
         const joyZone = document.getElementById('joystick-zone');
         const joyKnob = document.getElementById('joystick-knob');
@@ -190,7 +214,7 @@ html_template = """
         });
 
         joyZone.addEventListener('pointerdown', (e) => { isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); });
-        joyZone.addEventListener('pointerup', (e) => { isDraggingJoy = false; joyKnob.style.top = '30px'; joyKnob.style.left = '30px'; joyX = 0; joyY = 0; });
+        joyZone.addEventListener('pointerup', (e) => { isDraggingJoy = false; joyKnob.style.top = '30px'; joyKnob.style.left = '30px'; joyX = 0; });
         joyZone.addEventListener('pointermove', (e) => {
             if (!isDraggingJoy) return;
             const rect = joyZone.getBoundingClientRect();
@@ -198,7 +222,7 @@ html_template = """
             const dist = Math.sqrt(x*x + y*y);
             if (dist > 35) { x = (x/35)*35; y = (y/35)*35; }
             joyKnob.style.left = (30 + x) + 'px'; joyKnob.style.top = (30 + y) + 'px';
-            joyX = x; joyY = y;
+            joyX = x; 
         });
 
         throttleZone.addEventListener('pointerdown', (e) => { isDraggingThrottle = true; throttleZone.setPointerCapture(e.pointerId); });
@@ -231,32 +255,38 @@ html_template = """
 
         function updatePhysics() {
             if (!state.started || state.exploded) return;
-            
-            // If sitting still on pad, do nothing
             if (state.throttle === 0 && state.y <= 6371.1) return;
 
             let ax = 0, ay = 0;
-
-            // 1. REAL GRAVITY (Newton's Law)
             let distSq = state.x*state.x + state.y*state.y;
             let dist = Math.sqrt(distSq);
             if(dist < 100) dist = 100;
             
+            // 1. GRAVITY
             let gForce = (G * EARTH_MASS) / distSq;
-            ax += gForce * (0 - state.x) / dist; // Pull towards 0,0
+            ax += gForce * (0 - state.x) / dist;
             ay += gForce * (0 - state.y) / dist;
 
-            // 2. THRUST
+            // 2. THRUST & PARTICLE ANIMATION
             if (state.throttle > 0) {
                 fireParticles.visible = true;
-                // Flicker fire
-                fireParticles.children.forEach((p, idx) => {
-                    p.scale.set(1 + Math.random()*0.5, 1 + Math.random()*0.8, 1 + Math.random()*0.5);
-                    p.material.opacity = 0.4 + Math.random()*0.6;
-                });
+                
+                // Animate particles
+                const positions = fireParticles.geometry.attributes.position.array;
+                for (let i = 0; i < particleCount; i++) {
+                    // Reset particle if it goes too far
+                    if (positions[i*3+1] < -40) {
+                        positions[i*3] = 0; positions[i*3+1] = 0; positions[i*3+2] = 0;
+                        fireVelocities[i].y = -Math.random() * 20 - 10;
+                    }
+                    // Move particle
+                    positions[i*3] += fireVelocities[i].x * (state.throttle/100);
+                    positions[i*3+1] += fireVelocities[i].y * (state.throttle/100);
+                    positions[i*3+2] += fireVelocities[i].z * (state.throttle/100);
+                }
+                fireParticles.geometry.attributes.position.needsUpdate = true;
 
                 let thrustAccel = (MAX_THRUST * (state.throttle/100)) / ROCKET_MASS;
-                // Thrust points in the direction of rotation (0 is up)
                 ax += thrustAccel * Math.sin(state.rotation);
                 ay += thrustAccel * Math.cos(state.rotation);
 
@@ -266,34 +296,34 @@ html_template = """
                 fireParticles.visible = false;
             }
 
-            // 3. REAL ROTATION (Angular Momentum)
-            // Joystick controls angular velocity, not instant angle
-            let targetAngVel = (joyX / 35) * 0.05; 
-            state.angularVelocity += (targetAngVel - state.angularVelocity) * 0.1; // Smooth turning
+            // 3. ANGULAR MOMENTUM (Turning)
+            let targetAngVel = (joyX / 35) * 0.03; 
+            state.angularVelocity += (targetAngVel - state.angularVelocity) * 0.1; 
             state.rotation += state.angularVelocity;
 
-            // 4. INTEGRATION
+            // 4. INTEGRATION & DRAG
             state.vx += ax * 0.05;
             state.vy += ay * 0.05;
+            
+            // Add atmospheric drag (caps speed so camera can keep up)
+            let alt = dist - EARTH_RADIUS;
+            if (alt < 100) {
+                let drag = 0.0005 * Math.sqrt(state.vx*state.vx + state.vy*state.vy);
+                state.vx -= state.vx * drag;
+                state.vy -= state.vy * drag;
+            }
+
             state.x += state.vx * 0.05;
             state.y += state.vy * 0.05;
 
-            // 5. REAL CRASH DETECTION
+            // 5. CRASH DETECTION
             let currentDist = Math.sqrt(state.x*state.x + state.y*state.y);
-            if (currentDist < EARTH_RADIUS && state.throttle > 0) {
-                // Hit the ground!
-                triggerExplosion("LITHOBRAKING");
-            } else if (currentDist < EARTH_RADIUS + 2) {
-                // Safe landing / resting on ground
-                state.vy = 0; 
-                state.vx *= 0.9; // friction
-                if (state.vy < -50) triggerExplosion("CRASHED INTO EARTH");
+            if (currentDist < EARTH_RADIUS) {
+                triggerExplosion("LITHOBRAKING (CRASHED)");
             }
 
-            // Update HUD
             let speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
-            let alt = currentDist - EARTH_RADIUS;
-            document.getElementById('val-alt').innerText = Math.max(0, alt).toFixed(1);
+            document.getElementById('val-alt').innerText = Math.max(0, currentDist - EARTH_RADIUS).toFixed(1);
             document.getElementById('val-vel').innerText = (speed * 3.6).toFixed(0);
             document.getElementById('val-fuel').innerText = state.fuel.toFixed(1);
         }
@@ -303,18 +333,16 @@ html_template = """
             document.getElementById('mission').innerText = "💥 FAILED: " + reason;
             rocketGroup.visible = false;
             
-            // Explosion Particles
-            const particleCount = 300;
-            const geo = new THREE.BufferGeometry();
-            const pos = new Float32Array(particleCount * 3);
-            const vel = [];
-            for (let i = 0; i < particleCount; i++) {
-                pos[i*3] = state.x; pos[i*3+1] = state.y; pos[i*3+2] = 0;
-                vel.push({x: (Math.random()-0.5)*2000, y: (Math.random()-0.5)*2000});
+            const expGeo = new THREE.BufferGeometry();
+            const expPos = new Float32Array(100 * 3);
+            const expVel = [];
+            for (let i = 0; i < 100; i++) {
+                expPos[i*3] = state.x; expPos[i*3+1] = state.y; expPos[i*3+2] = 0;
+                expVel.push({x: (Math.random()-0.5)*1000, y: (Math.random()-0.5)*1000});
             }
-            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-            const exp = new THREE.Points(geo, new THREE.PointsMaterial({color: 0xff3300, size: 20}));
-            exp.userData = vel;
+            expGeo.setAttribute('position', new THREE.BufferAttribute(expPos, 3));
+            const exp = new THREE.Points(expGeo, new THREE.PointsMaterial({color: 0xff3300, size: 10}));
+            exp.userData = expVel;
             scene.add(exp);
         }
 
@@ -324,20 +352,19 @@ html_template = """
 
             if (!state.exploded) {
                 rocketGroup.position.set(state.x, state.y, 0);
-                // Apply the calculated rotation. Add Math.PI if the model faces wrong way by default.
                 rocketGroup.rotation.z = -state.rotation; 
             }
 
-            // SMOOTH FOLLOW CAMERA
-            // Keeps you in view without swooping wildly
-            let targetCamX = state.x;
-            let targetCamY = state.y - 100; // Look slightly above rocket
+            // --- SMART CAMERA ---
+            // Lock camera to rocket position, but zoom out based on altitude
+            let altitude = Math.max(0, state.y - 6371);
+            let targetZoom = 300 + (altitude * 0.5); // Zoom out as you go higher
             
-            // Smoothly interpolate camera position
-            camera.position.x += (targetCamX - camera.position.x) * 0.05;
-            camera.position.y += (targetCamY - camera.position.y) * 0.05;
-            camera.position.z = 400; // Zoomed in
-
+            // Smoothly interpolate camera position to prevent jerky movement
+            camera.position.x += (state.x - camera.position.x) * 0.1;
+            camera.position.y += (state.y + 50 - camera.position.y) * 0.1; // Look slightly above rocket
+            camera.position.z += (targetZoom - camera.position.z) * 0.05;
+            
             camera.lookAt(state.x, state.y, 0);
             
             renderer.render(scene, camera);
