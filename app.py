@@ -19,42 +19,53 @@ game_html = f"""
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body {{ margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', monospace; touch-action: none; }}
+        body {{ margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', monospace; touch-action: none; user-select: none; }}
         canvas {{ display: block; }}
-        #ui-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;}}
+        
+        /* The UI layer MUST be above the canvas */
+        #ui-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }}
+        
+        /* HUD */
         #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; border: 1px solid #38bdf8;}}
         #mission {{ position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 16px; font-weight: bold; text-shadow: 0 0 5px black; width: 80%;}}
         
+        /* Joystick */
         #joystick-zone {{ position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(56,189,248,0.5); border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
         #joystick-knob {{ position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(56,189,248,0.8); border-radius: 50%; box-shadow: 0 0 10px #38bdf8; }}
         
+        /* Throttle */
         #throttle-zone {{ position: absolute; bottom: 30px; right: 30px; width: 40px; height: 200px; background: rgba(255,255,255,0.1); border: 2px solid rgba(239,68,68,0.5); border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
         #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: rgba(239,68,68,0.8); border-radius: 18px;}}
         
+        /* Minimap */
         #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 150px; height: 150px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.6); overflow: hidden; display: none;}}
         #minimap {{ width: 100%; height: 100%; }}
         
-        .btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.6); color: white; border: 1px solid #38bdf8; padding: 10px; border-radius: 5px; font-family: inherit; font-weight: bold; display: none;}}
+        /* Buttons */
+        .btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 1px solid #38bdf8; padding: 15px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 16px; display: none; z-index: 10000;}}
         #btn-gear {{ bottom: 30px; left: 160px; color: #22c55e; border-color: #22c55e; }}
         #btn-shield {{ bottom: 80px; left: 160px; color: #f59e0b; border-color: #f59e0b; }}
-        #btn-reset {{ top: 10px; right: 170px; color: #ef4444; border-color: #ef4444; display: block;}}
         
+        /* Loading */
         #loading {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #38bdf8; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: opacity 1s; }}
         
-        /* FULL SCREEN START BUTTON OVERLAY */
+        /* TAP ANYWHERE TO START OVERLAY */
         #start-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(2, 6, 23, 0.85); z-index: 50; 
+            background: rgba(2, 6, 23, 0.8); z-index: 99999; 
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            pointer-events: auto; 
+            pointer-events: auto; cursor: pointer;
         }}
-        #start-btn {{
-            background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 2px solid #38bdf8; 
-            padding: 20px 40px; border-radius: 10px; font-family: inherit; font-size: 24px; 
-            font-weight: bold; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; 
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.6); transition: all 0.2s;
+        .start-text {{
+            color: #38bdf8; font-size: 28px; font-weight: bold; text-transform: uppercase; 
+            letter-spacing: 3px; text-align: center; text-shadow: 0 0 20px #38bdf8;
+            animation: pulse 2s infinite;
         }}
-        #start-btn:active {{ background: rgba(56, 189, 248, 0.6); transform: scale(0.95); }}
+        @keyframes pulse {{
+            0% {{ opacity: 0.5; }}
+            50% {{ opacity: 1; }}
+            100% {{ opacity: 0.5; }}
+        }}
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -62,10 +73,9 @@ game_html = f"""
 <body>
     <div id="loading">INITIALIZING UNIVERSE...</div>
     
-    <!-- START SCREEN OVERLAY -->
+    <!-- TAP ANYWHERE TO START -->
     <div id="start-overlay">
-        <h1 style="color:white; margin-bottom: 40px; text-shadow: 0 0 10px #38bdf8;">ARTEMIS II</h1>
-        <button id="start-btn">INITIATE LAUNCH</button>
+        <div class="start-text">TAP ANYWHERE<br>TO<br>INITIATE LAUNCH</div>
     </div>
 
     <div id="ui-layer">
@@ -83,7 +93,6 @@ game_html = f"""
         
         <button class="btn" id="btn-gear">GEAR: RETRACTED</button>
         <button class="btn" id="btn-shield">HEAT SHIELD: ON</button>
-        <button class="btn" id="btn-reset">RESET</button>
     </div>
 
     <script>
@@ -102,8 +111,7 @@ game_html = f"""
         const planets = {{
             "Earth": {{ gravity: 9.81, atmo: 100, color: 0x2233ff, radius: 6371 }},
             "Moon": {{ gravity: 1.62, atmo: 0, color: 0xaaaaaa, radius: 1737 }},
-            "Mars": {{ gravity: 3.71, atmo: 50, color: 0xff4400, radius: 3389 }},
-            "Jupiter": {{ gravity: 24.79, atmo: 500, color: 0xd4a373, radius: 69911 }}
+            "Mars": {{ gravity: 3.71, atmo: 50, color: 0xff4400, radius: 3389 }}
         }};
 
         const scene = new THREE.Scene();
@@ -117,12 +125,10 @@ game_html = f"""
         scene.add(sunLight);
         scene.add(new THREE.AmbientLight(0x404040));
 
-        let planetMeshes = {{}};
         let planetPositions = {{
             "Earth": [0, -6371, 0],
             "Moon": [50000, 20000, -50000],
-            "Mars": [150000, -10000, 100000],
-            "Jupiter": [-300000, 50000, -200000]
+            "Mars": [150000, -10000, 100000]
         }};
 
         for (let p in planets) {{
@@ -131,7 +137,6 @@ game_html = f"""
             let mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(...planetPositions[p]);
             scene.add(mesh);
-            planetMeshes[p] = mesh;
         }}
 
         const rocketGroup = new THREE.Group();
@@ -168,6 +173,7 @@ game_html = f"""
             
             document.getElementById('loading').style.opacity = 0;
         }}, undefined, function (error) {{
+            // Fallback
             const rocketGeo = new THREE.CylinderGeometry(15, 15, 100, 16);
             const rocketMat = new THREE.MeshPhongMaterial({{color: 0xdddddd}});
             const rocket = new THREE.Mesh(rocketGeo, rocketMat);
@@ -197,27 +203,29 @@ game_html = f"""
         const throttleZone = document.getElementById('throttle-zone');
         const throttleFill = document.getElementById('throttle-fill');
 
-        // --- START BUTTON LOGIC ---
-        document.getElementById('start-btn').addEventListener('pointerdown', function() {{
+        // --- TAP ANYWHERE TO START ---
+        document.getElementById('start-overlay').addEventListener('pointerdown', function(e) {{
+            e.preventDefault(); // Stop 3D engine from eating the touch
             state.started = true;
             state.cameraMode = "launch";
             
-            // Hide the start overlay completely
-            document.getElementById('start-overlay').style.display = 'none';
+            // Hide overlay
+            this.style.display = 'none';
             
-            // Show game controls
+            // Show UI
             document.getElementById('joystick-zone').style.display = 'block';
             document.getElementById('throttle-zone').style.display = 'block';
             document.getElementById('minimap-container').style.display = 'block';
             document.getElementById('btn-gear').style.display = 'block';
             document.getElementById('btn-shield').style.display = 'block';
             
-            // Auto-throttle to 100% for the initial launch
+            // Auto launch
             state.throttle = 100;
             document.getElementById('throttle-fill').style.height = '100%';
             state.task = "LIFTOFF! Monitor your velocity.";
         }});
 
+        // Joystick Drag
         joyZone.addEventListener('pointerdown', (e) => {{ isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); }});
         joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '35px'; joyKnob.style.left = '35px'; state.pitch = 0; state.roll = 0; }});
         joyZone.addEventListener('pointermove', (e) => {{
@@ -230,6 +238,7 @@ game_html = f"""
             state.roll = (x / 35) * 45; state.pitch = -(y / 35) * 45;
         }});
 
+        // Throttle Drag
         throttleZone.addEventListener('pointerdown', (e) => {{ isDraggingThrottle = true; throttleZone.setPointerCapture(e.pointerId); }});
         throttleZone.addEventListener('pointerup', () => {{ isDraggingThrottle = false; }});
         throttleZone.addEventListener('pointermove', (e) => {{
@@ -242,6 +251,7 @@ game_html = f"""
             throttleFill.style.height = percent + '%';
         }});
 
+        // Buttons
         document.getElementById('btn-gear').onclick = function() {{
             state.gear = !state.gear;
             this.innerText = "GEAR: " + (state.gear ? "DEPLOYED" : "RETRACTED");
@@ -249,9 +259,6 @@ game_html = f"""
         document.getElementById('btn-shield').onclick = function() {{
             state.shield = !state.shield;
             this.innerText = "HEAT SHIELD: " + (state.shield ? "ON" : "OFF");
-        }};
-        document.getElementById('btn-reset').onclick = function() {{
-            window.location.reload();
         }};
 
         function updatePhysics() {{
@@ -265,7 +272,6 @@ game_html = f"""
             if (throttleRatio > 0.05 && !state.exploded) {{
                 engineFire.visible = true;
                 engineFire.scale.set(1 + Math.random()*0.2, 1 + Math.random()*0.5, 1 + Math.random()*0.2);
-                engineFire.material.opacity = 0.5 + Math.random() * 0.4;
             }} else {{
                 engineFire.visible = false;
             }}
@@ -352,6 +358,7 @@ game_html = f"""
                 rocketGroup.rotation.z = state.roll * (Math.PI / 180);
             }}
 
+            // Explosion Particles Animation
             scene.children.forEach(child => {{
                 if (child.type === 'Points' && child.userData.velocities) {{
                     const positions = child.geometry.attributes.position.array;
@@ -364,16 +371,13 @@ game_html = f"""
                 }}
             }});
 
-            // --- CAMERA LOGIC ---
             if (!state.started) {{
-                // BIRD'S EYE VIEW: Zoomed in closer so you can see Earth clearly
                 const time = Date.now() * 0.0003;
                 camera.position.x = Math.sin(time) * 30000;
                 camera.position.z = Math.cos(time) * 30000;
                 camera.position.y = 10000 + Math.sin(time * 2) * 5000;
-                camera.lookAt(0, -5000, 0); // Look at Earth
+                camera.lookAt(0, -5000, 0); 
             }} else {{
-                // LAUNCH CAMERA: Follows the rocket
                 camera.position.set(150, visualAlt + 100, 300);
                 camera.lookAt(rocketGroup.position);
             }}
