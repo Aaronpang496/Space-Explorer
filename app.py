@@ -3,7 +3,7 @@ import streamlit.components.v1 as components
 import base64
 import os
 
-st.set_page_config(page_title="Artemis II | Solar System", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Artemis II | Real Physics", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
 <style>
@@ -13,14 +13,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Read the model file
 model_path = "artemis_ii.glb"
 glb_base64 = ""
 if os.path.exists(model_path):
     with open(model_path, "rb") as f:
         glb_base64 = base64.b64encode(f.read()).decode('utf-8')
 
-# Use a standard string with a placeholder instead of an f-string to prevent syntax errors
 html_template = """
 <!DOCTYPE html>
 <html>
@@ -34,14 +32,12 @@ html_template = """
         #hud { position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}
         #mission { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}
         
-        /* Controls are pushed to the middle of the screen */
+        /* Controls placed mid-screen for mobile */
         #joystick-zone { position: absolute; top: 60%; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}
         #joystick-knob { position: absolute; top: 30px; left: 30px; width: 46px; height: 46px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }
         
         #throttle-zone { position: absolute; top: 50%; right: 20px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}
         #throttle-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: #ef4444; border-radius: 18px;}
-        
-        #minimap-container { position: absolute; top: 10px; right: 10px; width: 100px; height: 100px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}
         
         .action-btn { position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 2px solid #38bdf8; padding: 10px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 12px; display: none; z-index: 10000; }
         #btn-gear { top: 60%; right: 80px; color: #22c55e; border-color: #22c55e; }
@@ -74,7 +70,6 @@ html_template = """
         
         <div id="joystick-zone"><div id="joystick-knob"></div></div>
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
-        <div id="minimap-container"><canvas id="minimap" width="100" height="100"></canvas></div>
         
         <button class="action-btn" id="btn-gear">GEAR: UP</button>
         <button class="action-btn" id="btn-retro">RETRO</button>
@@ -83,13 +78,18 @@ html_template = """
 
     <script>
         let state = {
-            x: 0, y: 0, vx: 0, vy: 0, 
-            fuel: 100, throttle: 0, angle: 0, 
-            gear: false, exploded: false, started: false, liftedOff: false
+            // Start on the surface of Earth
+            x: 0, y: 6371, vx: 0, vy: 0, 
+            rotation: 0, angularVelocity: 0, // REAL physics rotation
+            fuel: 100, throttle: 0, 
+            gear: false, exploded: false, started: false
         };
 
-        const gravity = 9.8;
-        const thrustPower = 30; // Stronger than gravity
+        const G = 6.674e-11;
+        const EARTH_MASS = 5.97e24;
+        const ROCKET_MASS = 100000;
+        const MAX_THRUST = 3500000; // Newtons
+        const EARTH_RADIUS = 6371;
 
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000000);
@@ -97,45 +97,53 @@ html_template = """
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // Background
+        scene.add(new THREE.AmbientLight(0x404040));
+        const sunLight = new THREE.DirectionalLight(0xffffff, 2);
+        sunLight.position.set(5000, 5000, 5000);
+        scene.add(sunLight);
+
         // Stars
         const starsGeo = new THREE.BufferGeometry();
-        const starsCount = 2000;
-        const starsPos = new Float32Array(starsCount * 3);
-        for(let i=0; i<starsCount*3; i++) starsPos[i] = (Math.random() - 0.5) * 100000;
+        const starsPos = new Float32Array(3000 * 3);
+        for(let i=0; i<3000*3; i++) starsPos[i] = (Math.random() - 0.5) * 20000;
         starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 200})));
+        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 5})));
 
-        const sunLight = new THREE.DirectionalLight(0xffffff, 2);
-        sunLight.position.set(1000, 1000, 1000);
-        scene.add(sunLight);
-        scene.add(new THREE.AmbientLight(0x404040));
+        // Earth (A massive sphere)
+        const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
+        const earthMat = new THREE.MeshPhongMaterial({color: 0x1e3a8a, shininess: 10});
+        const earth = new THREE.Mesh(earthGeo, earthMat);
+        scene.add(earth);
 
-        // Ground
-        const groundGeo = new THREE.PlaneGeometry(20000, 20000);
-        const groundMat = new THREE.MeshLambertMaterial({color: 0x1e3a8a});
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = 0;
-        scene.add(ground);
+        // Atmosphere Glow
+        const atmoGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.02, 64, 64);
+        const atmoMat = new THREE.MeshBasicMaterial({color: 0x38bdf8, transparent: true, opacity: 0.15, side: THREE.BackSide});
+        scene.add(new THREE.Mesh(atmoGeo, atmoMat));
 
         // Launch Pad
-        const padGeo = new THREE.BoxGeometry(200, 10, 200);
+        const padGeo = new THREE.BoxGeometry(100, 10, 100);
         const padMat = new THREE.MeshLambertMaterial({color: 0x555555});
         const pad = new THREE.Mesh(padGeo, padMat);
-        pad.position.set(0, 5, 0);
+        pad.position.set(0, EARTH_RADIUS + 5, 0); // Sit on top of Earth
         scene.add(pad);
 
+        // Rocket
         const rocketGroup = new THREE.Group();
-        rocketGroup.position.set(0, 10, 0); 
         scene.add(rocketGroup);
 
-        const fireGeo = new THREE.ConeGeometry(20, 60, 16);
-        const fireMat = new THREE.MeshBasicMaterial({color: 0xffaa00, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending});
-        const engineFire = new THREE.Mesh(fireGeo, fireMat);
-        engineFire.rotation.x = Math.PI;
-        engineFire.position.y = -30;
-        engineFire.visible = false;
-        rocketGroup.add(engineFire);
+        // REALISTIC PARTICLE FIRE
+        const fireParticles = new THREE.Group();
+        for(let i=0; i<5; i++) {
+            let fGeo = new THREE.ConeGeometry(15, 40, 8);
+            let fMat = new THREE.MeshBasicMaterial({color: i%2==0 ? 0xffaa00 : 0xff3300, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending});
+            let fMesh = new THREE.Mesh(fGeo, fMat);
+            fMesh.rotation.x = Math.PI;
+            fMesh.position.y = -20 - (i*5);
+            fireParticles.add(fMesh);
+        }
+        fireParticles.visible = false;
+        rocketGroup.add(fireParticles);
 
         const base64String = "{{GLB_BASE64_PLACEHOLDER}}";
         if (base64String.length > 100) {
@@ -148,19 +156,22 @@ html_template = """
                 const model = gltf.scene;
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
-                const scaleFactor = 100 / size.y; 
+                const scaleFactor = 80 / size.y; 
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.x = -center.x * scaleFactor;
                 model.position.z = -center.z * scaleFactor;
-                model.position.y = (-box.min.y * scaleFactor);
+                model.position.y = (-box.min.y * scaleFactor) + 2; // Lift slightly
                 rocketGroup.add(model);
                 document.getElementById('loading').style.opacity = 0;
             });
         }
 
+        // CONTROLS
         let isDraggingJoy = false;
         let isDraggingThrottle = false;
+        let joyX = 0; let joyY = 0;
+
         const joyZone = document.getElementById('joystick-zone');
         const joyKnob = document.getElementById('joystick-knob');
         const throttleZone = document.getElementById('throttle-zone');
@@ -172,7 +183,6 @@ html_template = """
             this.style.display = 'none';
             document.getElementById('joystick-zone').style.display = 'block';
             document.getElementById('throttle-zone').style.display = 'block';
-            document.getElementById('minimap-container').style.display = 'block';
             document.getElementById('btn-gear').style.display = 'block';
             document.getElementById('btn-retro').style.display = 'block';
             document.getElementById('btn-reset').style.display = 'block';
@@ -180,7 +190,7 @@ html_template = """
         });
 
         joyZone.addEventListener('pointerdown', (e) => { isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); });
-        joyZone.addEventListener('pointerup', (e) => { isDraggingJoy = false; joyKnob.style.top = '30px'; joyKnob.style.left = '30px'; });
+        joyZone.addEventListener('pointerup', (e) => { isDraggingJoy = false; joyKnob.style.top = '30px'; joyKnob.style.left = '30px'; joyX = 0; joyY = 0; });
         joyZone.addEventListener('pointermove', (e) => {
             if (!isDraggingJoy) return;
             const rect = joyZone.getBoundingClientRect();
@@ -188,7 +198,7 @@ html_template = """
             const dist = Math.sqrt(x*x + y*y);
             if (dist > 35) { x = (x/35)*35; y = (y/35)*35; }
             joyKnob.style.left = (30 + x) + 'px'; joyKnob.style.top = (30 + y) + 'px';
-            state.angle = Math.atan2(x, -y); 
+            joyX = x; joyY = y;
         });
 
         throttleZone.addEventListener('pointerdown', (e) => { isDraggingThrottle = true; throttleZone.setPointerCapture(e.pointerId); });
@@ -211,61 +221,101 @@ html_template = """
             state.vx *= 0.8; state.vy *= 0.8;
         };
         document.getElementById('btn-reset').onclick = function() {
-            state.x = 0; state.y = 0; state.vx = 0; state.vy = 0; state.fuel = 100; state.throttle = 0; state.exploded = false; state.liftedOff = false;
+            state.x = 0; state.y = 6371; state.vx = 0; state.vy = 0; 
+            state.rotation = 0; state.angularVelocity = 0;
+            state.fuel = 100; state.throttle = 0; state.exploded = false;
             rocketGroup.visible = true;
-            rocketGroup.position.set(0, 10, 0);
             throttleFill.style.height = '0%';
             document.getElementById('mission').innerText = "Reset. Slide RED BAR up to launch.";
         };
 
         function updatePhysics() {
             if (!state.started || state.exploded) return;
+            
+            // If sitting still on pad, do nothing
+            if (state.throttle === 0 && state.y <= 6371.1) return;
 
-            // ANTI-SWOOP FIX: If throttle is 0 and we are on the ground, do absolutely nothing.
-            if (state.throttle === 0 && !state.liftedOff) {
-                return;
-            }
+            let ax = 0, ay = 0;
 
-            let ax = 0;
-            let ay = -gravity; 
+            // 1. REAL GRAVITY (Newton's Law)
+            let distSq = state.x*state.x + state.y*state.y;
+            let dist = Math.sqrt(distSq);
+            if(dist < 100) dist = 100;
+            
+            let gForce = (G * EARTH_MASS) / distSq;
+            ax += gForce * (0 - state.x) / dist; // Pull towards 0,0
+            ay += gForce * (0 - state.y) / dist;
 
+            // 2. THRUST
             if (state.throttle > 0) {
-                state.liftedOff = true;
-                engineFire.visible = true;
-                engineFire.scale.set(1 + Math.random()*0.2, 1 + Math.random()*0.5, 1 + Math.random()*0.2);
-                
-                let currentThrust = thrustPower * (state.throttle/100);
-                ax += currentThrust * Math.sin(state.angle);
-                ay += currentThrust * Math.cos(state.angle);
-                
-                state.fuel -= 0.02 * (state.throttle/100);
+                fireParticles.visible = true;
+                // Flicker fire
+                fireParticles.children.forEach((p, idx) => {
+                    p.scale.set(1 + Math.random()*0.5, 1 + Math.random()*0.8, 1 + Math.random()*0.5);
+                    p.material.opacity = 0.4 + Math.random()*0.6;
+                });
+
+                let thrustAccel = (MAX_THRUST * (state.throttle/100)) / ROCKET_MASS;
+                // Thrust points in the direction of rotation (0 is up)
+                ax += thrustAccel * Math.sin(state.rotation);
+                ay += thrustAccel * Math.cos(state.rotation);
+
+                state.fuel -= 0.05 * (state.throttle/100);
                 if (state.fuel <= 0) { state.fuel = 0; state.throttle = 0; }
             } else {
-                engineFire.visible = false;
+                fireParticles.visible = false;
             }
 
-            state.vx += ax * 0.1;
-            state.vy += ay * 0.1;
-            
-            state.x += state.vx * 0.1;
-            state.y += state.vy * 0.1;
+            // 3. REAL ROTATION (Angular Momentum)
+            // Joystick controls angular velocity, not instant angle
+            let targetAngVel = (joyX / 35) * 0.05; 
+            state.angularVelocity += (targetAngVel - state.angularVelocity) * 0.1; // Smooth turning
+            state.rotation += state.angularVelocity;
 
-            // Ground collision
-            if (state.y <= 0) {
-                state.y = 0;
-                state.vy = 0;
-                if (state.liftedOff) {
-                    state.throttle = 0;
-                    throttleFill.style.height = '0%';
-                    state.liftedOff = false;
-                }
+            // 4. INTEGRATION
+            state.vx += ax * 0.05;
+            state.vy += ay * 0.05;
+            state.x += state.vx * 0.05;
+            state.y += state.vy * 0.05;
+
+            // 5. REAL CRASH DETECTION
+            let currentDist = Math.sqrt(state.x*state.x + state.y*state.y);
+            if (currentDist < EARTH_RADIUS && state.throttle > 0) {
+                // Hit the ground!
+                triggerExplosion("LITHOBRAKING");
+            } else if (currentDist < EARTH_RADIUS + 2) {
+                // Safe landing / resting on ground
+                state.vy = 0; 
+                state.vx *= 0.9; // friction
+                if (state.vy < -50) triggerExplosion("CRASHED INTO EARTH");
             }
 
+            // Update HUD
             let speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
-            
-            document.getElementById('val-alt').innerText = Math.max(0, (state.y / 1000)).toFixed(2);
-            document.getElementById('val-vel').innerText = (speed * 3.6).toFixed(0); 
+            let alt = currentDist - EARTH_RADIUS;
+            document.getElementById('val-alt').innerText = Math.max(0, alt).toFixed(1);
+            document.getElementById('val-vel').innerText = (speed * 3.6).toFixed(0);
             document.getElementById('val-fuel').innerText = state.fuel.toFixed(1);
+        }
+
+        function triggerExplosion(reason) {
+            state.exploded = true;
+            document.getElementById('mission').innerText = "💥 FAILED: " + reason;
+            rocketGroup.visible = false;
+            
+            // Explosion Particles
+            const particleCount = 300;
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(particleCount * 3);
+            const vel = [];
+            for (let i = 0; i < particleCount; i++) {
+                pos[i*3] = state.x; pos[i*3+1] = state.y; pos[i*3+2] = 0;
+                vel.push({x: (Math.random()-0.5)*2000, y: (Math.random()-0.5)*2000});
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const exp = new THREE.Points(geo, new THREE.PointsMaterial({color: 0xff3300, size: 20}));
+            exp.userData = vel;
+            scene.add(exp);
         }
 
         function animate() {
@@ -273,13 +323,21 @@ html_template = """
             updatePhysics();
 
             if (!state.exploded) {
-                rocketGroup.position.set(state.x, 10 + state.y, 0);
-                rocketGroup.rotation.z = -state.angle; 
+                rocketGroup.position.set(state.x, state.y, 0);
+                // Apply the calculated rotation. Add Math.PI if the model faces wrong way by default.
+                rocketGroup.rotation.z = -state.rotation; 
             }
 
-            // SIDE-SCROLL CAMERA
-            let cameraY = Math.max(50, state.y + 50);
-            camera.position.set(state.x, cameraY, 400);
+            // SMOOTH FOLLOW CAMERA
+            // Keeps you in view without swooping wildly
+            let targetCamX = state.x;
+            let targetCamY = state.y - 100; // Look slightly above rocket
+            
+            // Smoothly interpolate camera position
+            camera.position.x += (targetCamX - camera.position.x) * 0.05;
+            camera.position.y += (targetCamY - camera.position.y) * 0.05;
+            camera.position.z = 400; // Zoomed in
+
             camera.lookAt(state.x, state.y, 0);
             
             renderer.render(scene, camera);
@@ -291,8 +349,5 @@ html_template = """
 </html>
 """
 
-# Replace the placeholder with the actual base64 string
 final_html = html_template.replace("{{GLB_BASE64_PLACEHOLDER}}", glb_base64)
-
-# Render the game
 components.html(final_html, height=900, scrolling=False)
