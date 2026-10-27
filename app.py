@@ -30,18 +30,23 @@ game_html = f"""
         canvas {{ display: block; }}
         #ui-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }}
         
-        #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 12px; background: rgba(0,0,0,0.7); padding: 8px; border-radius: 5px; border: 1px solid #38bdf8;}}
-        #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 12px; font-weight: bold; text-shadow: 0 0 5px black; width: 50%;}}
+        #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}}
+        #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}}
         
-        /* Pushed Way Up for Mobile Safari */
-        #joystick-zone {{ position: absolute; bottom: 180px; left: 20px; width: 100px; height: 100px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
-        #joystick-knob {{ position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
+        /* Controls */
+        #joystick-zone {{ position: absolute; bottom: 180px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
+        #joystick-knob {{ position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
         
-        #throttle-zone {{ position: absolute; bottom: 180px; right: 20px; width: 40px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
+        #throttle-zone {{ position: absolute; bottom: 180px; right: 20px; width: 45px; height: 180px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
         #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: #ef4444; border-radius: 18px;}}
         
-        #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 100px; height: 100px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}}
-        #minimap {{ width: 100%; height: 100%; }}
+        #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 120px; height: 120px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}}
+        
+        /* Extra Buttons for Landing */
+        .action-btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 2px solid #38bdf8; padding: 12px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 12px; display: none; z-index: 10000; }}
+        #btn-gear {{ bottom: 180px; right: 80px; color: #22c55e; border-color: #22c55e; }}
+        #btn-retro {{ bottom: 240px; right: 80px; color: #f59e0b; border-color: #f59e0b; }}
+        #btn-reset {{ bottom: 180px; left: 150px; color: #ef4444; border-color: #ef4444; }}
         
         #loading {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #38bdf8; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: opacity 1s; }}
         #start-overlay {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; cursor: pointer; }}
@@ -60,8 +65,8 @@ game_html = f"""
 
     <div id="ui-layer">
         <div id="hud">
-            POS: X:<span id="val-x">0</span> Y:<span id="val-y">0</span><br>
-            VEL: <span id="val-vel">0</span> m/s<br>
+            ALT: <span id="val-alt">0</span> km<br>
+            SPEED: <span id="val-vel">0</span> km/h<br>
             FUEL: <span id="val-fuel">100</span>%<br>
             <span style="color:white">ZONE: <span id="val-zone">Earth</span></span>
         </div>
@@ -69,20 +74,24 @@ game_html = f"""
         
         <div id="joystick-zone"><div id="joystick-knob"></div></div>
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
-        <div id="minimap-container"><div id="minimap"></div></div>
+        <div id="minimap-container"><canvas id="minimap"></canvas></div>
+        
+        <button class="action-btn" id="btn-gear">GEAR: UP</button>
+        <button class="action-btn" id="btn-retro">RETRO-BURN</button>
+        <button class="action-btn" id="btn-reset">RESET</button>
     </div>
 
     <script>
         let state = {{
-            // STARTING SLIGHTLY OFF-CENTER TO PREVENT MATH ERRORS
-            x: 500, y: 6371, vx: 0, vy: 0, 
+            x: 0, y: 6371, vx: 0, vy: 0, 
             fuel: 100, throttle: 0, angle: 0, 
-            exploded: false, started: false
+            gear: false, exploded: false, started: false
         }};
 
+        // Rebablanced Physics for Gameplay
         const G = 6.674e-11;
-        const rocketMass = 50000; 
-        const maxThrust = 50000000; 
+        const rocketMass = 100000; 
+        const maxThrust = 100000000; 
 
         const planets = {{
             Earth:   {{ m: 5.97e24, r: 6371, x: 0, y: 0, color: 0x2233ff, soi: 100000 }},
@@ -149,22 +158,33 @@ game_html = f"""
             }});
         }}
 
-        const miniScene = new THREE.Scene();
-        const miniCamera = new THREE.OrthographicCamera(-1e6, 1e6, 1e6, -1e6, 0.1, 2e6);
-        miniCamera.position.set(0, 0, 1e5);
-        const miniRenderer = new THREE.WebGLRenderer({{ alpha: true }});
-        miniRenderer.setSize(100, 100);
-        document.getElementById('minimap').appendChild(miniRenderer.domElement);
+        // Minimap
+        const canvas = document.getElementById('minimap');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 120; canvas.height = 120;
 
-        for (let p in planets) {{
-            let mGeo = new THREE.CircleGeometry(planets[p].soi * 0.8, 16);
-            let mMat = new THREE.MeshBasicMaterial({{color: planets[p].color}});
-            let mesh = new THREE.Mesh(mGeo, mMat);
-            mesh.position.set(planets[p].x, planets[p].y, 0);
-            miniScene.add(mesh);
+        function drawMinimap() {{
+            ctx.clearRect(0, 0, 120, 120);
+            let scale = 120 / 1000000; // Fit 1 million meters in map
+            
+            // Draw planets
+            for (let p in planets) {{
+                ctx.beginPath();
+                let px = 60 + planets[p].x * scale;
+                let py = 60 - planets[p].y * scale;
+                ctx.arc(px, py, Math.max(2, planets[p].r * scale), 0, Math.PI*2);
+                ctx.fillStyle = '#' + planets[p].color.toString(16).padStart(6, '0');
+                ctx.fill();
+            }}
+            
+            // Draw Rocket
+            ctx.beginPath();
+            let rx = 60 + state.x * scale;
+            let ry = 60 - state.y * scale;
+            ctx.arc(rx, ry, 3, 0, Math.PI*2);
+            ctx.fillStyle = '#ff0000';
+            ctx.fill();
         }}
-        const miniRocket = new THREE.Mesh(new THREE.CircleGeometry(20000, 8), new THREE.MeshBasicMaterial({{color: 0xff0000}}));
-        miniScene.add(miniRocket);
 
         let isDraggingJoy = false;
         let isDraggingThrottle = false;
@@ -180,18 +200,21 @@ game_html = f"""
             document.getElementById('joystick-zone').style.display = 'block';
             document.getElementById('throttle-zone').style.display = 'block';
             document.getElementById('minimap-container').style.display = 'block';
+            document.getElementById('btn-gear').style.display = 'block';
+            document.getElementById('btn-retro').style.display = 'block';
+            document.getElementById('btn-reset').style.display = 'block';
             document.getElementById('mission').innerText = "Slide RED BAR up to launch.";
         }});
 
         joyZone.addEventListener('pointerdown', (e) => {{ isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); }});
-        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '30px'; joyKnob.style.left = '30px'; }});
+        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '35px'; joyKnob.style.left = '35px'; }});
         joyZone.addEventListener('pointermove', (e) => {{
             if (!isDraggingJoy) return;
             const rect = joyZone.getBoundingClientRect();
-            let x = e.clientX - rect.left - 50; let y = e.clientY - rect.top - 50;
+            let x = e.clientX - rect.left - 60; let y = e.clientY - rect.top - 60;
             const dist = Math.sqrt(x*x + y*y);
             if (dist > 35) {{ x = (x/35)*35; y = (y/35)*35; }}
-            joyKnob.style.left = (30 + x) + 'px'; joyKnob.style.top = (30 + y) + 'px';
+            joyKnob.style.left = (35 + x) + 'px'; joyKnob.style.top = (35 + y) + 'px';
             state.angle = Math.atan2(x, -y); 
         }});
 
@@ -201,11 +224,28 @@ game_html = f"""
             if (!isDraggingThrottle) return;
             const rect = throttleZone.getBoundingClientRect();
             let y = e.clientY - rect.top;
-            if (y < 0) y = 0; if (y > 160) y = 160;
-            let percent = 100 - (y / 160) * 100;
+            if (y < 0) y = 0; if (y > 180) y = 180;
+            let percent = 100 - (y / 180) * 100;
             state.throttle = percent;
             throttleFill.style.height = percent + '%';
         }});
+
+        // Action Buttons
+        document.getElementById('btn-gear').onclick = function() {{
+            state.gear = !state.gear;
+            this.innerText = "GEAR: " + (state.gear ? "DOWN" : "UP");
+        }};
+        document.getElementById('btn-retro').onclick = function() {{
+            // Applies a massive braking force to kill velocity
+            state.vx *= 0.85;
+            state.vy *= 0.85;
+        }};
+        document.getElementById('btn-reset').onclick = function() {{
+            state.x = 0; state.y = 6371; state.vx = 0; state.vy = 0; state.fuel = 100; state.throttle = 0; state.exploded = false;
+            rocketGroup.visible = true;
+            throttleFill.style.height = '0%';
+            document.getElementById('mission').innerText = "Reset. Slide RED BAR up to launch.";
+        }};
 
         function updatePhysics() {{
             if (!state.started || state.exploded) return;
@@ -218,8 +258,6 @@ game_html = f"""
                 let dy = planets[p].y - state.y;
                 let distSq = dx*dx + dy*dy;
                 let dist = Math.sqrt(distSq);
-                
-                // SAFETY CHECK: Prevent division by zero
                 if (dist < 100) dist = 100; 
 
                 if (dist < planets[p].soi) currentZone = p;
@@ -252,11 +290,11 @@ game_html = f"""
 
             let speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
             
-            // SAFETY CHECK: Only display numbers if they are valid
+            // Update UI
             if (!isNaN(state.x) && !isNaN(speed)) {{
-                document.getElementById('val-x').innerText = (state.x/1000).toFixed(0);
-                document.getElementById('val-y').innerText = (state.y/1000).toFixed(0);
-                document.getElementById('val-vel').innerText = speed.toFixed(0);
+                let alt = Math.sqrt(state.x*state.x + state.y*state.y) - 6371;
+                document.getElementById('val-alt').innerText = Math.max(0, (alt/1000)).toFixed(1);
+                document.getElementById('val-vel').innerText = (speed * 3.6).toFixed(0); // m/s to km/h
                 document.getElementById('val-fuel').innerText = state.fuel.toFixed(1);
                 document.getElementById('val-zone').innerText = currentZone;
             }}
@@ -271,22 +309,20 @@ game_html = f"""
         function animate() {{
             requestAnimationFrame(animate);
             updatePhysics();
+            drawMinimap();
 
-            // SAFETY CHECK: Prevent camera from breaking
             if (!isNaN(state.x) && !isNaN(state.y)) {{
                 if (!state.exploded) {{
                     rocketGroup.position.set(state.x, state.y, 0);
                     rocketGroup.rotation.z = -state.angle; 
                 }}
 
-                let zoom = Math.max(5000, Math.sqrt(state.x*state.x + state.y*state.y) * 2); 
+                // Camera doesn't zoom out wildly anymore
+                let zoom = Math.max(20000, Math.sqrt(state.x*state.x + state.y*state.y) * 1.5); 
                 camera.position.set(state.x, state.y, zoom);
                 camera.lookAt(state.x, state.y, 0);
-
-                miniRocket.position.set(state.x, state.y, 1);
             }}
             
-            miniRenderer.render(miniScene, miniCamera);
             renderer.render(scene, camera);
         }}
         
