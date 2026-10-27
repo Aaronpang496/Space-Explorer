@@ -127,7 +127,6 @@ html_template = """
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Controls are ENABLED by default so dragging always works
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
@@ -243,7 +242,6 @@ html_template = """
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
                 
-                // HUGE ROCKET
                 const scaleFactor = 200 / size.y; 
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 
@@ -388,6 +386,7 @@ html_template = """
             let isInAtmosphere = false;
             let currentSpeed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
 
+            // Engine Overheat
             if (state.throttle > 80 && !state.engineStalled) {
                 state.engineHeat += 0.5;
                 if (state.engineHeat > 100) {
@@ -419,7 +418,8 @@ html_template = """
                 let dist = Math.sqrt(distSq);
                 if (dist < 10) dist = 10;
 
-                if (p.atmo !== 0x000000 && dist < p.r + 1000) isInAtmosphere = true;
+                // Check if in atmosphere (only near the planet)
+                if (p.atmo !== 0x000000 && dist < p.r + 500) isInAtmosphere = true;
                 if (dist < p.r * 3) currentZone = p.name + " Orbit";
 
                 let accel = (G * p.m) / distSq;
@@ -457,7 +457,8 @@ html_template = """
                 }
             });
 
-            if (isInAtmosphere && currentSpeed > 8) {
+            // FIXED: HEAT ONLY APPLIES IF FALLING (vy < 0)
+            if (isInAtmosphere && state.vy < 0 && currentSpeed > 8) {
                 state.hull -= 0.5; 
                 if (state.hull <= 0) triggerExplosion("BURNED UP IN ATMOSPHERE");
                 document.getElementById('val-hull').innerText = Math.max(0, state.hull).toFixed(0);
@@ -553,19 +554,14 @@ html_template = """
             let distToEarth = Math.sqrt(state.x*state.x + state.y*state.y);
 
             if (state.cameraMode === "chase") {
-                // CHASE CAMERA
-                // The camera is positioned in front of the rocket's nose, looking back at it.
                 let distanceInFront = 400; 
                 
-                // Calculate the position ahead of the rocket based on its rotation
                 let camX = state.x + Math.sin(state.rotation) * distanceInFront;
                 let camY = state.y + Math.cos(state.rotation) * distanceInFront;
                 
-                // We override OrbitControls here to force the chase view
                 camera.position.x += (camX - camera.position.x) * 0.1; 
                 camera.position.y += (camY - camera.position.y) * 0.1;
                 
-                // Dynamic zoom based on distance from Earth
                 let targetZoom = 350 + (distToEarth * 0.05);
                 if (targetZoom > 800) targetZoom = 800; 
                 camera.position.z += (targetZoom - camera.position.z) * 0.05;
@@ -573,7 +569,6 @@ html_template = """
                 camera.lookAt(state.x, state.y, 0);
 
             } else {
-                // ORBIT CAMERA (User drags freely)
                 controls.target.set(state.x, state.y, 0);
                 controls.update(); 
             }
