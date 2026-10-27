@@ -11,7 +11,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-model_filename = "artemis_ii.glb"
+# 🚀 PATH FIXED: It is now looking directly in the main folder
+model_path = "app/artemis_ii.glb"
 
 game_html = f"""
 <!DOCTYPE html>
@@ -21,51 +22,22 @@ game_html = f"""
     <style>
         body {{ margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', monospace; touch-action: none; user-select: none; }}
         canvas {{ display: block; }}
-        
-        /* The UI layer MUST be above the canvas */
         #ui-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }}
-        
-        /* HUD */
         #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; border: 1px solid #38bdf8;}}
         #mission {{ position: absolute; top: 90px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 16px; font-weight: bold; text-shadow: 0 0 5px black; width: 80%;}}
-        
-        /* Joystick */
         #joystick-zone {{ position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(56,189,248,0.5); border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
         #joystick-knob {{ position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(56,189,248,0.8); border-radius: 50%; box-shadow: 0 0 10px #38bdf8; }}
-        
-        /* Throttle */
         #throttle-zone {{ position: absolute; bottom: 30px; right: 30px; width: 40px; height: 200px; background: rgba(255,255,255,0.1); border: 2px solid rgba(239,68,68,0.5); border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
         #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: rgba(239,68,68,0.8); border-radius: 18px;}}
-        
-        /* Minimap */
         #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 150px; height: 150px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.6); overflow: hidden; display: none;}}
         #minimap {{ width: 100%; height: 100%; }}
-        
-        /* Buttons */
         .btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 1px solid #38bdf8; padding: 15px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 16px; display: none; z-index: 10000;}}
         #btn-gear {{ bottom: 30px; left: 160px; color: #22c55e; border-color: #22c55e; }}
         #btn-shield {{ bottom: 80px; left: 160px; color: #f59e0b; border-color: #f59e0b; }}
-        
-        /* Loading */
         #loading {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #38bdf8; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: opacity 1s; }}
-        
-        /* TAP ANYWHERE TO START OVERLAY */
-        #start-overlay {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(2, 6, 23, 0.8); z-index: 99999; 
-            display: flex; flex-direction: column; justify-content: center; align-items: center; 
-            pointer-events: auto; cursor: pointer;
-        }}
-        .start-text {{
-            color: #38bdf8; font-size: 28px; font-weight: bold; text-transform: uppercase; 
-            letter-spacing: 3px; text-align: center; text-shadow: 0 0 20px #38bdf8;
-            animation: pulse 2s infinite;
-        }}
-        @keyframes pulse {{
-            0% {{ opacity: 0.5; }}
-            50% {{ opacity: 1; }}
-            100% {{ opacity: 0.5; }}
-        }}
+        #start-overlay {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.8); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; cursor: pointer; }}
+        .start-text {{ color: #38bdf8; font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; text-align: center; text-shadow: 0 0 20px #38bdf8; animation: pulse 2s infinite; }}
+        @keyframes pulse {{ 0% {{ opacity: 0.5; }} 50% {{ opacity: 1; }} 100% {{ opacity: 0.5; }} }}
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -73,7 +45,6 @@ game_html = f"""
 <body>
     <div id="loading">INITIALIZING UNIVERSE...</div>
     
-    <!-- TAP ANYWHERE TO START -->
     <div id="start-overlay">
         <div class="start-text">TAP ANYWHERE<br>TO<br>INITIATE LAUNCH</div>
     </div>
@@ -150,8 +121,9 @@ game_html = f"""
         engineFire.visible = false;
         rocketGroup.add(engineFire);
 
+        // LOADER - Path is now direct to the main folder
         const loader = new THREE.GLTFLoader();
-        loader.load('app/{model_filename}', function (gltf) {{
+        loader.load('{model_path}', function (gltf) {{
             const model = gltf.scene;
             const box = new THREE.Box3().setFromObject(model);
             const size = box.getSize(new THREE.Vector3());
@@ -173,7 +145,7 @@ game_html = f"""
             
             document.getElementById('loading').style.opacity = 0;
         }}, undefined, function (error) {{
-            // Fallback
+            // Fallback if the model still fails
             const rocketGeo = new THREE.CylinderGeometry(15, 15, 100, 16);
             const rocketMat = new THREE.MeshPhongMaterial({{color: 0xdddddd}});
             const rocket = new THREE.Mesh(rocketGeo, rocketMat);
@@ -203,29 +175,21 @@ game_html = f"""
         const throttleZone = document.getElementById('throttle-zone');
         const throttleFill = document.getElementById('throttle-fill');
 
-        // --- TAP ANYWHERE TO START ---
         document.getElementById('start-overlay').addEventListener('pointerdown', function(e) {{
-            e.preventDefault(); // Stop 3D engine from eating the touch
+            e.preventDefault(); 
             state.started = true;
             state.cameraMode = "launch";
-            
-            // Hide overlay
             this.style.display = 'none';
-            
-            // Show UI
             document.getElementById('joystick-zone').style.display = 'block';
             document.getElementById('throttle-zone').style.display = 'block';
             document.getElementById('minimap-container').style.display = 'block';
             document.getElementById('btn-gear').style.display = 'block';
             document.getElementById('btn-shield').style.display = 'block';
-            
-            // Auto launch
             state.throttle = 100;
             document.getElementById('throttle-fill').style.height = '100%';
             state.task = "LIFTOFF! Monitor your velocity.";
         }});
 
-        // Joystick Drag
         joyZone.addEventListener('pointerdown', (e) => {{ isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); }});
         joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '35px'; joyKnob.style.left = '35px'; state.pitch = 0; state.roll = 0; }});
         joyZone.addEventListener('pointermove', (e) => {{
@@ -238,7 +202,6 @@ game_html = f"""
             state.roll = (x / 35) * 45; state.pitch = -(y / 35) * 45;
         }});
 
-        // Throttle Drag
         throttleZone.addEventListener('pointerdown', (e) => {{ isDraggingThrottle = true; throttleZone.setPointerCapture(e.pointerId); }});
         throttleZone.addEventListener('pointerup', () => {{ isDraggingThrottle = false; }});
         throttleZone.addEventListener('pointermove', (e) => {{
@@ -251,7 +214,6 @@ game_html = f"""
             throttleFill.style.height = percent + '%';
         }});
 
-        // Buttons
         document.getElementById('btn-gear').onclick = function() {{
             state.gear = !state.gear;
             this.innerText = "GEAR: " + (state.gear ? "DEPLOYED" : "RETRACTED");
@@ -321,21 +283,11 @@ game_html = f"""
                 positions[i*3] = 0;
                 positions[i*3+1] = Math.max(100, state.alt * 0.1);
                 positions[i*3+2] = 0;
-
-                velocities.push({{
-                    x: (Math.random() - 0.5) * 20,
-                    y: (Math.random() - 0.5) * 20,
-                    z: (Math.random() - 0.5) * 20
-                }});
-
-                colors[i*3] = 1.0;
-                colors[i*3+1] = Math.random() * 0.8;
-                colors[i*3+2] = 0.0;
+                velocities.push({{ x: (Math.random() - 0.5) * 20, y: (Math.random() - 0.5) * 20, z: (Math.random() - 0.5) * 20 }});
+                colors[i*3] = 1.0; colors[i*3+1] = Math.random() * 0.8; colors[i*3+2] = 0.0;
             }}
-
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
             const material = new THREE.PointsMaterial({{ size: 15, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending }});
             const explosionParticles = new THREE.Points(geometry, material);
             explosionParticles.userData.velocities = velocities;
@@ -358,7 +310,6 @@ game_html = f"""
                 rocketGroup.rotation.z = state.roll * (Math.PI / 180);
             }}
 
-            // Explosion Particles Animation
             scene.children.forEach(child => {{
                 if (child.type === 'Points' && child.userData.velocities) {{
                     const positions = child.geometry.attributes.position.array;
