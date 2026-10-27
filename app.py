@@ -33,20 +33,19 @@ game_html = f"""
         #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}}
         #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}}
         
-        /* Controls */
-        #joystick-zone {{ position: absolute; bottom: 180px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
-        #joystick-knob {{ position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
+        /* Pushed WAY up for Mobile Safari */
+        #joystick-zone {{ position: absolute; bottom: 220px; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
+        #joystick-knob {{ position: absolute; top: 30px; left: 30px; width: 46px; height: 46px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
         
-        #throttle-zone {{ position: absolute; bottom: 180px; right: 20px; width: 45px; height: 180px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
+        #throttle-zone {{ position: absolute; bottom: 220px; right: 20px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
         #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: #ef4444; border-radius: 18px;}}
         
-        #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 120px; height: 120px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}}
+        #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 100px; height: 100px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}}
         
-        /* Extra Buttons for Landing */
-        .action-btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 2px solid #38bdf8; padding: 12px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 12px; display: none; z-index: 10000; }}
-        #btn-gear {{ bottom: 180px; right: 80px; color: #22c55e; border-color: #22c55e; }}
-        #btn-retro {{ bottom: 240px; right: 80px; color: #f59e0b; border-color: #f59e0b; }}
-        #btn-reset {{ bottom: 180px; left: 150px; color: #ef4444; border-color: #ef4444; }}
+        .action-btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 2px solid #38bdf8; padding: 10px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 12px; display: none; z-index: 10000; }}
+        #btn-gear {{ bottom: 220px; right: 80px; color: #22c55e; border-color: #22c55e; }}
+        #btn-retro {{ bottom: 270px; right: 80px; color: #f59e0b; border-color: #f59e0b; }}
+        #btn-reset {{ bottom: 220px; left: 140px; color: #ef4444; border-color: #ef4444; }}
         
         #loading {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #38bdf8; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: opacity 1s; }}
         #start-overlay {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; cursor: pointer; }}
@@ -57,7 +56,7 @@ game_html = f"""
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <div id="loading">INITIALIZING SOLAR SYSTEM...</div>
+    <div id="loading">INITIALIZING...</div>
     
     <div id="start-overlay">
         <div class="start-text">TAP ANYWHERE<br>TO<br>ENTER COCKPIT</div>
@@ -74,33 +73,34 @@ game_html = f"""
         
         <div id="joystick-zone"><div id="joystick-knob"></div></div>
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
-        <div id="minimap-container"><canvas id="minimap"></canvas></div>
+        <div id="minimap-container"><canvas id="minimap" width="100" height="100"></canvas></div>
         
         <button class="action-btn" id="btn-gear">GEAR: UP</button>
-        <button class="action-btn" id="btn-retro">RETRO-BURN</button>
+        <button class="action-btn" id="btn-retro">RETRO</button>
         <button class="action-btn" id="btn-reset">RESET</button>
     </div>
 
     <script>
         let state = {{
+            // Starts right on the launch pad
             x: 0, y: 6371, vx: 0, vy: 0, 
             fuel: 100, throttle: 0, angle: 0, 
             gear: false, exploded: false, started: false
         }};
 
-        // Rebablanced Physics for Gameplay
+        // TONED DOWN PHYSICS FOR PLAYABILITY
         const G = 6.674e-11;
-        const rocketMass = 100000; 
-        const maxThrust = 100000000; 
+        const rocketMass = 200000; 
+        const maxThrust = 80000000; 
 
         const planets = {{
             Earth:   {{ m: 5.97e24, r: 6371, x: 0, y: 0, color: 0x2233ff, soi: 100000 }},
             Moon:    {{ m: 7.34e22, r: 1737, x: 250000, y: 0, color: 0xaaaaaa, soi: 30000 }},
-            Mars:    {{ m: 6.41e23, r: 3389, x: 500000, y: 0, color: 0xff4400, soi: 60000 }},
-            Jupiter: {{ m: 1.89e27, r: 69911, x: 900000, y: 0, color: 0xd4a373, soi: 150000 }}
+            Mars:    {{ m: 6.41e23, r: 3389, x: 500000, y: 0, color: 0xff4400, soi: 60000 }}
         }};
 
         const scene = new THREE.Scene();
+        // Zoomed in camera for better control
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000000);
         const renderer = new THREE.WebGLRenderer({{ antialias: true }});
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -119,7 +119,7 @@ game_html = f"""
             scene.add(mesh);
 
             let ringGeo = new THREE.RingGeometry(planets[p].soi - 1000, planets[p].soi, 64);
-            let ringMat = new THREE.MeshBasicMaterial({{ color: planets[p].color, side: THREE.DoubleSide, transparent: true, opacity: 0.2 }});
+            let ringMat = new THREE.MeshBasicMaterial({{ color: planets[p].color, side: THREE.DoubleSide, transparent: true, opacity: 0.15 }});
             let ring = new THREE.Mesh(ringGeo, ringMat);
             ring.position.set(planets[p].x, planets[p].y, 0);
             scene.add(ring);
@@ -147,7 +147,7 @@ game_html = f"""
                 const model = gltf.scene;
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
-                const scaleFactor = 1500 / size.y;
+                const scaleFactor = 1000 / size.y;
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.x = -center.x * scaleFactor;
@@ -158,30 +158,19 @@ game_html = f"""
             }});
         }}
 
-        // Minimap
         const canvas = document.getElementById('minimap');
         const ctx = canvas.getContext('2d');
-        canvas.width = 120; canvas.height = 120;
-
         function drawMinimap() {{
-            ctx.clearRect(0, 0, 120, 120);
-            let scale = 120 / 1000000; // Fit 1 million meters in map
-            
-            // Draw planets
+            ctx.clearRect(0, 0, 100, 100);
+            let scale = 100 / 800000; // Fit 800k meters in map
             for (let p in planets) {{
                 ctx.beginPath();
-                let px = 60 + planets[p].x * scale;
-                let py = 60 - planets[p].y * scale;
-                ctx.arc(px, py, Math.max(2, planets[p].r * scale), 0, Math.PI*2);
+                ctx.arc(50 + planets[p].x * scale, 50 - planets[p].y * scale, Math.max(1, planets[p].r * scale * 3), 0, Math.PI*2);
                 ctx.fillStyle = '#' + planets[p].color.toString(16).padStart(6, '0');
                 ctx.fill();
             }}
-            
-            // Draw Rocket
             ctx.beginPath();
-            let rx = 60 + state.x * scale;
-            let ry = 60 - state.y * scale;
-            ctx.arc(rx, ry, 3, 0, Math.PI*2);
+            ctx.arc(50 + state.x * scale, 50 - state.y * scale, 3, 0, Math.PI*2);
             ctx.fillStyle = '#ff0000';
             ctx.fill();
         }}
@@ -207,14 +196,14 @@ game_html = f"""
         }});
 
         joyZone.addEventListener('pointerdown', (e) => {{ isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); }});
-        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '35px'; joyKnob.style.left = '35px'; }});
+        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '30px'; joyKnob.style.left = '30px'; }});
         joyZone.addEventListener('pointermove', (e) => {{
             if (!isDraggingJoy) return;
             const rect = joyZone.getBoundingClientRect();
-            let x = e.clientX - rect.left - 60; let y = e.clientY - rect.top - 60;
+            let x = e.clientX - rect.left - 55; let y = e.clientY - rect.top - 55;
             const dist = Math.sqrt(x*x + y*y);
             if (dist > 35) {{ x = (x/35)*35; y = (y/35)*35; }}
-            joyKnob.style.left = (35 + x) + 'px'; joyKnob.style.top = (35 + y) + 'px';
+            joyKnob.style.left = (30 + x) + 'px'; joyKnob.style.top = (30 + y) + 'px';
             state.angle = Math.atan2(x, -y); 
         }});
 
@@ -224,21 +213,18 @@ game_html = f"""
             if (!isDraggingThrottle) return;
             const rect = throttleZone.getBoundingClientRect();
             let y = e.clientY - rect.top;
-            if (y < 0) y = 0; if (y > 180) y = 180;
-            let percent = 100 - (y / 180) * 100;
+            if (y < 0) y = 0; if (y > 160) y = 160;
+            let percent = 100 - (y / 160) * 100;
             state.throttle = percent;
             throttleFill.style.height = percent + '%';
         }});
 
-        // Action Buttons
         document.getElementById('btn-gear').onclick = function() {{
             state.gear = !state.gear;
             this.innerText = "GEAR: " + (state.gear ? "DOWN" : "UP");
         }};
         document.getElementById('btn-retro').onclick = function() {{
-            // Applies a massive braking force to kill velocity
-            state.vx *= 0.85;
-            state.vy *= 0.85;
+            state.vx *= 0.8; state.vy *= 0.8;
         }};
         document.getElementById('btn-reset').onclick = function() {{
             state.x = 0; state.y = 6371; state.vx = 0; state.vy = 0; state.fuel = 100; state.throttle = 0; state.exploded = false;
@@ -277,7 +263,7 @@ game_html = f"""
                 let thrustAccel = (maxThrust * (state.throttle/100)) / rocketMass;
                 ax += thrustAccel * Math.sin(state.angle);
                 ay += thrustAccel * Math.cos(state.angle);
-                state.fuel -= 0.05 * (state.throttle/100);
+                state.fuel -= 0.02 * (state.throttle/100);
                 if (state.fuel <= 0) {{ state.fuel = 0; state.throttle = 0; }}
             }} else {{
                 engineFire.visible = false;
@@ -290,11 +276,10 @@ game_html = f"""
 
             let speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
             
-            // Update UI
             if (!isNaN(state.x) && !isNaN(speed)) {{
                 let alt = Math.sqrt(state.x*state.x + state.y*state.y) - 6371;
                 document.getElementById('val-alt').innerText = Math.max(0, (alt/1000)).toFixed(1);
-                document.getElementById('val-vel').innerText = (speed * 3.6).toFixed(0); // m/s to km/h
+                document.getElementById('val-vel').innerText = (speed * 3.6).toFixed(0); 
                 document.getElementById('val-fuel').innerText = state.fuel.toFixed(1);
                 document.getElementById('val-zone').innerText = currentZone;
             }}
@@ -317,8 +302,8 @@ game_html = f"""
                     rocketGroup.rotation.z = -state.angle; 
                 }}
 
-                // Camera doesn't zoom out wildly anymore
-                let zoom = Math.max(20000, Math.sqrt(state.x*state.x + state.y*state.y) * 1.5); 
+                // FIXED CAMERA: Stays close to the rocket so you can see it fly
+                let zoom = 15000; 
                 camera.position.set(state.x, state.y, zoom);
                 camera.lookAt(state.x, state.y, 0);
             }}
