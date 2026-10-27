@@ -32,7 +32,7 @@ html_template = """
         #hud { position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}
         #mission { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}
         
-        /* Moved UP to top: 40% to guarantee visibility above Safari UI */
+        /* Controls at top: 40% for mobile visibility */
         #joystick-zone { position: absolute; top: 40%; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}
         #joystick-knob { position: absolute; top: 30px; left: 30px; width: 46px; height: 46px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }
         
@@ -87,11 +87,11 @@ html_template = """
         const G = 6.674e-11;
         const EARTH_MASS = 5.97e24;
         const ROCKET_MASS = 100000;
-        const MAX_THRUST = 1500000; // Balanced for gameplay
+        const MAX_THRUST = 2000000; 
         const EARTH_RADIUS = 6371;
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000000);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 10000000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
@@ -103,12 +103,12 @@ html_template = """
 
         // Stars
         const starsGeo = new THREE.BufferGeometry();
-        const starsPos = new Float32Array(3000 * 3);
-        for(let i=0; i<3000*3; i++) starsPos[i] = (Math.random() - 0.5) * 20000;
+        const starsPos = new Float32Array(4000 * 3);
+        for(let i=0; i<4000*3; i++) starsPos[i] = (Math.random() - 0.5) * 50000;
         starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 5})));
+        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 10})));
 
-        // Earth
+        // Spherical Earth
         const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
         const earthMat = new THREE.MeshPhongMaterial({color: 0x1e3a8a, shininess: 10});
         const earth = new THREE.Mesh(earthGeo, earthMat);
@@ -116,21 +116,22 @@ html_template = """
 
         // Atmosphere Glow
         const atmoGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.02, 64, 64);
-        const atmoMat = new THREE.MeshBasicMaterial({color: 0x38bdf8, transparent: true, opacity: 0.15, side: THREE.BackSide});
+        const atmoMat = new THREE.MeshBasicMaterial({color: 0x38bdf8, transparent: true, opacity: 0.2, side: THREE.BackSide});
         scene.add(new THREE.Mesh(atmoGeo, atmoMat));
 
-        // Launch Pad
-        const padGeo = new THREE.BoxGeometry(50, 5, 50);
+        // Launch Pad on Earth
+        const padGeo = new THREE.BoxGeometry(80, 10, 80);
         const padMat = new THREE.MeshLambertMaterial({color: 0x555555});
         const pad = new THREE.Mesh(padGeo, padMat);
-        pad.position.set(0, EARTH_RADIUS + 2.5, 0);
+        pad.position.set(0, EARTH_RADIUS + 5, 0);
         scene.add(pad);
 
         const rocketGroup = new THREE.Group();
+        rocketGroup.position.set(0, EARTH_RADIUS + 10, 0); // Start on pad
         scene.add(rocketGroup);
 
-        // --- REALISTIC PARTICLE FIRE ---
-        const particleCount = 200;
+        // Realistic Particle Fire
+        const particleCount = 300;
         const fireGeo = new THREE.BufferGeometry();
         const firePositions = new Float32Array(particleCount * 3);
         const fireVelocities = [];
@@ -138,14 +139,13 @@ html_template = """
         for (let i = 0; i < particleCount; i++) {
             firePositions[i*3] = 0; firePositions[i*3+1] = 0; firePositions[i*3+2] = 0;
             fireVelocities.push({
-                x: (Math.random() - 0.5) * 2,
-                y: -Math.random() * 20 - 10, // Shoot downwards
-                z: (Math.random() - 0.5) * 2
+                x: (Math.random() - 0.5) * 3,
+                y: -Math.random() * 30 - 10, 
+                z: (Math.random() - 0.5) * 3
             });
         }
         fireGeo.setAttribute('position', new THREE.BufferAttribute(firePositions, 3));
         
-        // Glowing orange/red particle texture
         const canvas = document.createElement('canvas');
         canvas.width = 16; canvas.height = 16;
         const ctx = canvas.getContext('2d');
@@ -158,15 +158,11 @@ html_template = """
         
         const fireTexture = new THREE.CanvasTexture(canvas);
         const fireMaterial = new THREE.PointsMaterial({
-            size: 8,
-            map: fireTexture,
-            transparent: true,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
+            size: 15, map: fireTexture, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
         });
 
         const fireParticles = new THREE.Points(fireGeo, fireMaterial);
-        fireParticles.position.y = -5; // Position at engine nozzle
+        fireParticles.position.y = -5; 
         fireParticles.visible = false;
         rocketGroup.add(fireParticles);
 
@@ -181,7 +177,7 @@ html_template = """
                 const model = gltf.scene;
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
-                const scaleFactor = 40 / size.y; // Make rocket appropriately sized
+                const scaleFactor = 60 / size.y; 
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.x = -center.x * scaleFactor;
@@ -249,6 +245,7 @@ html_template = """
             state.rotation = 0; state.angularVelocity = 0;
             state.fuel = 100; state.throttle = 0; state.exploded = false;
             rocketGroup.visible = true;
+            rocketGroup.position.set(0, EARTH_RADIUS + 10, 0);
             throttleFill.style.height = '0%';
             document.getElementById('mission').innerText = "Reset. Slide RED BAR up to launch.";
         };
@@ -262,24 +259,20 @@ html_template = """
             let dist = Math.sqrt(distSq);
             if(dist < 100) dist = 100;
             
-            // 1. GRAVITY
+            // Gravity
             let gForce = (G * EARTH_MASS) / distSq;
             ax += gForce * (0 - state.x) / dist;
             ay += gForce * (0 - state.y) / dist;
 
-            // 2. THRUST & PARTICLE ANIMATION
+            // Thrust & Particles
             if (state.throttle > 0) {
                 fireParticles.visible = true;
-                
-                // Animate particles
                 const positions = fireParticles.geometry.attributes.position.array;
                 for (let i = 0; i < particleCount; i++) {
-                    // Reset particle if it goes too far
-                    if (positions[i*3+1] < -40) {
+                    if (positions[i*3+1] < -60) {
                         positions[i*3] = 0; positions[i*3+1] = 0; positions[i*3+2] = 0;
-                        fireVelocities[i].y = -Math.random() * 20 - 10;
+                        fireVelocities[i].y = -Math.random() * 40 - 10;
                     }
-                    // Move particle
                     positions[i*3] += fireVelocities[i].x * (state.throttle/100);
                     positions[i*3+1] += fireVelocities[i].y * (state.throttle/100);
                     positions[i*3+2] += fireVelocities[i].z * (state.throttle/100);
@@ -296,18 +289,17 @@ html_template = """
                 fireParticles.visible = false;
             }
 
-            // 3. ANGULAR MOMENTUM (Turning)
-            let targetAngVel = (joyX / 35) * 0.03; 
+            // Angular Momentum
+            let targetAngVel = (joyX / 35) * 0.04; 
             state.angularVelocity += (targetAngVel - state.angularVelocity) * 0.1; 
             state.rotation += state.angularVelocity;
 
-            // 4. INTEGRATION & DRAG
+            // Integration & Drag
             state.vx += ax * 0.05;
             state.vy += ay * 0.05;
             
-            // Add atmospheric drag (caps speed so camera can keep up)
             let alt = dist - EARTH_RADIUS;
-            if (alt < 100) {
+            if (alt < 150) {
                 let drag = 0.0005 * Math.sqrt(state.vx*state.vx + state.vy*state.vy);
                 state.vx -= state.vx * drag;
                 state.vy -= state.vy * drag;
@@ -316,7 +308,7 @@ html_template = """
             state.x += state.vx * 0.05;
             state.y += state.vy * 0.05;
 
-            // 5. CRASH DETECTION
+            // Crash Detection
             let currentDist = Math.sqrt(state.x*state.x + state.y*state.y);
             if (currentDist < EARTH_RADIUS) {
                 triggerExplosion("LITHOBRAKING (CRASHED)");
@@ -334,14 +326,14 @@ html_template = """
             rocketGroup.visible = false;
             
             const expGeo = new THREE.BufferGeometry();
-            const expPos = new Float32Array(100 * 3);
+            const expPos = new Float32Array(200 * 3);
             const expVel = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 200; i++) {
                 expPos[i*3] = state.x; expPos[i*3+1] = state.y; expPos[i*3+2] = 0;
-                expVel.push({x: (Math.random()-0.5)*1000, y: (Math.random()-0.5)*1000});
+                expVel.push({x: (Math.random()-0.5)*3000, y: (Math.random()-0.5)*3000});
             }
             expGeo.setAttribute('position', new THREE.BufferAttribute(expPos, 3));
-            const exp = new THREE.Points(expGeo, new THREE.PointsMaterial({color: 0xff3300, size: 10}));
+            const exp = new THREE.Points(expGeo, new THREE.PointsMaterial({color: 0xff3300, size: 20}));
             exp.userData = expVel;
             scene.add(exp);
         }
@@ -355,17 +347,26 @@ html_template = """
                 rocketGroup.rotation.z = -state.rotation; 
             }
 
-            // --- SMART CAMERA ---
-            // Lock camera to rocket position, but zoom out based on altitude
-            let altitude = Math.max(0, state.y - 6371);
-            let targetZoom = 300 + (altitude * 0.5); // Zoom out as you go higher
+            // --- SMART FIXED CAMERA ---
+            // This camera keeps the Earth and the rocket in the exact same frame
+            // It anchors itself halfway between the Earth's core and the rocket.
+            let midPointX = state.x * 0.5;
+            let midPointY = state.y * 0.5;
             
-            // Smoothly interpolate camera position to prevent jerky movement
-            camera.position.x += (state.x - camera.position.x) * 0.1;
-            camera.position.y += (state.y + 50 - camera.position.y) * 0.1; // Look slightly above rocket
-            camera.position.z += (targetZoom - camera.position.z) * 0.05;
+            // Zoom out as rocket goes higher
+            let distanceFromEarth = Math.sqrt(state.x*state.x + state.y*state.y);
+            let targetZoom = distanceFromEarth * 2.5 + 2000; 
             
-            camera.lookAt(state.x, state.y, 0);
+            // Smoothly interpolate to target
+            camera.position.x += (midPointX - camera.position.x) * 0.1;
+            camera.position.y += (midPointY - camera.position.y) * 0.1;
+            camera.position.z += (targetZoom - camera.position.z) * 0.1;
+
+            camera.lookAt(0, 0, 0); // Always look at Earth
+            // But offset the lookat slightly so the rocket is centered
+            let lookAtX = state.x * 0.3;
+            let lookAtY = state.y * 0.3;
+            camera.lookAt(lookAtX, lookAtY, 0);
             
             renderer.render(scene, camera);
         }
