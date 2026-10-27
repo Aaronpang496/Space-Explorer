@@ -33,15 +33,13 @@ game_html = f"""
         #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 12px; background: rgba(0,0,0,0.7); padding: 8px; border-radius: 5px; border: 1px solid #38bdf8;}}
         #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 12px; font-weight: bold; text-shadow: 0 0 5px black; width: 50%;}}
         
-        /* Mobile Joystick - Moved UP so Safari doesn't hide it */
-        #joystick-zone {{ position: absolute; bottom: 120px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
-        #joystick-knob {{ position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
+        /* Pushed Way Up for Mobile Safari */
+        #joystick-zone {{ position: absolute; bottom: 180px; left: 20px; width: 100px; height: 100px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
+        #joystick-knob {{ position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
         
-        /* Mobile Throttle - Moved UP */
-        #throttle-zone {{ position: absolute; bottom: 120px; right: 20px; width: 40px; height: 180px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
+        #throttle-zone {{ position: absolute; bottom: 180px; right: 20px; width: 40px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
         #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: #ef4444; border-radius: 18px;}}
         
-        /* Minimap */
         #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 100px; height: 100px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}}
         #minimap {{ width: 100%; height: 100%; }}
         
@@ -76,12 +74,12 @@ game_html = f"""
 
     <script>
         let state = {{
-            x: 0, y: 6371, vx: 0, vy: 0, 
+            // STARTING SLIGHTLY OFF-CENTER TO PREVENT MATH ERRORS
+            x: 500, y: 6371, vx: 0, vy: 0, 
             fuel: 100, throttle: 0, angle: 0, 
             exploded: false, started: false
         }};
 
-        // COMPRESSED SOLAR SYSTEM (So planets are visible on screen)
         const G = 6.674e-11;
         const rocketMass = 50000; 
         const maxThrust = 50000000; 
@@ -104,7 +102,6 @@ game_html = f"""
         scene.add(sunLight);
         scene.add(new THREE.AmbientLight(0x404040));
 
-        // Draw Planets & Gravity Rings
         for (let p in planets) {{
             let geo = new THREE.SphereGeometry(planets[p].r, 32, 32);
             let mat = new THREE.MeshPhongMaterial({{color: planets[p].color, emissive: planets[p].color, emissiveIntensity: 0.2}});
@@ -112,7 +109,6 @@ game_html = f"""
             mesh.position.set(planets[p].x, planets[p].y, 0);
             scene.add(mesh);
 
-            // Gravity Ring
             let ringGeo = new THREE.RingGeometry(planets[p].soi - 1000, planets[p].soi, 64);
             let ringMat = new THREE.MeshBasicMaterial({{ color: planets[p].color, side: THREE.DoubleSide, transparent: true, opacity: 0.2 }});
             let ring = new THREE.Mesh(ringGeo, ringMat);
@@ -131,7 +127,6 @@ game_html = f"""
         engineFire.visible = false;
         rocketGroup.add(engineFire);
 
-        // Load Model (Scaled up so it's visible in the compressed space)
         const base64String = "{glb_base64}";
         if (base64String.length > 100) {{
             const binaryString = atob(base64String);
@@ -143,7 +138,7 @@ game_html = f"""
                 const model = gltf.scene;
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
-                const scaleFactor = 1500 / size.y; // Made rocket much bigger
+                const scaleFactor = 1500 / size.y;
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.x = -center.x * scaleFactor;
@@ -165,13 +160,12 @@ game_html = f"""
             let mGeo = new THREE.CircleGeometry(planets[p].soi * 0.8, 16);
             let mMat = new THREE.MeshBasicMaterial({{color: planets[p].color}});
             let mesh = new THREE.Mesh(mGeo, mMat);
-            mesh.position.set(planets[p].x, planets.y = planets[p].y, 0);
+            mesh.position.set(planets[p].x, planets[p].y, 0);
             miniScene.add(mesh);
         }}
         const miniRocket = new THREE.Mesh(new THREE.CircleGeometry(20000, 8), new THREE.MeshBasicMaterial({{color: 0xff0000}}));
         miniScene.add(miniRocket);
 
-        // CONTROLS
         let isDraggingJoy = false;
         let isDraggingThrottle = false;
         const joyZone = document.getElementById('joystick-zone');
@@ -190,14 +184,14 @@ game_html = f"""
         }});
 
         joyZone.addEventListener('pointerdown', (e) => {{ isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); }});
-        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '35px'; joyKnob.style.left = '35px'; }});
+        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '30px'; joyKnob.style.left = '30px'; }});
         joyZone.addEventListener('pointermove', (e) => {{
             if (!isDraggingJoy) return;
             const rect = joyZone.getBoundingClientRect();
-            let x = e.clientX - rect.left - 60; let y = e.clientY - rect.top - 60;
+            let x = e.clientX - rect.left - 50; let y = e.clientY - rect.top - 50;
             const dist = Math.sqrt(x*x + y*y);
             if (dist > 35) {{ x = (x/35)*35; y = (y/35)*35; }}
-            joyKnob.style.left = (35 + x) + 'px'; joyKnob.style.top = (35 + y) + 'px';
+            joyKnob.style.left = (30 + x) + 'px'; joyKnob.style.top = (30 + y) + 'px';
             state.angle = Math.atan2(x, -y); 
         }});
 
@@ -207,8 +201,8 @@ game_html = f"""
             if (!isDraggingThrottle) return;
             const rect = throttleZone.getBoundingClientRect();
             let y = e.clientY - rect.top;
-            if (y < 0) y = 0; if (y > 180) y = 180;
-            let percent = 100 - (y / 180) * 100;
+            if (y < 0) y = 0; if (y > 160) y = 160;
+            let percent = 100 - (y / 160) * 100;
             state.throttle = percent;
             throttleFill.style.height = percent + '%';
         }});
@@ -224,7 +218,9 @@ game_html = f"""
                 let dy = planets[p].y - state.y;
                 let distSq = dx*dx + dy*dy;
                 let dist = Math.sqrt(distSq);
-                if (dist < 1000) dist = 1000; // Prevent infinity
+                
+                // SAFETY CHECK: Prevent division by zero
+                if (dist < 100) dist = 100; 
 
                 if (dist < planets[p].soi) currentZone = p;
 
@@ -232,7 +228,6 @@ game_html = f"""
                 ax += accel * (dx / dist);
                 ay += accel * (dy / dist);
 
-                // Collision Check
                 if (dist < planets[p].r && !state.exploded) {{
                     triggerExplosion("CRASHED INTO " + p);
                 }}
@@ -256,11 +251,15 @@ game_html = f"""
             state.y += state.vy * 0.1;
 
             let speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
-            document.getElementById('val-x').innerText = (state.x/1000).toFixed(0);
-            document.getElementById('val-y').innerText = (state.y/1000).toFixed(0);
-            document.getElementById('val-vel').innerText = speed.toFixed(0);
-            document.getElementById('val-fuel').innerText = state.fuel.toFixed(1);
-            document.getElementById('val-zone').innerText = currentZone;
+            
+            // SAFETY CHECK: Only display numbers if they are valid
+            if (!isNaN(state.x) && !isNaN(speed)) {{
+                document.getElementById('val-x').innerText = (state.x/1000).toFixed(0);
+                document.getElementById('val-y').innerText = (state.y/1000).toFixed(0);
+                document.getElementById('val-vel').innerText = speed.toFixed(0);
+                document.getElementById('val-fuel').innerText = state.fuel.toFixed(1);
+                document.getElementById('val-zone').innerText = currentZone;
+            }}
         }}
 
         function triggerExplosion(reason) {{
@@ -273,17 +272,20 @@ game_html = f"""
             requestAnimationFrame(animate);
             updatePhysics();
 
-            if (!state.exploded) {{
-                rocketGroup.position.set(state.x, state.y, 0);
-                rocketGroup.rotation.z = -state.angle; 
+            // SAFETY CHECK: Prevent camera from breaking
+            if (!isNaN(state.x) && !isNaN(state.y)) {{
+                if (!state.exploded) {{
+                    rocketGroup.position.set(state.x, state.y, 0);
+                    rocketGroup.rotation.z = -state.angle; 
+                }}
+
+                let zoom = Math.max(5000, Math.sqrt(state.x*state.x + state.y*state.y) * 2); 
+                camera.position.set(state.x, state.y, zoom);
+                camera.lookAt(state.x, state.y, 0);
+
+                miniRocket.position.set(state.x, state.y, 1);
             }}
-
-            // Camera Follow
-            let zoom = Math.max(5000, Math.sqrt(state.x*state.x + state.y*state.y) * 2); 
-            camera.position.set(state.x, state.y, zoom);
-            camera.lookAt(state.x, state.y, 0);
-
-            miniRocket.position.set(state.x, state.y, 1);
+            
             miniRenderer.render(miniScene, miniCamera);
             renderer.render(scene, camera);
         }}
