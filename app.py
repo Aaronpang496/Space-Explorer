@@ -32,7 +32,9 @@ html_template = """
         #hud { position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}
         #mission { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 16px; font-weight: bold; text-shadow: 0 0 8px black; width: 60%;}
         
-        /* Controls */
+        #minimap-container { position: absolute; top: 10px; right: 10px; width: 120px; height: 120px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; box-shadow: 0 0 15px rgba(56,189,248,0.3);}
+        #minimap { width: 100%; height: 100%; }
+
         #joystick-zone { position: absolute; top: 40%; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}
         #joystick-knob { position: absolute; top: 30px; left: 30px; width: 46px; height: 46px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }
         
@@ -52,7 +54,6 @@ html_template = """
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <!-- ADDED ORBIT CONTROLS -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
@@ -71,6 +72,8 @@ html_template = """
         </div>
         <div id="mission">Awaiting Launch...</div>
         
+        <div id="minimap-container"><canvas id="minimap" width="120" height="120"></canvas></div>
+        
         <div id="joystick-zone"><div id="joystick-knob"></div></div>
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
         
@@ -83,7 +86,7 @@ html_template = """
     <script>
         let state = {
             x: 0, y: 205, vx: 0, vy: 0, 
-            rotation: 0, angularVelocity: 0,
+            rotation: 0, targetRotation: 0, // New: Direct target rotation
             fuel: 100, throttle: 0, 
             gear: false, exploded: false, started: false, phase: 1,
             cameraMode: "dynamic" 
@@ -106,14 +109,19 @@ html_template = """
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // Setup OrbitControls (Disabled by default until ORBIT mode is selected)
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.enabled = false;
 
+        const sunGeo = new THREE.SphereGeometry(100, 32, 32);
+        const sunMat = new THREE.MeshBasicMaterial({color: 0xffdd00});
+        const sun = new THREE.Mesh(sunGeo, sunMat);
+        sun.position.set(0, -2500, 0);
+        scene.add(sun);
+
         const sunLight = new THREE.PointLight(0xffffff, 2, 0, 1);
-        sunLight.position.set(0, -2000, 0); 
+        sunLight.position.set(0, -2500, 0); 
         scene.add(sunLight);
         scene.add(new THREE.AmbientLight(0x404040));
 
@@ -121,7 +129,7 @@ html_template = """
         const starsPos = new Float32Array(5000 * 3);
         for(let i=0; i<5000*3; i++) starsPos[i] = (Math.random() - 0.5) * 20000;
         starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 5})));
+        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 15})));
 
         planets.forEach(p => {
             const geo = new THREE.SphereGeometry(p.r, 64, 64);
@@ -160,9 +168,9 @@ html_template = """
         }
         fireGeo.setAttribute('position', new THREE.BufferAttribute(firePositions, 3));
         
-        const canvas = document.createElement('canvas');
-        canvas.width = 16; canvas.height = 16;
-        const ctx = canvas.getContext('2d');
+        const canvasFire = document.createElement('canvas');
+        canvasFire.width = 16; canvasFire.height = 16;
+        const ctx = canvasFire.getContext('2d');
         const gradient = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
         gradient.addColorStop(0.2, 'rgba(255, 200, 0, 1)');
@@ -170,7 +178,7 @@ html_template = """
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 16, 16);
         
-        const fireTexture = new THREE.CanvasTexture(canvas);
+        const fireTexture = new THREE.CanvasTexture(canvasFire);
         const fireMaterial = new THREE.PointsMaterial({ size: 15, map: fireTexture, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
 
         const fireParticles = new THREE.Points(fireGeo, fireMaterial);
@@ -189,8 +197,11 @@ html_template = """
                 const model = gltf.scene;
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
-                const scaleFactor = 30 / size.y; 
+                
+                // ROCKET IS SCALED UP
+                const scaleFactor = 120 / size.y; 
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.x = -center.x * scaleFactor;
                 model.position.z = -center.z * scaleFactor;
@@ -198,6 +209,38 @@ html_template = """
                 rocketGroup.add(model);
                 document.getElementById('loading').style.opacity = 0;
             });
+        }
+
+        const mapCanvas = document.getElementById('minimap');
+        const mapCtx = mapCanvas.getContext('2d');
+
+        function drawMinimap() {
+            mapCtx.clearRect(0, 0, 120, 120);
+            let scaleX = 120 / 8000;
+            let scaleY = 120 / 5000;
+            let centerX = 60; 
+            let centerY = 60; 
+
+            mapCtx.beginPath();
+            mapCtx.arc(centerX, centerY + (2500 * scaleY), 5, 0, Math.PI * 2);
+            mapCtx.fillStyle = '#ffdd00';
+            mapCtx.fill();
+
+            planets.forEach(p => {
+                mapCtx.beginPath();
+                let px = centerX + (p.x * scaleX);
+                let py = centerY - (p.y * scaleY);
+                mapCtx.arc(px, py, Math.max(2, p.r * scaleX * 2), 0, Math.PI * 2);
+                mapCtx.fillStyle = '#' + p.color.toString(16).padStart(6, '0');
+                mapCtx.fill();
+            });
+
+            mapCtx.beginPath();
+            let rx = centerX + (state.x * scaleX);
+            let ry = centerY - (state.y * scaleY);
+            mapCtx.arc(rx, ry, 4, 0, Math.PI * 2);
+            mapCtx.fillStyle = '#ff0000';
+            mapCtx.fill();
         }
 
         let isDraggingJoy = false;
@@ -254,17 +297,13 @@ html_template = """
             state.vx *= 0.7; state.vy *= 0.7;
         };
         
-        // --- CAMERA TOGGLE BUTTON ---
         document.getElementById('btn-camera').onclick = function() {
             if (state.cameraMode === "dynamic") {
                 state.cameraMode = "orbit";
                 this.innerText = "CAM: ORBIT";
                 controls.enabled = true;
-                
-                // Snap camera to a close, dramatic angle when entering orbit mode
-                camera.position.set(state.x + 80, state.y + 40, 80);
+                camera.position.set(state.x + 200, state.y + 100, 200);
                 controls.target.set(state.x, state.y, 0);
-                
             } else {
                 state.cameraMode = "dynamic";
                 this.innerText = "CAM: DYNAMIC";
@@ -274,7 +313,7 @@ html_template = """
 
         document.getElementById('btn-reset').onclick = function() {
             state.x = 0; state.y = 205; state.vx = 0; state.vy = 0; 
-            state.rotation = 0; state.angularVelocity = 0; state.phase = 1;
+            state.rotation = 0; state.targetRotation = 0; state.phase = 1;
             state.fuel = 100; state.throttle = 0; state.exploded = false;
             rocketGroup.visible = true;
             rocketGroup.position.set(0, 205, 0);
@@ -332,9 +371,9 @@ html_template = """
                 fireParticles.visible = false;
             }
 
-            let targetAngVel = (joyX / 35) * 0.05; 
-            state.angularVelocity += (targetAngVel - state.angularVelocity) * 0.1; 
-            state.rotation += state.angularVelocity;
+            // FIXED TURNING LOGIC: Direct mapping instead of floaty angular momentum
+            state.targetRotation = (joyX / 35) * (Math.PI / 3); // Max tilt is 60 degrees
+            state.rotation += (state.targetRotation - state.rotation) * 0.1; // Smoothly turn to target
 
             state.vx += ax * 0.1;
             state.vy += ay * 0.1;
@@ -373,6 +412,7 @@ html_template = """
         function animate() {
             requestAnimationFrame(animate);
             updatePhysics();
+            drawMinimap();
 
             if (!state.exploded) {
                 rocketGroup.position.set(state.x, state.y, 0);
@@ -382,27 +422,29 @@ html_template = """
             let speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
             let distToEarth = Math.sqrt(state.x*state.x + state.y*state.y);
 
-            // --- CAMERA LOGIC ---
             if (state.cameraMode === "dynamic") {
-                // DYNAMIC MOMENTUM CAMERA (Cinematic)
-                let camTargetX = state.x - (state.vx * 0.8); 
-                let camTargetY = state.y - (state.vy * 0.8);
-                let lookTargetX = state.x + (state.vx * 1.5);
-                let lookTargetY = state.y + (state.vy * 1.5);
+                // FIXED CAMERA LOGIC: 
+                // Camera trails behind based on speed, but ALWAYS looks directly at the rocket.
+                let lagX = state.vx * 2.0;
+                let lagY = state.vy * 2.0;
+                
+                let camTargetX = state.x - lagX; 
+                let camTargetY = state.y - lagY;
 
                 camera.position.x += (camTargetX - camera.position.x) * 0.05; 
                 camera.position.y += (camTargetY - camera.position.y) * 0.05;
 
-                let targetZoom = 300 + (distToEarth * 0.5) + (speed * 3);
+                let targetZoom = 300 + (distToEarth * 0.3) + (speed * 2);
+                if (targetZoom > 1500) targetZoom = 1500; // Cap zoom out
+                
                 camera.position.z += (targetZoom - camera.position.z) * 0.05;
                 
-                camera.lookAt(lookTargetX, lookTargetY, 0);
+                // Look exactly at the rocket so it never flies out of frame
+                camera.lookAt(state.x, state.y, 0);
 
             } else {
-                // 360 ORBIT CAMERA (Locked to Rocket)
-                // Keep the orbit controls target exactly on the rocket
                 controls.target.set(state.x, state.y, 0);
-                controls.update(); // Updates the drag/zoom
+                controls.update(); 
             }
             
             renderer.render(scene, camera);
