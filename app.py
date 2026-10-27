@@ -30,25 +30,24 @@ game_html = f"""
         canvas {{ display: block; }}
         #ui-layer {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }}
         
-        #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; border: 1px solid #38bdf8;}}
-        #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}}
+        #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 12px; background: rgba(0,0,0,0.7); padding: 8px; border-radius: 5px; border: 1px solid #38bdf8;}}
+        #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 12px; font-weight: bold; text-shadow: 0 0 5px black; width: 50%;}}
         
-        /* Mobile Joystick */
-        #joystick-zone {{ position: absolute; bottom: 40px; left: 40px; width: 140px; height: 140px; background: rgba(255,255,255,0.1); border: 2px solid rgba(56,189,248,0.5); border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
-        #joystick-knob {{ position: absolute; top: 45px; left: 45px; width: 50px; height: 50px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
+        /* Mobile Joystick - Moved UP so Safari doesn't hide it */
+        #joystick-zone {{ position: absolute; bottom: 120px; left: 20px; width: 120px; height: 120px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
+        #joystick-knob {{ position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
         
-        /* Mobile Throttle */
-        #throttle-zone {{ position: absolute; bottom: 40px; right: 40px; width: 50px; height: 250px; background: rgba(255,255,255,0.1); border: 2px solid rgba(239,68,68,0.5); border-radius: 25px; pointer-events: auto; touch-action: none; display: none;}}
-        #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: #ef4444; border-radius: 20px;}}
+        /* Mobile Throttle - Moved UP */
+        #throttle-zone {{ position: absolute; bottom: 120px; right: 20px; width: 40px; height: 180px; background: rgba(255,255,255,0.15); border: 2px solid #ef4444; border-radius: 20px; pointer-events: auto; touch-action: none; display: none;}}
+        #throttle-fill {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: #ef4444; border-radius: 18px;}}
         
-        #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 180px; height: 180px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}}
+        /* Minimap */
+        #minimap-container {{ position: absolute; top: 10px; right: 10px; width: 100px; height: 100px; border: 2px solid #38bdf8; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none;}}
         #minimap {{ width: 100%; height: 100%; }}
-        
-        .btn {{ position: absolute; pointer-events: auto; background: rgba(0,0,0,0.8); color: white; border: 2px solid #38bdf8; padding: 15px; border-radius: 8px; font-family: inherit; font-weight: bold; font-size: 14px; display: none; z-index: 10000;}}
         
         #loading {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #38bdf8; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: opacity 1s; }}
         #start-overlay {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(2, 6, 23, 0.85); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; cursor: pointer; }}
-        .start-text {{ color: #38bdf8; font-size: 28px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; text-align: center; text-shadow: 0 0 20px #38bdf8; animation: pulse 2s infinite; }}
+        .start-text {{ color: #38bdf8; font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; text-align: center; text-shadow: 0 0 20px #38bdf8; animation: pulse 2s infinite; }}
         @keyframes pulse {{ 0% {{ opacity: 0.5; }} 50% {{ opacity: 1; }} 100% {{ opacity: 0.5; }} }}
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -76,68 +75,63 @@ game_html = f"""
     </div>
 
     <script>
-        // --- 1. GAME STATE & PHYSICS ---
         let state = {{
-            x: 0, y: 6371, // Start on Earth surface
-            vx: 0, vy: 0,  // Velocity vector
-            fuel: 100, throttle: 0, 
-            angle: 0, // Rocket rotation (radians)
-            exploded: false, won: false,
-            started: false
+            x: 0, y: 6371, vx: 0, vy: 0, 
+            fuel: 100, throttle: 0, angle: 0, 
+            exploded: false, started: false
         }};
 
+        // COMPRESSED SOLAR SYSTEM (So planets are visible on screen)
         const G = 6.674e-11;
-        const rocketMass = 100000; 
-        const maxThrust = 20000000; // Newtons
+        const rocketMass = 50000; 
+        const maxThrust = 50000000; 
 
-        // Planets: Mass, Radius, Position, Gravity Ring (Sphere of Influence)
         const planets = {{
-            Earth:   {{ m: 5.97e24, r: 6371, x: 0, y: 0, color: 0x2233ff, soi: 924000 }},
-            Moon:    {{ m: 7.34e22, r: 1737, x: 384400, y: 0, color: 0xaaaaaa, soi: 66100 }},
-            Mars:    {{ m: 6.41e23, r: 3389, x: 225000000, y: 0, color: 0xff4400, soi: 577000 }},
-            Jupiter: {{ m: 1.89e27, r: 69911, x: 778000000, y: 0, color: 0xd4a373, soi: 48200000 }}
+            Earth:   {{ m: 5.97e24, r: 6371, x: 0, y: 0, color: 0x2233ff, soi: 100000 }},
+            Moon:    {{ m: 7.34e22, r: 1737, x: 250000, y: 0, color: 0xaaaaaa, soi: 30000 }},
+            Mars:    {{ m: 6.41e23, r: 3389, x: 500000, y: 0, color: 0xff4400, soi: 60000 }},
+            Jupiter: {{ m: 1.89e27, r: 69911, x: 900000, y: 0, color: 0xd4a373, soi: 150000 }}
         }};
 
-        // --- 2. THREE.JS SETUP ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000000000);
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100000000);
         const renderer = new THREE.WebGLRenderer({{ antialias: true }});
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
         const sunLight = new THREE.DirectionalLight(0xffffff, 2);
-        sunLight.position.set(100000, 100000, 100000);
+        sunLight.position.set(0, 0, 100000);
         scene.add(sunLight);
         scene.add(new THREE.AmbientLight(0x404040));
 
         // Draw Planets & Gravity Rings
         for (let p in planets) {{
-            let geo = new THREE.SphereGeometry(planets[p].r, 64, 64);
-            let mat = new THREE.MeshPhongMaterial({{color: planets[p].color}});
+            let geo = new THREE.SphereGeometry(planets[p].r, 32, 32);
+            let mat = new THREE.MeshPhongMaterial({{color: planets[p].color, emissive: planets[p].color, emissiveIntensity: 0.2}});
             let mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(planets[p].x, planets[p].y, 0);
             scene.add(mesh);
 
-            // Draw Gravity Ring (Sphere of Influence)
-            let ringGeo = new THREE.RingGeometry(planets[p].soi - (planets[p].soi*0.01), planets[p].soi, 64);
-            let ringMat = new THREE.MeshBasicMaterial({{ color: planets[p].color, side: THREE.DoubleSide, transparent: true, opacity: 0.1 }});
+            // Gravity Ring
+            let ringGeo = new THREE.RingGeometry(planets[p].soi - 1000, planets[p].soi, 64);
+            let ringMat = new THREE.MeshBasicMaterial({{ color: planets[p].color, side: THREE.DoubleSide, transparent: true, opacity: 0.2 }});
             let ring = new THREE.Mesh(ringGeo, ringMat);
             ring.position.set(planets[p].x, planets[p].y, 0);
             scene.add(ring);
         }}
 
-        // Load Rocket
         const rocketGroup = new THREE.Group();
         scene.add(rocketGroup);
 
-        const fireGeo = new THREE.ConeGeometry(10, 40, 16);
+        const fireGeo = new THREE.ConeGeometry(200, 600, 16);
         const fireMat = new THREE.MeshBasicMaterial({{color: 0xffaa00, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending}});
         const engineFire = new THREE.Mesh(fireGeo, fireMat);
         engineFire.rotation.x = Math.PI;
-        engineFire.position.y = -20;
+        engineFire.position.y = -300;
         engineFire.visible = false;
         rocketGroup.add(engineFire);
 
+        // Load Model (Scaled up so it's visible in the compressed space)
         const base64String = "{glb_base64}";
         if (base64String.length > 100) {{
             const binaryString = atob(base64String);
@@ -149,7 +143,7 @@ game_html = f"""
                 const model = gltf.scene;
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
-                const scaleFactor = 100 / size.y;
+                const scaleFactor = 1500 / size.y; // Made rocket much bigger
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 const center = box.getCenter(new THREE.Vector3());
                 model.position.x = -center.x * scaleFactor;
@@ -160,27 +154,24 @@ game_html = f"""
             }});
         }}
 
-        // Minimap Setup
         const miniScene = new THREE.Scene();
-        const miniCamera = new THREE.OrthographicCamera(-1e9, 1e9, 1e9, -1e9, 0.1, 2e9);
-        miniCamera.position.set(0, 0, 1e8);
+        const miniCamera = new THREE.OrthographicCamera(-1e6, 1e6, 1e6, -1e6, 0.1, 2e6);
+        miniCamera.position.set(0, 0, 1e5);
         const miniRenderer = new THREE.WebGLRenderer({{ alpha: true }});
-        miniRenderer.setSize(180, 180);
+        miniRenderer.setSize(100, 100);
         document.getElementById('minimap').appendChild(miniRenderer.domElement);
 
-        // Draw minimap planets
-        let miniPlanets = {{}};
         for (let p in planets) {{
-            let mGeo = new THREE.CircleGeometry(planets[p].soi * 0.8, 16); // Scale for visibility
-            let mMat = new THREE.MeshBasicMaterial({{color: planets[p].color, transparent: true, opacity: 0.5}});
+            let mGeo = new THREE.CircleGeometry(planets[p].soi * 0.8, 16);
+            let mMat = new THREE.MeshBasicMaterial({{color: planets[p].color}});
             let mesh = new THREE.Mesh(mGeo, mMat);
-            mesh.position.set(planets[p].x * 0.0000001, planets[p].y * 0.0000001, 0);
+            mesh.position.set(planets[p].x, planets.y = planets[p].y, 0);
             miniScene.add(mesh);
         }}
-        const miniRocket = new THREE.Mesh(new THREE.CircleGeometry(5000, 8), new THREE.MeshBasicMaterial({{color: 0xff0000}}));
+        const miniRocket = new THREE.Mesh(new THREE.CircleGeometry(20000, 8), new THREE.MeshBasicMaterial({{color: 0xff0000}}));
         miniScene.add(miniRocket);
 
-        // --- 3. CONTROLS ---
+        // CONTROLS
         let isDraggingJoy = false;
         let isDraggingThrottle = false;
         const joyZone = document.getElementById('joystick-zone');
@@ -195,21 +186,18 @@ game_html = f"""
             document.getElementById('joystick-zone').style.display = 'block';
             document.getElementById('throttle-zone').style.display = 'block';
             document.getElementById('minimap-container').style.display = 'block';
-            state.task = "Slide RED BAR up to launch.";
+            document.getElementById('mission').innerText = "Slide RED BAR up to launch.";
         }});
 
         joyZone.addEventListener('pointerdown', (e) => {{ isDraggingJoy = true; joyZone.setPointerCapture(e.pointerId); }});
-        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '45px'; joyKnob.style.left = '45px'; }});
+        joyZone.addEventListener('pointerup', (e) => {{ isDraggingJoy = false; joyKnob.style.top = '35px'; joyKnob.style.left = '35px'; }});
         joyZone.addEventListener('pointermove', (e) => {{
             if (!isDraggingJoy) return;
             const rect = joyZone.getBoundingClientRect();
-            let x = e.clientX - rect.left - 70; let y = e.clientY - rect.top - 70;
+            let x = e.clientX - rect.left - 60; let y = e.clientY - rect.top - 60;
             const dist = Math.sqrt(x*x + y*y);
-            if (dist > 45) {{ x = (x/45)*45; y = (y/45)*45; }}
-            joyKnob.style.left = (45 + x) + 'px'; joyKnob.style.top = (45 + y) + 'px';
-            
-            // Angle 0 is UP. Math.atan2(y, x) gives angle from positive X axis. 
-            // We want 0 to be up, so we use atan2(x, -y) 
+            if (dist > 35) {{ x = (x/35)*35; y = (y/35)*35; }}
+            joyKnob.style.left = (35 + x) + 'px'; joyKnob.style.top = (35 + y) + 'px';
             state.angle = Math.atan2(x, -y); 
         }});
 
@@ -219,17 +207,15 @@ game_html = f"""
             if (!isDraggingThrottle) return;
             const rect = throttleZone.getBoundingClientRect();
             let y = e.clientY - rect.top;
-            if (y < 0) y = 0; if (y > 250) y = 250;
-            let percent = 100 - (y / 250) * 100;
+            if (y < 0) y = 0; if (y > 180) y = 180;
+            let percent = 100 - (y / 180) * 100;
             state.throttle = percent;
             throttleFill.style.height = percent + '%';
         }});
 
-        // --- 4. PHYSICS ENGINE ---
         function updatePhysics() {{
             if (!state.started || state.exploded) return;
 
-            // Calculate Gravity from all planets
             let ax = 0, ay = 0;
             let currentZone = "Deep Space";
 
@@ -238,48 +224,37 @@ game_html = f"""
                 let dy = planets[p].y - state.y;
                 let distSq = dx*dx + dy*dy;
                 let dist = Math.sqrt(distSq);
+                if (dist < 1000) dist = 1000; // Prevent infinity
 
-                // Check if we are inside this planet's gravity ring
                 if (dist < planets[p].soi) currentZone = p;
 
-                // Newton's Law of Universal Gravitation: F = G * m1 * m2 / r^2
-                // Acceleration (a = F/m): a = G * m / r^2
                 let accel = (G * planets[p].m) / distSq;
-                
-                // Break acceleration into X and Y components
                 ax += accel * (dx / dist);
                 ay += accel * (dy / dist);
 
-                // Collision Check (Crash into planet)
+                // Collision Check
                 if (dist < planets[p].r && !state.exploded) {{
                     triggerExplosion("CRASHED INTO " + p);
                 }}
             }}
 
-            // Apply Thrust
             if (state.throttle > 0) {{
                 engineFire.visible = true;
                 engineFire.scale.set(1 + Math.random()*0.2, 1 + Math.random()*0.5, 1 + Math.random()*0.2);
-                
                 let thrustAccel = (maxThrust * (state.throttle/100)) / rocketMass;
-                // Thrust angle: 0 is UP (positive Y)
                 ax += thrustAccel * Math.sin(state.angle);
                 ay += thrustAccel * Math.cos(state.angle);
-                
-                // Burn fuel
-                state.fuel -= 0.1 * (state.throttle/100);
+                state.fuel -= 0.05 * (state.throttle/100);
                 if (state.fuel <= 0) {{ state.fuel = 0; state.throttle = 0; }}
             }} else {{
                 engineFire.visible = false;
             }}
 
-            // Update Velocity & Position (Euler Integration)
-            state.vx += ax * 0.1; // Time step
+            state.vx += ax * 0.1;
             state.vy += ay * 0.1;
             state.x += state.vx * 0.1;
             state.y += state.vy * 0.1;
 
-            // Update HUD
             let speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
             document.getElementById('val-x').innerText = (state.x/1000).toFixed(0);
             document.getElementById('val-y').innerText = (state.y/1000).toFixed(0);
@@ -292,54 +267,28 @@ game_html = f"""
             state.exploded = true;
             document.getElementById('mission').innerText = "💥 FAILED: " + reason;
             rocketGroup.visible = false;
-            
-            // Particle Explosion
-            const particleCount = 500;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(particleCount * 3);
-            const velocities = [];
-            for (let i = 0; i < particleCount; i++) {{
-                positions[i*3] = state.x; positions[i*3+1] = state.y; positions[i*3+2] = 0;
-                velocities.push({{ x: (Math.random()-0.5)*20000, y: (Math.random()-0.5)*20000 }});
-            }}
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            const material = new THREE.PointsMaterial({{ size: 1000, color: 0xff3300, transparent: true }});
-            const particles = new THREE.Points(geometry, material);
-            particles.userData.vel = velocities;
-            scene.add(particles);
         }}
 
-        // --- 5. RENDER LOOP ---
         function animate() {{
             requestAnimationFrame(animate);
             updatePhysics();
 
-            // Update Rocket Visuals
             if (!state.exploded) {{
                 rocketGroup.position.set(state.x, state.y, 0);
-                rocketGroup.rotation.z = -state.angle; // Rotate rocket to match thrust angle
+                rocketGroup.rotation.z = -state.angle; 
             }}
 
-            // Dynamic Camera (Zooms out as you leave Earth)
-            let distToEarth = Math.sqrt(state.x*state.x + state.y*state.y);
-            let zoom = Math.max(500, distToEarth * 1.5); 
+            // Camera Follow
+            let zoom = Math.max(5000, Math.sqrt(state.x*state.x + state.y*state.y) * 2); 
             camera.position.set(state.x, state.y, zoom);
             camera.lookAt(state.x, state.y, 0);
 
-            // Minimap Update
-            miniRocket.position.set(state.x * 0.0000001, state.y * 0.0000001, 1);
+            miniRocket.position.set(state.x, state.y, 1);
             miniRenderer.render(miniScene, miniCamera);
-
             renderer.render(scene, camera);
         }}
         
         animate();
-
-        window.addEventListener('resize', () => {{
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }});
     </script>
 </body>
 </html>
