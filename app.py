@@ -566,4 +566,26 @@ html_template = """
                 camera.position.y += (camY - camera.position.y) * 0.1;
                 
                 // Dynamic zoom based on distance from Earth
-                let targetZoom =
+                let targetZoom = 350 + (distToEarth * 0.05);
+                if (targetZoom > 800) targetZoom = 800; 
+                camera.position.z += (targetZoom - camera.position.z) * 0.05;
+                
+                camera.lookAt(state.x, state.y, 0);
+
+            } else {
+                // ORBIT CAMERA (User drags freely)
+                controls.target.set(state.x, state.y, 0);
+                controls.update(); 
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
+"""
+
+final_html = html_template.replace("{{GLB_BASE64_PLACEHOLDER}}", glb_base64)
+components.html(final_html, height=900, scrolling=False)
