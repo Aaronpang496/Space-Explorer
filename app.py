@@ -26,7 +26,7 @@ html_template = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', monospace; touch-action: none; user-select: none; }
-        canvas { display: block; }
+        canvas { display: block; touch-action: none; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
         
         #hud { position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}
@@ -97,7 +97,7 @@ html_template = """
         
         <button class="action-btn" id="btn-gear">GEAR: UP</button>
         <button class="action-btn" id="btn-retro">RETRO</button>
-        <button class="action-btn" id="btn-camera">CAM: FRONT</button>
+        <button class="action-btn" id="btn-camera">CAM: CHASE</button>
         <button class="action-btn" id="btn-reset">RESET</button>
     </div>
 
@@ -108,7 +108,7 @@ html_template = """
             fuel: 100, throttle: 0, hull: 100,
             engineHeat: 0, engineStalled: false,
             gear: false, exploded: false, started: false, phase: 1, won: false,
-            cameraMode: "front" 
+            cameraMode: "chase" 
         };
 
         const G = 50; 
@@ -127,11 +127,12 @@ html_template = """
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // Controls are ENABLED by default so dragging always works
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.enablePan = false; 
-        controls.enabled = false; 
+        controls.enabled = true; 
 
         const sunGeo = new THREE.SphereGeometry(500, 32, 32);
         const sunMat = new THREE.MeshBasicMaterial({color: 0xffdd00});
@@ -242,7 +243,7 @@ html_template = """
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
                 
-                // SCALED UP ROCKET
+                // HUGE ROCKET
                 const scaleFactor = 200 / size.y; 
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 
@@ -279,20 +280,19 @@ html_template = """
                 mapCtx.fill();
             });
 
-            // --- MINIMAP ARROW ---
+            // Minimap Arrow
             let rx = centerX + (state.x * scaleX);
             let ry = centerY - (state.y * scaleY);
             
             mapCtx.save();
             mapCtx.translate(rx, ry);
-            // state.rotation is 0 when pointing up, positive when turning left
             mapCtx.rotate(-state.rotation); 
             
             mapCtx.beginPath();
-            mapCtx.moveTo(0, -8); // Nose
-            mapCtx.lineTo(6, 6);  // Right wing
-            mapCtx.lineTo(0, 3);  // Tail notch
-            mapCtx.lineTo(-6, 6); // Left wing
+            mapCtx.moveTo(0, -8); 
+            mapCtx.lineTo(6, 6);  
+            mapCtx.lineTo(0, 3);  
+            mapCtx.lineTo(-6, 6); 
             mapCtx.closePath();
             mapCtx.fillStyle = '#ff0000';
             mapCtx.fill();
@@ -301,23 +301,12 @@ html_template = """
 
         let isDraggingJoy = false;
         let isDraggingThrottle = false;
-        let isDraggingCamera = false; 
         let joyX = 0; 
 
         const joyZone = document.getElementById('joystick-zone');
         const joyKnob = document.getElementById('joystick-knob');
         const throttleZone = document.getElementById('throttle-zone');
         const throttleFill = document.getElementById('throttle-fill');
-
-        renderer.domElement.addEventListener('pointerdown', () => {
-            if(state.cameraMode === "front") {
-                isDraggingCamera = true;
-                controls.enabled = true; 
-            }
-        });
-        renderer.domElement.addEventListener('pointerup', () => {
-            isDraggingCamera = false;
-        });
 
         document.getElementById('start-overlay').addEventListener('pointerdown', function(e) {
             e.preventDefault(); 
@@ -365,16 +354,12 @@ html_template = """
         };
         
         document.getElementById('btn-camera').onclick = function() {
-            if (state.cameraMode === "front") {
+            if (state.cameraMode === "chase") {
                 state.cameraMode = "orbit";
                 this.innerText = "CAM: ORBIT";
-                controls.enabled = true;
-                camera.position.set(state.x + 200, state.y + 100, 200);
-                controls.target.set(state.x, state.y, 0);
             } else {
-                state.cameraMode = "front";
-                this.innerText = "CAM: FRONT";
-                controls.enabled = false;
+                state.cameraMode = "chase";
+                this.innerText = "CAM: CHASE";
             }
         };
 
@@ -567,45 +552,18 @@ html_template = """
 
             let distToEarth = Math.sqrt(state.x*state.x + state.y*state.y);
 
-            if (state.cameraMode === "front") {
-                if (!isDraggingCamera) {
-                    // CAMERA IN FRONT OF ROCKET
-                    // We place the camera ahead of the rocket, and look back at it.
-                    let distanceInFront = 350; 
-                    
-                    // Calculate the position in front based on the rocket's rotation
-                    let camX = state.x + Math.sin(state.rotation) * distanceInFront;
-                    let camY = state.y + Math.cos(state.rotation) * distanceInFront;
-                    
-                    // Smooth follow
-                    camera.position.x += (camX - camera.position.x) * 0.1; 
-                    camera.position.y += (camY - camera.position.y) * 0.1;
-                    
-                    // Dynamic zoom based on distance from Earth
-                    let targetZoom = 350 + (distToEarth * 0.05);
-                    if (targetZoom > 800) targetZoom = 800; 
-                    camera.position.z += (targetZoom - camera.position.z) * 0.05;
-                    
-                    // Look back at the rocket
-                    camera.lookAt(state.x, state.y, 0);
-                } else {
-                    // User is dragging. Let them orbit around the rocket.
-                    controls.target.set(state.x, state.y, 0);
-                    controls.update();
-                }
-            } else {
-                controls.target.set(state.x, state.y, 0);
-                controls.update(); 
-            }
-            
-            renderer.render(scene, camera);
-        }
-        
-        animate();
-    </script>
-</body>
-</html>
-"""
-
-final_html = html_template.replace("{{GLB_BASE64_PLACEHOLDER}}", glb_base64)
-components.html(final_html, height=900, scrolling=False)
+            if (state.cameraMode === "chase") {
+                // CHASE CAMERA
+                // The camera is positioned in front of the rocket's nose, looking back at it.
+                let distanceInFront = 400; 
+                
+                // Calculate the position ahead of the rocket based on its rotation
+                let camX = state.x + Math.sin(state.rotation) * distanceInFront;
+                let camY = state.y + Math.cos(state.rotation) * distanceInFront;
+                
+                // We override OrbitControls here to force the chase view
+                camera.position.x += (camX - camera.position.x) * 0.1; 
+                camera.position.y += (camY - camera.position.y) * 0.1;
+                
+                // Dynamic zoom based on distance from Earth
+                let targetZoom =
