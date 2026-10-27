@@ -33,7 +33,7 @@ game_html = f"""
         #hud {{ position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}}
         #mission {{ position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px black; width: 60%;}}
         
-        /* Position Controls higher up to avoid Safari bar */
+        /* Position Controls higher up */
         #joystick-zone {{ position: absolute; bottom: 180px; left: 20px; width: 110px; height: 110px; background: rgba(255,255,255,0.15); border: 2px solid #38bdf8; border-radius: 50%; pointer-events: auto; touch-action: none; display: none;}}
         #joystick-knob {{ position: absolute; top: 30px; left: 30px; width: 46px; height: 46px; background: #38bdf8; border-radius: 50%; box-shadow: 0 0 10px #fff; }}
         
@@ -82,23 +82,21 @@ game_html = f"""
 
     <script>
         let state = {{
-            // Start exactly on the pad
-            x: 0, y: 6371, vx: 0, vy: 0, 
+            // SPAWN FIXED: X is offset so it doesn't divide by zero
+            x: 500, y: 6371, vx: 0, vy: 0, 
             fuel: 100, throttle: 0, angle: 0, 
-            gear: false, exploded: false, started: false
+            gear: false, exploded: false, started: false,
+            liftOffTime: 0 // Tracks when we actually leave the ground
         }};
 
-        // REALISTIC BUT PLAYABLE PHYSICS
         const G = 6.674e-11;
-        // We scale down the masses so gravity doesn't instantly crush you
         const rocketMass = 100000; 
-        const maxThrust = 2000000; 
+        const maxThrust = 1500000; // Tuned down for controllable speed
 
         const planets = {{
-            // Distances are heavily compressed so you can actually fly to them
-            Earth:   {{ m: 5.97e22, r: 6371, x: 0, y: 0, color: 0x2233ff, soi: 50000 }},
-            Moon:    {{ m: 7.34e20, r: 1737, x: 100000, y: 0, color: 0xaaaaaa, soi: 20000 }},
-            Mars:    {{ m: 6.41e21, r: 3389, x: 200000, y: 0, color: 0xff4400, soi: 30000 }}
+            Earth:   {{ m: 5.97e22, r: 6371, x: 0, y: 0, color: 0x1e3a8a, soi: 50000 }},
+            Moon:    {{ m: 7.34e20, r: 1737, x: 100000, y: 0, color: 0x9ca3af, soi: 20000 }},
+            Mars:    {{ m: 6.41e21, r: 3389, x: 200000, y: 0, color: 0xea580c, soi: 30000 }}
         }};
 
         const scene = new THREE.Scene();
@@ -107,20 +105,38 @@ game_html = f"""
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // Add Stars to the background
+        const starsGeo = new THREE.BufferGeometry();
+        const starsCount = 2000;
+        const starsPos = new Float32Array(starsCount * 3);
+        for(let i=0; i<starsCount*3; i++) starsPos[i] = (Math.random() - 0.5) * 1000000;
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
+        const starsMat = new THREE.PointsMaterial({{color: 0xffffff, size: 1000}});
+        scene.add(new THREE.Points(starsGeo, starsMat));
+
         const sunLight = new THREE.DirectionalLight(0xffffff, 2);
-        sunLight.position.set(0, 0, 100000);
+        sunLight.position.set(500000, 500000, 500000);
         scene.add(sunLight);
         scene.add(new THREE.AmbientLight(0x404040));
 
         for (let p in planets) {{
+            // Main Planet
             let geo = new THREE.SphereGeometry(planets[p].r, 32, 32);
-            let mat = new THREE.MeshPhongMaterial({{color: planets[p].color}});
+            let mat = new THREE.MeshPhongMaterial({{color: planets[p].color, shininess: 10}});
             let mesh = new THREE.Mesh(geo, mat);
             mesh.position.set(planets[p].x, planets[p].y, 0);
             scene.add(mesh);
 
-            let ringGeo = new THREE.RingGeometry(planets[p].soi - 1000, planets[p].soi, 64);
-            let ringMat = new THREE.MeshBasicMaterial({{ color: planets[p].color, side: THREE.DoubleSide, transparent: true, opacity: 0.15 }});
+            // Atmosphere Glow
+            let atmoGeo = new THREE.SphereGeometry(planets[p].r * 1.05, 32, 32);
+            let atmoMat = new THREE.MeshBasicMaterial({{ color: 0x38bdf8, transparent: true, opacity: 0.15, side: THREE.BackSide }});
+            let atmo = new THREE.Mesh(atmoGeo, atmoMat);
+            atmo.position.set(planets[p].x, planets[p].y, 0);
+            scene.add(atmo);
+
+            // Gravity Ring
+            let ringGeo = new THREE.RingGeometry(planets[p].soi - 500, planets[p].soi, 64);
+            let ringMat = new THREE.MeshBasicMaterial({{ color: planets[p].color, side: THREE.DoubleSide, transparent: true, opacity: 0.2 }});
             let ring = new THREE.Mesh(ringGeo, ringMat);
             ring.position.set(planets[p].x, planets[p].y, 0);
             scene.add(ring);
@@ -129,11 +145,11 @@ game_html = f"""
         const rocketGroup = new THREE.Group();
         scene.add(rocketGroup);
 
-        const fireGeo = new THREE.ConeGeometry(200, 600, 16);
+        const fireGeo = new THREE.ConeGeometry(150, 400, 16);
         const fireMat = new THREE.MeshBasicMaterial({{color: 0xffaa00, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending}});
         const engineFire = new THREE.Mesh(fireGeo, fireMat);
         engineFire.rotation.x = Math.PI;
-        engineFire.position.y = -300;
+        engineFire.position.y = -200;
         engineFire.visible = false;
         rocketGroup.add(engineFire);
 
@@ -163,7 +179,7 @@ game_html = f"""
         const ctx = canvas.getContext('2d');
         function drawMinimap() {{
             ctx.clearRect(0, 0, 100, 100);
-            let scale = 100 / 300000; // Map fits 300km
+            let scale = 100 / 300000; 
             for (let p in planets) {{
                 ctx.beginPath();
                 ctx.arc(50 + planets[p].x * scale, 50 - planets[p].y * scale, Math.max(1, planets[p].r * scale * 2), 0, Math.PI*2);
@@ -228,7 +244,7 @@ game_html = f"""
             state.vx *= 0.8; state.vy *= 0.8;
         }};
         document.getElementById('btn-reset').onclick = function() {{
-            state.x = 0; state.y = 6371; state.vx = 0; state.vy = 0; state.fuel = 100; state.throttle = 0; state.exploded = false;
+            state.x = 500; state.y = 6371; state.vx = 0; state.vy = 0; state.fuel = 100; state.throttle = 0; state.exploded = false; state.liftOffTime = 0;
             rocketGroup.visible = true;
             throttleFill.style.height = '0%';
             document.getElementById('mission').innerText = "Reset. Slide RED BAR up to launch.";
@@ -249,12 +265,12 @@ game_html = f"""
 
                 if (dist < planets[p].soi) currentZone = p;
 
-                // Gravity acceleration (a = G * m / r^2)
                 let accel = (G * planets[p].m) / distSq;
                 ax += accel * (dx / dist);
                 ay += accel * (dy / dist);
 
-                if (dist < planets[p].r && !state.exploded) {{
+                // COLLISION FIX: Only explode if you have actually lifted off
+                if (dist < planets[p].r && state.throttle > 5 && !state.exploded) {{
                     triggerExplosion("CRASHED INTO " + p);
                 }}
             }}
@@ -304,9 +320,8 @@ game_html = f"""
                     rocketGroup.rotation.z = -state.angle; 
                 }}
 
-                // FIXED CAMERA: Stays locked at a reasonable distance (15km)
-                // so you can see the launch pad, the rocket, and the ground.
-                let zoom = 15000; 
+                // Slightly dynamic camera that keeps Earth in view but follows rocket
+                let zoom = 20000; 
                 camera.position.set(state.x, state.y, zoom);
                 camera.lookAt(state.x, state.y, 0);
             }}
