@@ -97,7 +97,7 @@ html_template = """
         
         <button class="action-btn" id="btn-gear">GEAR: UP</button>
         <button class="action-btn" id="btn-retro">RETRO</button>
-        <button class="action-btn" id="btn-camera">CAM: DYNAMIC</button>
+        <button class="action-btn" id="btn-camera">CAM: FRONT</button>
         <button class="action-btn" id="btn-reset">RESET</button>
     </div>
 
@@ -108,7 +108,7 @@ html_template = """
             fuel: 100, throttle: 0, hull: 100,
             engineHeat: 0, engineStalled: false,
             gear: false, exploded: false, started: false, phase: 1, won: false,
-            cameraMode: "dynamic" 
+            cameraMode: "front" 
         };
 
         const G = 50; 
@@ -127,12 +127,11 @@ html_template = """
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // OrbitControls setup for dragging the camera
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
         controls.enablePan = false; 
-        controls.enabled = false; // Disabled by default, enabled when user drags
+        controls.enabled = false; 
 
         const sunGeo = new THREE.SphereGeometry(500, 32, 32);
         const sunMat = new THREE.MeshBasicMaterial({color: 0xffdd00});
@@ -243,7 +242,8 @@ html_template = """
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
                 
-                const scaleFactor = 150 / size.y; // Made model bigger
+                // SCALED UP ROCKET
+                const scaleFactor = 200 / size.y; 
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 
                 const center = box.getCenter(new THREE.Vector3());
@@ -279,17 +279,29 @@ html_template = """
                 mapCtx.fill();
             });
 
-            mapCtx.beginPath();
+            // --- MINIMAP ARROW ---
             let rx = centerX + (state.x * scaleX);
             let ry = centerY - (state.y * scaleY);
-            mapCtx.arc(rx, ry, 4, 0, Math.PI * 2);
+            
+            mapCtx.save();
+            mapCtx.translate(rx, ry);
+            // state.rotation is 0 when pointing up, positive when turning left
+            mapCtx.rotate(-state.rotation); 
+            
+            mapCtx.beginPath();
+            mapCtx.moveTo(0, -8); // Nose
+            mapCtx.lineTo(6, 6);  // Right wing
+            mapCtx.lineTo(0, 3);  // Tail notch
+            mapCtx.lineTo(-6, 6); // Left wing
+            mapCtx.closePath();
             mapCtx.fillStyle = '#ff0000';
             mapCtx.fill();
+            mapCtx.restore();
         }
 
         let isDraggingJoy = false;
         let isDraggingThrottle = false;
-        let isDraggingCamera = false; // Track camera drag
+        let isDraggingCamera = false; 
         let joyX = 0; 
 
         const joyZone = document.getElementById('joystick-zone');
@@ -297,11 +309,10 @@ html_template = """
         const throttleZone = document.getElementById('throttle-zone');
         const throttleFill = document.getElementById('throttle-fill');
 
-        // CAMERA DRAG LOGIC
         renderer.domElement.addEventListener('pointerdown', () => {
-            if(state.cameraMode === "dynamic") {
+            if(state.cameraMode === "front") {
                 isDraggingCamera = true;
-                controls.enabled = true; // Enable orbit controls when dragging
+                controls.enabled = true; 
             }
         });
         renderer.domElement.addEventListener('pointerup', () => {
@@ -354,15 +365,15 @@ html_template = """
         };
         
         document.getElementById('btn-camera').onclick = function() {
-            if (state.cameraMode === "dynamic") {
+            if (state.cameraMode === "front") {
                 state.cameraMode = "orbit";
                 this.innerText = "CAM: ORBIT";
                 controls.enabled = true;
                 camera.position.set(state.x + 200, state.y + 100, 200);
                 controls.target.set(state.x, state.y, 0);
             } else {
-                state.cameraMode = "dynamic";
-                this.innerText = "CAM: DYNAMIC";
+                state.cameraMode = "front";
+                this.innerText = "CAM: FRONT";
                 controls.enabled = false;
             }
         };
@@ -556,24 +567,29 @@ html_template = """
 
             let distToEarth = Math.sqrt(state.x*state.x + state.y*state.y);
 
-            if (state.cameraMode === "dynamic") {
+            if (state.cameraMode === "front") {
                 if (!isDraggingCamera) {
-                    // Auto-center camera behind rocket
-                    let targetCamX = state.x - 200; // Offset to see rocket from behind
-                    let targetCamY = state.y + 50;
+                    // CAMERA IN FRONT OF ROCKET
+                    // We place the camera ahead of the rocket, and look back at it.
+                    let distanceInFront = 350; 
                     
-                    // Super smooth interpolation
-                    camera.position.x += (targetCamX - camera.position.x) * 0.02; 
-                    camera.position.y += (targetCamY - camera.position.y) * 0.02;
+                    // Calculate the position in front based on the rocket's rotation
+                    let camX = state.x + Math.sin(state.rotation) * distanceInFront;
+                    let camY = state.y + Math.cos(state.rotation) * distanceInFront;
                     
-                    // Fixed Zoom: Keeps rocket large
+                    // Smooth follow
+                    camera.position.x += (camX - camera.position.x) * 0.1; 
+                    camera.position.y += (camY - camera.position.y) * 0.1;
+                    
+                    // Dynamic zoom based on distance from Earth
                     let targetZoom = 350 + (distToEarth * 0.05);
-                    if (targetZoom > 800) targetZoom = 800; // Hard limit
+                    if (targetZoom > 800) targetZoom = 800; 
                     camera.position.z += (targetZoom - camera.position.z) * 0.05;
                     
+                    // Look back at the rocket
                     camera.lookAt(state.x, state.y, 0);
                 } else {
-                    // User is dragging. Let them look around.
+                    // User is dragging. Let them orbit around the rocket.
                     controls.target.set(state.x, state.y, 0);
                     controls.update();
                 }
