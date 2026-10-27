@@ -1,5 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import base64
 import os
 
 st.set_page_config(page_title="Artemis II | Universe View", layout="wide", initial_sidebar_state="collapsed")
@@ -12,10 +13,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# This finds the exact path of your file, no matter where GitHub puts it
-current_dir = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(current_dir, "artemis_ii.glb")
+# 📁 THIS READS YOUR FILE DIRECTLY FROM THE MAIN FOLDER
+model_path = "artemis_ii.glb"
+glb_base64 = ""
 
+if os.path.exists(model_path):
+    with open(model_path, "rb") as f:
+        glb_base64 = base64.b64encode(f.read()).decode('utf-8')
+else:
+    st.error(f"File {model_path} not found in the main folder!")
+
+# Pass the base64 string directly into the HTML
 game_html = f"""
 <!DOCTYPE html>
 <html>
@@ -123,31 +131,42 @@ game_html = f"""
         engineFire.visible = false;
         rocketGroup.add(engineFire);
 
-        // 🚀 NATIVE STREAMLIT FILE LOADER
-        const loader = new THREE.GLTFLoader();
-        loader.load('/app/static/{os.path.basename(model_path)}', function (gltf) {{
-            const model = gltf.scene;
-            const box = new THREE.Box3().setFromObject(model);
-            const size = box.getSize(new THREE.Vector3());
-            const targetHeight = 100;
-            const scaleFactor = targetHeight / size.y;
-            model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-            const center = box.getCenter(new THREE.Vector3());
-            model.position.x = -center.x * scaleFactor;
-            model.position.z = -center.z * scaleFactor;
-            model.position.y = (-box.min.y * scaleFactor);
+        // 🚀 BASE64 LOADER (Injected directly from Python)
+        const base64String = "{glb_base64}";
+        
+        if (base64String.length > 100) {{
+            const binaryString = atob(base64String);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {{
+                bytes[i] = binaryString.charCodeAt(i);
+            }}
             
-            rocketGroup.add(model);
-            
-            const padGeo = new THREE.BoxGeometry(200, 20, 200);
-            const padMat = new THREE.MeshLambertMaterial({{color: 0x555555}});
-            const pad = new THREE.Mesh(padGeo, padMat);
-            pad.position.set(0, -10, 0);
-            rocketGroup.add(pad);
-            
-            document.getElementById('loading').style.opacity = 0;
-        }}, undefined, function (error) {{
-            console.error("Model failed to load:", error);
+            const loader = new THREE.GLTFLoader();
+            loader.parse(bytes.buffer, '', function (gltf) {{
+                const model = gltf.scene;
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const targetHeight = 100;
+                const scaleFactor = targetHeight / size.y;
+                model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.x = -center.x * scaleFactor;
+                model.position.z = -center.z * scaleFactor;
+                model.position.y = (-box.min.y * scaleFactor);
+                
+                rocketGroup.add(model);
+                
+                const padGeo = new THREE.BoxGeometry(200, 20, 200);
+                const padMat = new THREE.MeshLambertMaterial({{color: 0x555555}});
+                const pad = new THREE.Mesh(padGeo, padMat);
+                pad.position.set(0, -10, 0);
+                rocketGroup.add(pad);
+                
+                document.getElementById('loading').style.opacity = 0;
+            }}, function(error) {{
+                console.error("Parse error:", error);
+            }});
+        }} else {{
             // Fallback
             const rocketGeo = new THREE.CylinderGeometry(15, 15, 100, 16);
             const rocketMat = new THREE.MeshPhongMaterial({{color: 0xdddddd}});
@@ -155,7 +174,7 @@ game_html = f"""
             rocket.position.y = 50;
             rocketGroup.add(rocket);
             document.getElementById('loading').style.opacity = 0;
-        }});
+        }}
 
         const miniScene = new THREE.Scene();
         const miniCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 100000);
