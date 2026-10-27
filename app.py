@@ -110,16 +110,16 @@ game_html = f"""
 
         // --- ENGINE FIRE EFFECT ---
         const fireGeo = new THREE.ConeGeometry(10, 40, 16);
-        // Material with emissive glow and transparency
         const fireMat = new THREE.MeshBasicMaterial({{color: 0xffaa00, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending}});
         const engineFire = new THREE.Mesh(fireGeo, fireMat);
-        engineFire.rotation.x = Math.PI; // Point down
-        engineFire.position.y = -20; // Position under rocket
-        engineFire.visible = false; // Hidden by default
+        engineFire.rotation.x = Math.PI;
+        engineFire.position.y = -20;
+        engineFire.visible = false;
         rocketGroup.add(engineFire);
 
         const loader = new THREE.GLTFLoader();
-        loader.load('app/static/{model_filename}', function (gltf) {{
+        // THE PATH IS NOW UPDATED TO LOOK IN THE MAIN FOLDER
+        loader.load('app/{model_filename}', function (gltf) {{
             const model = gltf.scene;
             const box = new THREE.Box3().setFromObject(model);
             const size = box.getSize(new THREE.Vector3());
@@ -222,7 +222,6 @@ game_html = f"""
             throttleFill.style.height = '0%';
             rocketGroup.visible = true;
             rocketGroup.rotation.set(0,0,0);
-            // Remove old explosions
             scene.children = scene.children.filter(child => child.type !== 'Points' && child.type !== 'Mesh' || child.geometry.type !== 'SphereGeometry');
         }};
 
@@ -234,10 +233,8 @@ game_html = f"""
             let altKm = state.alt / 1000;
             let throttleRatio = state.throttle / 100;
 
-            // --- ENGINE FIRE VISUALS ---
             if (throttleRatio > 0.05 && !state.exploded) {{
                 engineFire.visible = true;
-                // Flicker effect
                 engineFire.scale.set(1 + Math.random()*0.2, 1 + Math.random()*0.5, 1 + Math.random()*0.2);
                 engineFire.material.opacity = 0.5 + Math.random() * 0.4;
             }} else {{
@@ -274,13 +271,11 @@ game_html = f"""
             }}
         }}
 
-        // --- PARTICLES EXPLOSION EFFECT ---
         function triggerExplosion(reason) {{
             state.exploded = true;
             state.task = "💥 FAILED: " + reason;
-            rocketGroup.visible = false; // Hide rocket
+            rocketGroup.visible = false;
             
-            // Create a particle system for the explosion
             const particleCount = 500;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
@@ -288,22 +283,19 @@ game_html = f"""
             const velocities = [];
 
             for (let i = 0; i < particleCount; i++) {{
-                // Start all particles at the center of the rocket
                 positions[i*3] = 0;
                 positions[i*3+1] = Math.max(100, state.alt * 0.1);
                 positions[i*3+2] = 0;
 
-                // Random velocity vectors outward
                 velocities.push({{
                     x: (Math.random() - 0.5) * 20,
                     y: (Math.random() - 0.5) * 20,
                     z: (Math.random() - 0.5) * 20
                 }});
 
-                // Random fire colors (Red, Orange, Yellow)
-                colors[i*3] = 1.0; // R
-                colors[i*3+1] = Math.random() * 0.8; // G
-                colors[i*3+2] = 0.0; // B
+                colors[i*3] = 1.0;
+                colors[i*3+1] = Math.random() * 0.8;
+                colors[i*3+2] = 0.0;
             }}
 
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -311,7 +303,7 @@ game_html = f"""
 
             const material = new THREE.PointsMaterial({{ size: 15, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending }});
             const explosionParticles = new THREE.Points(geometry, material);
-            explosionParticles.userData.velocities = velocities; // Store velocities for animation
+            explosionParticles.userData.velocities = velocities;
             scene.add(explosionParticles);
         }}
 
@@ -331,7 +323,6 @@ game_html = f"""
                 rocketGroup.rotation.z = state.roll * (Math.PI / 180);
             }}
 
-            // Animate Explosion Particles
             scene.children.forEach(child => {{
                 if (child.type === 'Points' && child.userData.velocities) {{
                     const positions = child.geometry.attributes.position.array;
