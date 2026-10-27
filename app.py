@@ -1,5 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import os
 
 st.set_page_config(page_title="Artemis II | Universe View", layout="wide", initial_sidebar_state="collapsed")
 
@@ -11,8 +12,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🚀 PATH FIXED: It is now looking directly in the main folder
-model_path = "app/artemis_ii.glb"
+# This finds the exact path of your file, no matter where GitHub puts it
+current_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(current_dir, "artemis_ii.glb")
 
 game_html = f"""
 <!DOCTYPE html>
@@ -121,9 +123,9 @@ game_html = f"""
         engineFire.visible = false;
         rocketGroup.add(engineFire);
 
-        // LOADER - Path is now direct to the main folder
+        // 🚀 NATIVE STREAMLIT FILE LOADER
         const loader = new THREE.GLTFLoader();
-        loader.load('{model_path}', function (gltf) {{
+        loader.load('/app/static/{os.path.basename(model_path)}', function (gltf) {{
             const model = gltf.scene;
             const box = new THREE.Box3().setFromObject(model);
             const size = box.getSize(new THREE.Vector3());
@@ -145,7 +147,8 @@ game_html = f"""
             
             document.getElementById('loading').style.opacity = 0;
         }}, undefined, function (error) {{
-            // Fallback if the model still fails
+            console.error("Model failed to load:", error);
+            // Fallback
             const rocketGeo = new THREE.CylinderGeometry(15, 15, 100, 16);
             const rocketMat = new THREE.MeshPhongMaterial({{color: 0xdddddd}});
             const rocket = new THREE.Mesh(rocketGeo, rocketMat);
