@@ -127,10 +127,12 @@ html_template = """
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
+        // OrbitControls setup for dragging the camera
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.enabled = false;
+        controls.enablePan = false; 
+        controls.enabled = false; // Disabled by default, enabled when user drags
 
         const sunGeo = new THREE.SphereGeometry(500, 32, 32);
         const sunMat = new THREE.MeshBasicMaterial({color: 0xffdd00});
@@ -143,12 +145,11 @@ html_template = """
         scene.add(sunLight);
         scene.add(new THREE.AmbientLight(0x404040));
 
-        // FIXED STARS: Small and crisp
         const starsGeo = new THREE.BufferGeometry();
         const starsPos = new Float32Array(10000 * 3);
         for(let i=0; i<10000*3; i++) starsPos[i] = (Math.random() - 0.5) * 100000;
         starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 8})));
+        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 5})));
 
         planets.forEach(p => {
             const geo = new THREE.SphereGeometry(p.r, 64, 64);
@@ -242,7 +243,7 @@ html_template = """
                 const box = new THREE.Box3().setFromObject(model);
                 const size = box.getSize(new THREE.Vector3());
                 
-                const scaleFactor = 100 / size.y; 
+                const scaleFactor = 150 / size.y; // Made model bigger
                 model.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 
                 const center = box.getCenter(new THREE.Vector3());
@@ -288,12 +289,24 @@ html_template = """
 
         let isDraggingJoy = false;
         let isDraggingThrottle = false;
+        let isDraggingCamera = false; // Track camera drag
         let joyX = 0; 
 
         const joyZone = document.getElementById('joystick-zone');
         const joyKnob = document.getElementById('joystick-knob');
         const throttleZone = document.getElementById('throttle-zone');
         const throttleFill = document.getElementById('throttle-fill');
+
+        // CAMERA DRAG LOGIC
+        renderer.domElement.addEventListener('pointerdown', () => {
+            if(state.cameraMode === "dynamic") {
+                isDraggingCamera = true;
+                controls.enabled = true; // Enable orbit controls when dragging
+            }
+        });
+        renderer.domElement.addEventListener('pointerup', () => {
+            isDraggingCamera = false;
+        });
 
         document.getElementById('start-overlay').addEventListener('pointerdown', function(e) {
             e.preventDefault(); 
@@ -541,24 +554,29 @@ html_template = """
                 rocketGroup.rotation.z = -state.rotation; 
             }
 
-            let speed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
             let distToEarth = Math.sqrt(state.x*state.x + state.y*state.y);
 
             if (state.cameraMode === "dynamic") {
-                let camTargetX = state.x - (state.vx * 1.5); 
-                let camTargetY = state.y - (state.vy * 1.5);
-
-                camera.position.x += (camTargetX - camera.position.x) * 0.05; 
-                camera.position.y += (camTargetY - camera.position.y) * 0.05;
-
-                // FIXED CAMERA ZOOM: The rocket stays huge. Max zoom out is 1500, not 3500.
-                let targetZoom = 400 + (distToEarth * 0.15); 
-                if (targetZoom > 1500) targetZoom = 1500; 
-                
-                camera.position.z += (targetZoom - camera.position.z) * 0.05;
-                
-                camera.lookAt(state.x, state.y, 0);
-
+                if (!isDraggingCamera) {
+                    // Auto-center camera behind rocket
+                    let targetCamX = state.x - 200; // Offset to see rocket from behind
+                    let targetCamY = state.y + 50;
+                    
+                    // Super smooth interpolation
+                    camera.position.x += (targetCamX - camera.position.x) * 0.02; 
+                    camera.position.y += (targetCamY - camera.position.y) * 0.02;
+                    
+                    // Fixed Zoom: Keeps rocket large
+                    let targetZoom = 350 + (distToEarth * 0.05);
+                    if (targetZoom > 800) targetZoom = 800; // Hard limit
+                    camera.position.z += (targetZoom - camera.position.z) * 0.05;
+                    
+                    camera.lookAt(state.x, state.y, 0);
+                } else {
+                    // User is dragging. Let them look around.
+                    controls.target.set(state.x, state.y, 0);
+                    controls.update();
+                }
             } else {
                 controls.target.set(state.x, state.y, 0);
                 controls.update(); 
