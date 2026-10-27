@@ -32,7 +32,6 @@ html_template = """
         #hud { position: absolute; top: 10px; left: 10px; color: #38bdf8; text-shadow: 0 0 5px #38bdf8; font-size: 14px; background: rgba(0,0,0,0.7); padding: 12px; border-radius: 5px; border: 1px solid #38bdf8;}
         #mission { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fbbf24; text-align: center; font-size: 16px; font-weight: bold; text-shadow: 0 0 8px black; width: 60%;}
         
-        /* Overheating Warning */
         #heat-warning { position: absolute; top: 110px; left: 10px; color: #ef4444; font-weight: bold; font-size: 16px; display: none; animation: flash 0.5s infinite; }
         
         #warning-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 0, 0, 0.3); z-index: 9998; display: none; animation: flash 0.5s infinite; pointer-events: none;}
@@ -144,11 +143,12 @@ html_template = """
         scene.add(sunLight);
         scene.add(new THREE.AmbientLight(0x404040));
 
+        // FIXED STARS: Small and crisp
         const starsGeo = new THREE.BufferGeometry();
         const starsPos = new Float32Array(10000 * 3);
         for(let i=0; i<10000*3; i++) starsPos[i] = (Math.random() - 0.5) * 100000;
         starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 50})));
+        scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color: 0xffffff, size: 8})));
 
         planets.forEach(p => {
             const geo = new THREE.SphereGeometry(p.r, 64, 64);
@@ -166,10 +166,8 @@ html_template = """
             }
         });
 
-        // --- ASTEROID FIELD GENERATION ---
         const asteroids = [];
         for(let i=0; i<40; i++) {
-            // Generate asteroids between Earth and Moon
             let ax = 2000 + Math.random() * 6000;
             let ay = Math.random() * 5000;
             let radius = 20 + Math.random() * 50;
@@ -194,7 +192,6 @@ html_template = """
         rocketGroup.position.set(0, 1020, 0);
         scene.add(rocketGroup);
 
-        // Engine Fire
         const particleCount = 200;
         const fireGeo = new THREE.BufferGeometry();
         const firePositions = new Float32Array(particleCount * 3);
@@ -220,7 +217,6 @@ html_template = """
         fireParticles.visible = false;
         rocketGroup.add(fireParticles);
 
-        // RCS Thrusters (White vapor for turning)
         const rcsGeo = new THREE.BufferGeometry();
         const rcsPositions = new Float32Array(50 * 3);
         const rcsVelocities = [];
@@ -383,7 +379,6 @@ html_template = """
             let isInAtmosphere = false;
             let currentSpeed = Math.sqrt(state.vx*state.vx + state.vy*state.vy);
 
-            // ENGINE HEAT LOGIC
             if (state.throttle > 80 && !state.engineStalled) {
                 state.engineHeat += 0.5;
                 if (state.engineHeat > 100) {
@@ -439,23 +434,17 @@ html_template = """
                 }
             });
 
-            // ASTEROID COLLISION LOGIC
             asteroids.forEach(ast => {
                 let dx = ast.x - state.x;
                 let dy = ast.y - state.y;
                 let dist = Math.sqrt(dx*dx + dy*dy);
                 
-                if (dist < ast.r + 50) { // 50 is roughly rocket radius
-                    state.hull -= 2; // Take damage
+                if (dist < ast.r + 50) { 
+                    state.hull -= 2; 
                     document.getElementById('val-hull').innerText = Math.max(0, state.hull).toFixed(0);
                     document.getElementById('val-hull').style.color = "#ef4444";
-                    
-                    // Bounce off
                     state.vx *= -0.5; state.vy *= -0.5;
-                    
-                    if (state.hull <= 0) {
-                        triggerExplosion("DESTROYED BY ASTEROID IMPACT");
-                    }
+                    if (state.hull <= 0) triggerExplosion("DESTROYED BY ASTEROID IMPACT");
                 }
             });
 
@@ -487,14 +476,12 @@ html_template = """
                 fireParticles.visible = false;
             }
 
-            // REALISTIC ROTATION & RCS THRUSTERS
             let torqueInput = joyX / 35; 
             let torquePower = 0.0015; 
             state.angularVelocity += torqueInput * torquePower;
             
             if (joyX !== 0) {
                 rcsParticles.visible = true;
-                // animate rcs
             } else {
                 rcsParticles.visible = false;
                 state.angularVelocity *= 0.90; 
@@ -564,8 +551,9 @@ html_template = """
                 camera.position.x += (camTargetX - camera.position.x) * 0.05; 
                 camera.position.y += (camTargetY - camera.position.y) * 0.05;
 
-                let targetZoom = 500 + (distToEarth * 0.4) + (speed * 5);
-                if (targetZoom > 3500) targetZoom = 3500; 
+                // FIXED CAMERA ZOOM: The rocket stays huge. Max zoom out is 1500, not 3500.
+                let targetZoom = 400 + (distToEarth * 0.15); 
+                if (targetZoom > 1500) targetZoom = 1500; 
                 
                 camera.position.z += (targetZoom - camera.position.z) * 0.05;
                 
@@ -574,21 +562,6 @@ html_template = """
             } else {
                 controls.target.set(state.x, state.y, 0);
                 controls.update(); 
-            }
-            
-            // Dynamic Starfield Stretch (Speed Effect)
-            if (speed > 3) {
-                scene.children.forEach(child => {
-                    if (child.type === 'Points' && child !== fireParticles && child !== rcsParticles) {
-                        child.material.size = 50 + (speed * 10); // Stars get bigger (feel faster)
-                    }
-                });
-            } else {
-                scene.children.forEach(child => {
-                    if (child.type === 'Points' && child !== fireParticles && child !== rcsParticles) {
-                        child.material.size = 50;
-                    }
-                });
             }
             
             renderer.render(scene, camera);
