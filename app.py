@@ -21,38 +21,35 @@ game_html = """
         body { margin: 0; overflow: hidden; background-color: #2b3a4a; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; }
         canvas { display: block; }
         
-        /* UI LAYER */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
         
         /* START SCREEN */
         #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000000; }
-        #btn-start { background: #00ffcc; color: #000; border: none; padding: 20px 50px; font-size: 28px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 0 20px #00ffcc; transition: transform 0.1s; }
-        #btn-start:active { transform: scale(0.95); }
-        .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 50px; text-shadow: 0 0 20px #4a90e2; text-align: center;}
+        #btn-start { background: #00ffcc; color: #000; border: none; padding: 20px 50px; font-size: 28px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 0 20px #00ffcc; }
+        .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 50px; text-shadow: 0 0 20px #4a90e2; }
 
-        /* VAB Menu (Left) */
-        #vab-menu { position: absolute; top: 10px; left: 10px; width: 100px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; display: none; flex-direction: column; align-items: center; padding: 10px 0; pointer-events: auto; max-height: 85vh; overflow-y: auto; z-index: 100000;}
-        .part-btn { width: 80px; height: 60px; margin: 4px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
+        /* VAB Menu */
+        #vab-menu { position: absolute; top: 10px; left: 10px; width: 110px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; display: none; flex-direction: column; align-items: center; padding: 10px 0; pointer-events: auto; max-height: 85vh; overflow-y: auto; z-index: 100000;}
+        .part-btn { width: 90px; height: 60px; margin: 4px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
         .part-btn:active { cursor: grabbing; border-color: #00ffcc; }
         .part-btn span { font-size: 9px; color: #aaa; position: absolute; bottom: 2px;}
 
-        /* CSS Lego Shapes */
+        /* CSS Lego Shapes (Accurate Proportions) */
         .m-pod { width: 20px; height: 25px; background: #888; border-radius: 5px 5px 0 0; border-bottom: 3px solid #444;}
         .m-nose { width: 20px; height: 20px; background: #fff; clip-path: polygon(50% 0%, 100% 100%, 0% 100%);}
         .m-tank-s { width: 16px; height: 25px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
         .m-tank-m { width: 20px; height: 40px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
         .m-tank-l { width: 26px; height: 50px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
-        .m-engine-s { width: 14px; height: 14px; background: #222; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);}
+        .m-engine-s { width: 16px; height: 14px; background: #222; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);}
         .m-engine-m { width: 20px; height: 18px; background: #222; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);}
-        .m-engine-l { width: 28px; height: 24px; background: #222; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);}
+        .m-engine-l { width: 26px; height: 24px; background: #222; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);}
         .m-decoupler { width: 20px; height: 6px; background: #5c3a21;}
         .m-booster { width: 14px; height: 35px; background: #ddd; border-radius: 5px 5px 0 0;}
-        .m-strut { width: 6px; height: 30px; background: #666;}
         .m-legs { width: 20px; height: 15px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
 
-        /* VAB Stats Panel (Right) */
-        #vab-stats { position: absolute; top: 10px; right: 10px; width: 150px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 15px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;}
+        /* VAB Stats */
+        #vab-stats { position: absolute; top: 10px; right: 10px; width: 160px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 15px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
 
         /* Top Bar */
@@ -74,12 +71,9 @@ game_html = """
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
         #btn-map { position: absolute; top: 15px; left: 15px; width: 60px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
 
-        /* Rotate Button */
-        #btn-rotate { position: absolute; top: 200px; right: 10px; width: 60px; height: 60px; background: rgba(0, 0, 0, 0.85); border: 2px solid #00ffcc; color: white; border-radius: 10px; font-size: 24px; display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 100000; cursor: pointer;}
-
-        /* Trash Can */
-        #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
-        #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; transform: scale(1.1); }
+        #btn-rotate { position: absolute; top: 220px; right: 10px; width: 60px; height: 60px; background: rgba(0, 0, 0, 0.85); border: 2px solid #00ffcc; color: white; border-radius: 10px; font-size: 24px; display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 100000; cursor: pointer;}
+        #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; }
+        #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; }
 
         /* Map Overlay */
         #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.95); display: none; pointer-events: auto; z-index: 200000;}
@@ -99,9 +93,13 @@ game_html = """
         <div id="vab-menu">
             <div class="part-btn" data-type="pod"><div class="m-pod"></div><span>Pod</span></div>
             <div class="part-btn" data-type="nose"><div class="m-nose"></div><span>Nose</span></div>
-            <div class="part-btn" data-type="tank_med"><div class="m-tank-m"></div><span>Tank</span></div>
+            <div class="part-btn" data-type="tank_small"><div class="m-tank-s"></div><span>Tank S</span></div>
+            <div class="part-btn" data-type="tank_med"><div class="m-tank-m"></div><span>Tank M</span></div>
+            <div class="part-btn" data-type="tank_large"><div class="m-tank-l"></div><span>Tank L</span></div>
             <div class="part-btn" data-type="decoupler"><div class="m-decoupler"></div><span>Decoupler</span></div>
-            <div class="part-btn" data-type="engine_med"><div class="m-engine-m"></div><span>Engine</span></div>
+            <div class="part-btn" data-type="engine_small"><div class="m-engine-s"></div><span>Engine S</span></div>
+            <div class="part-btn" data-type="engine_med"><div class="m-engine-m"></div><span>Engine M</span></div>
+            <div class="part-btn" data-type="engine_large"><div class="m-engine-l"></div><span>Engine L</span></div>
             <div class="part-btn" data-type="booster"><div class="m-booster"></div><span>Booster</span></div>
             <div class="part-btn" data-type="legs"><div class="m-legs"></div><span>Legs</span></div>
         </div>
@@ -164,12 +162,12 @@ game_html = """
         let gameState = "menu"; 
         
         let state = {
-            x: 0, y: 10, vx: 0, vy: 0, 
+            x: 0, y: 50, vx: 0, vy: 0, // Start safely in the air
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
             legsDeployed: false,
-            cameraY: 0, lastTime: performance.now(),
+            cameraY: 50, lastTime: performance.now(),
             particles: []
         };
 
@@ -178,14 +176,19 @@ game_html = """
         let rocketParts = []; 
         let currentRotation = 0; 
         
+        // --- ACCURATE SIZES & WEIGHTS ---
         const P = {
-            pod:        { w: 30, h: 30, m: 1500, f: 0,   t: 0 },
-            nose:       { w: 30, h: 20, m: 200,  f: 0,   t: 0 },
-            tank_med:   { w: 30, h: 60, m: 1000, f: 2500, t: 0 },
-            decoupler:  { w: 30, h: 8,  m: 100,  f: 0,   t: 0 },
-            engine_med: { w: 24, h: 24, m: 800,  f: 0,   t: 600 },
-            booster:    { w: 20, h: 50, m: 600,  f: 1500, t: 300 },
-            legs:       { w: 30, h: 20, m: 100,  f: 0,   t: 0 }
+            pod:         { w: 30, h: 30, m: 1500, f: 0,    t: 0 },
+            nose:        { w: 30, h: 20, m: 200,  f: 0,    t: 0 },
+            tank_small:  { w: 24, h: 30, m: 500,  f: 1000, t: 0 },
+            tank_med:    { w: 30, h: 60, m: 1000, f: 3000, t: 0 },
+            tank_large:  { w: 45, h: 90, m: 2500, f: 9000, t: 0 },
+            decoupler:   { w: 30, h: 8,  m: 100,  f: 0,    t: 0 },
+            engine_small:{ w: 24, h: 18, m: 300,  f: 0,    t: 250 },
+            engine_med:  { w: 30, h: 24, m: 800,  f: 0,    t: 800 },
+            engine_large:{ w: 45, h: 36, m: 2000, f: 0,    t: 2000 },
+            booster:     { w: 20, h: 50, m: 600,  f: 1800, t: 400 },
+            legs:        { w: 30, h: 20, m: 100,  f: 0,    t: 0 }
         };
 
         const menuPlanets = [
@@ -208,6 +211,7 @@ game_html = """
             document.getElementById('btn-rotate').style.display = 'flex';
             document.getElementById('trash-can').style.display = 'flex';
             
+            // Default rocket build
             rocketParts = [];
             addPart("engine_med", 0, 12, 0);
             addPart("tank_med", 0, 54, 0);
@@ -274,7 +278,7 @@ game_html = """
                     draggedPart = p.type;
                     currentRotation = angle;
                     rocketParts.splice(i, 1);
-                    updateStats(); // FIXED: Update stats when picking up
+                    updateStats(); 
                     createGhost(draggedPart, currentRotation);
                     isDraggingExisting = true;
                     break;
@@ -301,7 +305,7 @@ game_html = """
                 draggedPart = null;
                 if (dragGhost) document.body.removeChild(dragGhost);
                 dragGhost = null;
-                updateStats(); // FIXED: Update stats when deleting
+                updateStats(); 
                 return;
             }
 
@@ -410,7 +414,6 @@ game_html = """
                 rocketParts = rocketParts.filter(p => p.y >= lowest.y);
             }
             
-            // FIXED: Recalculate mass and fuel after dropping a stage
             let m = 0, f = 0;
             rocketParts.forEach(p => { m += P[p.type].m; f += P[p.type].f; });
             state.dryMass = m;
@@ -476,7 +479,7 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
-                state.y = 10; 
+                state.y = 50; // START SAFELY ABOVE THE GROUND
                 state.vy = 0; state.vx = 0;
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
@@ -522,10 +525,15 @@ game_html = """
             rocketParts.forEach(p => thrust += P[p.type].t);
             state.totalMass = state.dryMass + state.currentFuel;
 
-            // Gravity falloff based on altitude
             let currentGravity = GRAVITY * Math.max(0.1, 1 - (state.y / 100000)); 
             let ay = -currentGravity;
             let ax = 0;
+            
+            // Aerodynamic Drag (slows you down in the atmosphere)
+            let drag = 0;
+            if (state.y < 10000) {
+                drag = (Math.abs(state.vx) + Math.abs(state.vy)) * 0.005;
+            }
 
             if (state.throttle > 0 && state.currentFuel > 0 && thrust > 0) {
                 let thrustAccel = (thrust * 1000 * state.throttle) / state.totalMass;
@@ -553,12 +561,15 @@ game_html = """
                 }
             }
 
+            // Apply Drag
+            state.vx -= Math.sign(state.vx) * drag * dt;
+            state.vy -= Math.sign(state.vy) * drag * dt;
+
             state.vx += ax * dt;
             state.vy += ay * dt;
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
-            // Fixed: Check total speed (hypot) for crash
             if (state.y < 0) {
                 state.y = 0;
                 if (Math.hypot(state.vx, state.vy) > 5 || !state.legsDeployed) {
@@ -585,7 +596,6 @@ game_html = """
             document.getElementById('val-vel').innerText = Math.sqrt(state.vx*state.vx + state.vy*state.vy).toFixed(1);
             document.getElementById('val-mass').innerText = state.totalMass.toFixed(0);
             
-            // Fixed: Safe NaN check for fuel
             let fuelPercent = state.maxFuel > 0 ? (state.currentFuel / state.maxFuel) * 100 : 0;
             if (fuelPercent > 0) {
                 document.getElementById('val-fuel').innerText = fuelPercent.toFixed(1);
@@ -647,8 +657,6 @@ game_html = """
                 ctx.fillStyle = "#222"; ctx.beginPath(); ctx.moveTo(-w/3, -h/2); ctx.lineTo(w/3, -h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(-w/2, h/2); ctx.fill();
             } else if (p.type === "booster") {
                 ctx.fillStyle = "#ddd"; ctx.fillRect(-w/2, -h/2, w, h);
-            } else if (p.type === "strut") {
-                ctx.fillStyle = "#666"; ctx.fillRect(-w/2, -h/2, w, h);
             } else if (p.type === "decoupler") {
                 ctx.fillStyle = "#5c3a21"; ctx.fillRect(-w/2, -h/2, w, h);
             } else if (p.type === "legs") {
@@ -674,13 +682,10 @@ game_html = """
                 for(let i=-1000;i<1000;i+=GRID){ctx.beginPath();ctx.moveTo(i,-1000);ctx.lineTo(i,1000);ctx.stroke();ctx.beginPath();ctx.moveTo(-1000,i);ctx.lineTo(1000,i);ctx.stroke();}
                 rocketParts.forEach(p => drawPart(p, -p.y));
             } else {
-                // Camera Translation
                 ctx.translate(-state.x, state.cameraY);
 
-                // Ground
                 ctx.fillStyle = "#4a3b2c"; ctx.fillRect(-10000, 0, 20000, 10000);
                 
-                // Draw Particles
                 state.particles.forEach(p => {
                     ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
                     ctx.beginPath();
@@ -688,7 +693,6 @@ game_html = """
                     ctx.fill();
                 });
 
-                // Draw Rocket
                 ctx.translate(0, -state.y); 
                 ctx.rotate(state.angle * (Math.PI/180));
                 rocketParts.forEach(p => drawPart(p, -p.y));
