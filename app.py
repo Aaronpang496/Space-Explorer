@@ -52,6 +52,10 @@ game_html = """
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
 
+        /* TRASH CAN */
+        #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
+        #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; transform: scale(1.1); }
+
         /* TOP BAR */
         #top-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
         .top-btn { background: #1e3a8a; color: white; border: 2px solid #60a5fa; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer;}
@@ -59,15 +63,15 @@ game_html = """
         /* FLIGHT HUD */
         #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
         
-        /* FLIGHT CONTROLS - PERCENTAGE BASED FOR MOBILE */
-        #throttle-zone { position: absolute; right: 15px; bottom: 25%; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        /* FLIGHT CONTROLS - Top 60% for Mobile */
+        #throttle-zone { position: absolute; right: 15px; top: 60%; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 22px;}
         
-        #arrow-zone { position: absolute; left: 15px; bottom: 25%; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
+        #arrow-zone { position: absolute; left: 15px; top: 65%; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
         .arrow-btn { width: 60px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px);}
         
-        #btn-stage { position: absolute; bottom: 25%; right: 75px; width: 70px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
-        #btn-legs { position: absolute; bottom: 35%; right: 75px; width: 70px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-stage { position: absolute; top: 65%; right: 75px; width: 70px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-legs { position: absolute; top: 55%; right: 75px; width: 70px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
         #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
 
@@ -112,6 +116,8 @@ game_html = """
             <div class="stat-row"><span>Fuel:</span> <span class="stat-val" id="stat-fuel">0 kg</span></div>
             <div class="stat-row"><span>Thrust:</span> <span class="stat-val" id="stat-thrust">0 kN</span></div>
         </div>
+
+        <div id="trash-can">🗑️</div>
 
         <div id="top-bar">
             <button class="top-btn" id="btn-launch">LAUNCH 🚀</button>
@@ -203,7 +209,6 @@ game_html = """
             legs:        { w: 24, h: 20, m: 100,  f: 0,    t: 0 }
         };
 
-        // Generate Static Stars
         for(let i=0; i<300; i++) {
             state.stars.push({
                 x: Math.random() * 2000 - 1000,
@@ -218,6 +223,7 @@ game_html = """
             document.getElementById('vab-menu').style.display = 'flex';
             document.getElementById('top-bar').style.display = 'flex';
             document.getElementById('vab-stats').style.display = 'flex';
+            document.getElementById('trash-can').style.display = 'flex';
             
             rocketParts = [];
             addPart("engine_med", 0, 12);
@@ -251,26 +257,56 @@ game_html = """
                 item.classList.add('active');
                 currentSelectedPart = item.dataset.type;
                 
-                isDraggingPart = true;
-                draggedType = item.dataset.type;
-                dragGhost = document.createElement('div');
-                dragGhost.style.position = 'absolute';
-                dragGhost.style.width = P[draggedType].w + 'px';
-                dragGhost.style.height = P[draggedType].h + 'px';
-                
-                if (draggedType === 'chute') dragGhost.style.backgroundColor = '#f44';
-                else if (draggedType.includes('tank')) dragGhost.style.backgroundColor = '#fff';
-                else if (draggedType.includes('engine')) dragGhost.style.backgroundColor = '#222';
-                else dragGhost.style.backgroundColor = '#888';
-                
-                dragGhost.style.border = '2px dashed #00ffcc';
-                dragGhost.style.pointerEvents = 'none';
-                dragGhost.style.zIndex = 999999;
-                dragGhost.style.left = (e.clientX - P[draggedType].w/2) + 'px';
-                dragGhost.style.top = (e.clientY - P[draggedType].h/2) + 'px';
-                document.body.appendChild(dragGhost);
+                startDrag(currentSelectedPart, e.clientX, e.clientY);
             });
         });
+
+        canvas.addEventListener('pointerdown', (e) => {
+            if (gameState !== "vab" || isDraggingPart) return;
+            const rect = canvas.getBoundingClientRect();
+            let mouseX = e.clientX - rect.left;
+            let mouseY = e.clientY - rect.top;
+            let worldX = (mouseX - canvas.width/2) / 1.2;
+            let maxY = 0;
+            if (rocketParts.length > 0) {
+                rocketParts.forEach(p => { if (p.y > maxY) maxY = p.y; });
+            }
+            let worldY = (canvas.height * 0.8 - maxY * 0.5 - mouseY) / 1.2;
+
+            for (let i = rocketParts.length - 1; i >= 0; i--) {
+                let p = rocketParts[i];
+                let pw = P[p.type].w;
+                let ph = P[p.type].h;
+                
+                if (Math.abs(worldX - p.x) < pw/2 && Math.abs(worldY - p.y) < ph/2) {
+                    rocketParts.splice(i, 1);
+                    updateStats();
+                    startDrag(p.type, e.clientX, e.clientY);
+                    break;
+                }
+            }
+        });
+
+        function startDrag(type, cx, cy) {
+            isDraggingPart = true;
+            draggedType = type;
+            dragGhost = document.createElement('div');
+            dragGhost.style.position = 'absolute';
+            dragGhost.style.width = P[draggedType].w + 'px';
+            dragGhost.style.height = P[draggedType].h + 'px';
+            
+            if (draggedType === 'chute') dragGhost.style.backgroundColor = '#f44';
+            else if (draggedType.includes('tank')) dragGhost.style.backgroundColor = '#fff';
+            else if (draggedType.includes('engine')) dragGhost.style.backgroundColor = '#222';
+            else dragGhost.style.backgroundColor = '#888';
+            
+            dragGhost.style.border = '2px dashed #00ffcc';
+            dragGhost.style.pointerEvents = 'none';
+            dragGhost.style.zIndex = 999999;
+            dragGhost.style.left = (cx - P[draggedType].w/2) + 'px';
+            dragGhost.style.top = (cy - P[draggedType].h/2) + 'px';
+            document.body.appendChild(dragGhost);
+        }
 
         window.addEventListener('pointermove', (e) => {
             if (isDraggingPart && dragGhost) {
@@ -279,11 +315,21 @@ game_html = """
             }
         });
 
+        const trashCan = document.getElementById('trash-can');
+        trashCan.addEventListener('pointerenter', () => trashCan.classList.add('hover'));
+        trashCan.addEventListener('pointerleave', () => trashCan.classList.remove('hover'));
+
         window.addEventListener('pointerup', (e) => {
             if (!isDraggingPart) return;
             if (dragGhost) document.body.removeChild(dragGhost);
             dragGhost = null;
             isDraggingPart = false;
+
+            const tr = trashCan.getBoundingClientRect();
+            if (e.clientX >= tr.left && e.clientX <= tr.right && e.clientY >= tr.top && e.clientY <= tr.bottom) {
+                updateStats();
+                return;
+            }
 
             const rect = canvas.getBoundingClientRect();
             if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom && gameState === "vab") {
@@ -331,7 +377,6 @@ game_html = """
             rocketParts.push({ type, x, y });
         }
 
-        // FLIGHT CONTROLS
         let isDraggingThrottle = false;
         let leftPressed = false;
         let rightPressed = false;
@@ -453,6 +498,7 @@ game_html = """
                 document.getElementById('vab-menu').style.display = 'none';
                 document.getElementById('vab-stats').style.display = 'none';
                 document.getElementById('top-bar').style.display = 'none';
+                document.getElementById('trash-can').style.display = 'none';
                 
                 document.getElementById('hud').style.display = 'block';
                 document.getElementById('minimap-container').style.display = 'block';
@@ -510,22 +556,19 @@ game_html = """
                     document.getElementById('val-fuel').style.color = "#ff4444";
                 }
 
-                // --- SEPARATE FIRE FOR EACH ENGINE ---
+                // Exhaust Particles
                 let radF = state.angle * (Math.PI / 180);
                 let cosA = Math.cos(radF);
                 let sinA = Math.sin(radF);
                 
                 rocketParts.forEach(eng => {
                     if (eng.type.includes("engine")) {
-                        // Nozzle position relative to rocket center
                         let lx = eng.x;
                         let ly = eng.y - (P[eng.type].h / 2);
                         
-                        // Rotate by angle
                         let rx = lx * cosA + ly * sinA;
                         let ry = -lx * sinA + ly * cosA;
                         
-                        // World position
                         let wx = state.x + rx;
                         let wy = state.y + ry;
                         
@@ -651,7 +694,23 @@ game_html = """
                 let grad = ctx.createLinearGradient(-w/2, 0, w/2, 0); grad.addColorStop(0,"#aaa"); grad.addColorStop(0.5,"#fff"); grad.addColorStop(1,"#888");
                 ctx.fillStyle = grad; ctx.fillRect(-w/2, -h/2, w, h);
             } else if (p.type.includes("engine")) {
+                // Draw Engine Base
                 ctx.fillStyle = "#222"; ctx.beginPath(); ctx.moveTo(-w/3, -h/2); ctx.lineTo(w/3, -h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(-w/2, h/2); ctx.fill();
+                
+                // Draw Fixed Flame (Follows the rocket perfectly)
+                if (state.throttle > 0 && state.currentFuel > 0 && gameState === "flight" && !state.exploded) {
+                    let flameLen = 30 + Math.random() * 40 * (state.throttle/100);
+                    let grad = ctx.createLinearGradient(0, h/2, 0, h/2 + flameLen);
+                    grad.addColorStop(0, "rgba(255,255,255,1)");
+                    grad.addColorStop(0.4, "rgba(255,200,0,0.8)");
+                    grad.addColorStop(1, "rgba(255,0,0,0)");
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(-w/3, h/2);
+                    ctx.lineTo(w/3, h/2);
+                    ctx.lineTo(0, h/2 + flameLen);
+                    ctx.fill();
+                }
             } else if (p.type === "decoupler") {
                 ctx.fillStyle = "#5c3a21"; ctx.fillRect(-w/2, -h/2, w, h);
             } else if (p.type === "booster") {
@@ -728,6 +787,14 @@ game_html = """
                 let zoom = Math.max(0.65, 1.2 - (state.y / 30000));
                 ctx.scale(zoom, zoom);
                 
+                // Draw the planet's massive curvature in the background
+                if (state.y > 500) {
+                    ctx.fillStyle = planetsDB[state.currentPlanet].color;
+                    ctx.beginPath();
+                    ctx.arc(0, -200000, 200000, 0, Math.PI * 2); 
+                    ctx.fill();
+                }
+
                 ctx.translate(-state.x, state.cameraY);
 
                 ctx.fillStyle = planetsDB[state.currentPlanet].ground; 
