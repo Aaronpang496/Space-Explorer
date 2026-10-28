@@ -84,7 +84,7 @@ game_html = """
         #map-title { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold;}
 
         /* Status Message */
-        #status-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000;}
+        #status-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000;}
     </style>
 </head>
 <body>
@@ -173,7 +173,7 @@ game_html = """
         let gameState = "menu"; 
         
         let state = {
-            x: 0, y: 0, vx: 0, vy: 0, 
+            x: 0, y: 0, vx: 0, vy: 0, // Start on the pad
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
@@ -489,12 +489,13 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
-                state.y = 10; // START SAFELY ABOVE THE GROUND
+                state.y = 100; // START HIGH IN THE AIR
                 state.vy = 0; state.vx = 0;
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
-                state.legsDeployed = true; // Legs down so you don't instantly crash
+                state.legsDeployed = true; // Legs down
                 state.cameraY = state.y; 
+                state.landedMsgTimer = 0;
 
                 document.getElementById('vab-menu').style.display = 'none';
                 document.getElementById('vab-stats').style.display = 'none';
@@ -584,18 +585,27 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
-            // Ground Collision
+            // Check Ground Collision
             if (state.y <= 0) {
                 state.y = 0;
                 if (state.vy < -5 || !state.legsDeployed) {
+                    // CRASHED
                     gameState = "crashed";
                     for(let i=0; i<100; i++) {
+                        // Mix of Yellow, Orange, Red, and Grey smoke
+                        let col = "255,100,0"; // Orange
+                        let r = Math.random();
+                        if (r > 0.8) col = "255,255,0"; // Yellow
+                        else if (r > 0.5) col = "100,100,100"; // Smoke
+
                         state.particles.push({
                             x: state.x + (Math.random()-0.5)*30, 
                             y: state.y + (Math.random()-0.5)*30,
-                            vx: (Math.random()-0.5)*200,
-                            vy: (Math.random()-0.5)*200,
-                            life: 1.5, size: Math.random()*20+10, color: "255,50,0"
+                            vx: (Math.random()-0.5)*300,
+                            vy: (Math.random()-0.5)*300,
+                            life: 1.0 + Math.random(), 
+                            size: Math.random()*15+5, 
+                            color: col
                         });
                     }
                     document.getElementById('status-msg').innerText = "💥 CRASHED";
@@ -604,7 +614,7 @@ game_html = """
                 } else {
                     state.vy = 0; state.vx = 0; state.throttle = 0;
                     state.landedMsgTimer += dt;
-                    if (state.landedMsgTimer > 0.1) {
+                    if (state.landedMsgTimer > 0.5) {
                         document.getElementById('status-msg').innerText = "🏆 LANDED SAFELY";
                         document.getElementById('status-msg').style.color = "#00ffcc";
                         document.getElementById('status-msg').style.display = 'block';
@@ -733,8 +743,10 @@ game_html = """
                 // Camera Follow
                 ctx.translate(-state.x, state.cameraY);
 
+                // Ground
                 ctx.fillStyle = "#4a3b2c"; ctx.fillRect(-10000, 0, 20000, 10000);
                 
+                // Particles
                 state.particles.forEach(p => {
                     ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
                     ctx.beginPath();
