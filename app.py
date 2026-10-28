@@ -1,7 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(page_title="SFS Full Builder", layout="wide", initial_sidebar_state="collapsed")
+# Changed the page title to Space Explorer
+st.set_page_config(page_title="Space Explorer", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
 <style>
@@ -12,6 +13,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# The HTML code is stored in a standard string
 game_html = """
 <!DOCTYPE html>
 <html>
@@ -70,7 +72,7 @@ game_html = """
     <div id="ui-layer">
         <!-- START SCREEN -->
         <div id="start-screen">
-            <div class="title">SPACEFLIGHT SIMULATOR</div>
+            <div class="title">SPACE EXPLORER</div>
             <button id="btn-start">START BUILDING</button>
         </div>
 
@@ -219,7 +221,7 @@ game_html = """
                     // MAGNETIC SNAPPING (Top, Bottom, Left, Right)
                     let snapX = Math.round(worldX / GRID) * GRID;
                     let snapY = Math.round(worldY / GRID) * GRID;
-                    let minDist = 30; // Snap radius
+                    let minDist = 40; // Increased snap radius for easier side attaching
 
                     if (rocketParts.length > 0) {
                         rocketParts.forEach(p => {
@@ -448,3 +450,6 @@ game_html = """
     </script>
 </body>
 </html>
+"""
+
+components.html(game_html, height=900, scrolling=False)
