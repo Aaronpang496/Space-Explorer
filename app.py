@@ -69,6 +69,13 @@ game_html = """
         .arrow-btn { width: 60px; height: 80px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
         
         #btn-stage { position: absolute; bottom: 20px; right: 80px; width: 80px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 5px; font-size: 16px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+
+        /* Rotate Button */
+        #btn-rotate { position: absolute; top: 200px; right: 10px; width: 60px; height: 60px; background: rgba(0, 0, 0, 0.85); border: 2px solid #00ffcc; color: white; border-radius: 10px; font-size: 24px; display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 100000; cursor: pointer;}
+
+        /* Trash Can */
+        #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
+        #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -120,6 +127,10 @@ game_html = """
             <div class="arrow-btn" id="joy-right">▶</div>
         </div>
         <button id="btn-stage">STAGE</button>
+
+        <!-- Rotate & Trash -->
+        <div id="btn-rotate">🔄</div>
+        <div id="trash-can">🗑️</div>
     </div>
 
     <script>
@@ -146,8 +157,9 @@ game_html = """
         const GRAVITY = 9.81;
         const GRID = 15;
         let rocketParts = []; 
+        let currentRotation = 0; 
         
-        // --- PART DEFINITIONS (Mass in kg, Fuel in kg, Thrust in kN) ---
+        // --- PART DEFINITIONS ---
         const P = {
             pod:        { w: 30, h: 30, m: 1500, f: 0,   t: 0 },
             nose:       { w: 30, h: 20, m: 200,  f: 0,   t: 0 },
@@ -179,31 +191,25 @@ game_html = """
             document.getElementById('vab-menu').style.display = 'flex';
             document.getElementById('top-bar').style.display = 'flex';
             document.getElementById('vab-stats').style.display = 'flex';
+            document.getElementById('btn-rotate').style.display = 'flex';
+            document.getElementById('trash-can').style.display = 'flex';
             
             rocketParts = [];
-            addPart("engine_med", 0, 12);
-            addPart("tank_med", 0, 54);
-            addPart("tank_med", 0, 114);
-            addPart("pod", 0, 159);
+            addPart("engine_med", 0, 12, 0);
+            addPart("tank_med", 0, 54, 0);
+            addPart("tank_med", 0, 114, 0);
+            addPart("pod", 0, 159, 0);
+            updateStats();
         };
 
-        // --- STATS CALCULATION ---
+        // --- STATS ---
         function updateStats() {
-            let mass = 0;
-            let fuel = 0;
-            let thrust = 0;
-
+            let mass = 0, fuel = 0, thrust = 0;
             rocketParts.forEach(p => {
-                const part = P[p.type];
-                mass += part.m;
-                fuel += part.f;
-                thrust += part.t;
+                mass += P[p.type].m; fuel += P[p.type].f; thrust += P[p.type].t;
             });
-
-            // Add fuel to total mass
             const totalMass = mass + fuel;
             const twr = thrust > 0 ? (thrust * 1000) / (totalMass * GRAVITY) : 0;
-
             document.getElementById('stat-mass').innerText = totalMass.toLocaleString() + " kg";
             document.getElementById('stat-fuel').innerText = fuel.toLocaleString() + " kg";
             document.getElementById('stat-thrust').innerText = thrust.toLocaleString() + " kN";
@@ -213,22 +219,57 @@ game_html = """
         // --- DRAG AND DROP ---
         let draggedPart = null;
         let dragGhost = null;
+        let isDraggingExisting = false;
+
+        function createGhost(type, angle) {
+            dragGhost = document.createElement('div');
+            dragGhost.style.position = 'absolute';
+            dragGhost.style.width = P[type].w + 'px';
+            dragGhost.style.height = P[type].h + 'px';
+            dragGhost.style.backgroundColor = type.includes('tank') ? '#fff' : (type.includes('engine') ? '#222' : '#888');
+            dragGhost.style.border = '2px dashed #00ffcc';
+            dragGhost.style.pointerEvents = 'none';
+            dragGhost.style.zIndex = 999999;
+            dragGhost.style.transform = `rotate(${angle}deg)`;
+            document.body.appendChild(dragGhost);
+        }
 
         document.querySelectorAll('.part-btn').forEach(item => {
             item.addEventListener('pointerdown', (e) => {
-                if (gameState !== "vab") return;
+                if (gameState !== "vab" || draggedPart) return;
                 draggedPart = item.dataset.type;
-                
-                dragGhost = document.createElement('div');
-                dragGhost.style.position = 'absolute';
-                dragGhost.style.width = P[draggedPart].w + 'px';
-                dragGhost.style.height = P[draggedPart].h + 'px';
-                dragGhost.style.backgroundColor = draggedPart.includes('tank') ? '#fff' : (draggedPart.includes('engine') ? '#222' : '#888');
-                dragGhost.style.border = '2px dashed #00ffcc';
-                dragGhost.style.pointerEvents = 'none';
-                dragGhost.style.zIndex = 999999;
-                document.body.appendChild(dragGhost);
+                currentRotation = 0;
+                createGhost(draggedPart, currentRotation);
+                isDraggingExisting = false;
             });
+        });
+
+        // PICK UP EXISTING PART
+        canvas.addEventListener('pointerdown', (e) => {
+            if (gameState !== "vab" || draggedPart) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            let mouseX = e.clientX - rect.left;
+            let mouseY = e.clientY - rect.top;
+            let worldX = (mouseX - canvas.width/2) / 1.2;
+            let worldY = (canvas.height * 0.8 - mouseY) / 1.2;
+
+            for (let i = rocketParts.length - 1; i >= 0; i--) {
+                let p = rocketParts[i];
+                let angle = p.angle || 0;
+                let pw = (angle % 180 === 0) ? P[p.type].w : P[p.type].h;
+                let ph = (angle % 180 === 0) ? P[p.type].h : P[p.type].w;
+                
+                if (Math.abs(worldX - p.x) < pw/2 && Math.abs(worldY - p.y) < ph/2) {
+                    draggedPart = p.type;
+                    currentRotation = angle;
+                    rocketParts.splice(i, 1);
+                    updateStats();
+                    createGhost(draggedPart, currentRotation);
+                    isDraggingExisting = true;
+                    break;
+                }
+            }
         });
 
         window.addEventListener('pointermove', (e) => {
@@ -238,53 +279,79 @@ game_html = """
             }
         });
 
+        // TRASH CAN HOVER
+        const trashCan = document.getElementById('trash-can');
+        trashCan.addEventListener('pointerenter', () => trashCan.classList.add('hover'));
+        trashCan.addEventListener('pointerleave', () => trashCan.classList.remove('hover'));
+
         window.addEventListener('pointerup', (e) => {
-            if (draggedPart) {
+            if (!draggedPart) return;
+
+            // Check Trash Can
+            const tr = trashCan.getBoundingClientRect();
+            if (e.clientX >= tr.left && e.clientX <= tr.right && e.clientY >= tr.top && e.clientY <= tr.bottom) {
+                draggedPart = null;
                 if (dragGhost) document.body.removeChild(dragGhost);
                 dragGhost = null;
-
-                if (e.target === canvas && gameState === "vab") {
-                    const rect = canvas.getBoundingClientRect();
-                    let mouseX = e.clientX - rect.left;
-                    let mouseY = e.clientY - rect.top;
-
-                    let worldX = (mouseX - canvas.width/2) / 1.2;
-                    let worldY = (canvas.height * 0.8 - mouseY) / 1.2;
-
-                    let snapX = Math.round(worldX / GRID) * GRID;
-                    let snapY = Math.round(worldY / GRID) * GRID;
-                    let minDist = 45; 
-
-                    if (rocketParts.length > 0) {
-                        rocketParts.forEach(p => {
-                            let pw = P[p.type].w;
-                            let ph = P[p.type].h;
-                            let nw = P[draggedPart].w;
-                            let nh = P[draggedPart].h;
-
-                            let dTop = Math.hypot(worldX - p.x, worldY - (p.y + ph/2));
-                            if (dTop < minDist) { minDist = dTop; snapX = p.x; snapY = p.y + ph/2 + nh/2; }
-
-                            let dBot = Math.hypot(worldX - p.x, worldY - (p.y - ph/2));
-                            if (dBot < minDist) { minDist = dBot; snapX = p.x; snapY = p.y - ph/2 - nh/2; }
-
-                            let dRight = Math.hypot(worldX - (p.x + pw/2), worldY - p.y);
-                            if (dRight < minDist) { minDist = dRight; snapX = p.x + pw/2 + nw/2; snapY = p.y; }
-
-                            let dLeft = Math.hypot(worldX - (p.x - pw/2), worldY - p.y);
-                            if (dLeft < minDist) { minDist = dLeft; snapX = p.x - pw/2 - nw/2; snapY = p.y; }
-                        });
-                    }
-
-                    addPart(draggedPart, snapX, snapY);
-                    updateStats();
-                }
-                draggedPart = null;
+                return;
             }
+
+            if (e.target === canvas && gameState === "vab") {
+                const rect = canvas.getBoundingClientRect();
+                let mouseX = e.clientX - rect.left;
+                let mouseY = e.clientY - rect.top;
+                let worldX = (mouseX - canvas.width/2) / 1.2;
+                let worldY = (canvas.height * 0.8 - mouseY) / 1.2;
+
+                let snapX = Math.round(worldX / GRID) * GRID;
+                let snapY = Math.round(worldY / GRID) * GRID;
+                let minDist = 45; 
+
+                let nw = (currentRotation % 180 === 0) ? P[draggedPart].w : P[draggedPart].h;
+                let nh = (currentRotation % 180 === 0) ? P[draggedPart].h : P[draggedPart].w;
+
+                if (rocketParts.length > 0) {
+                    rocketParts.forEach(p => {
+                        let pw = (p.angle % 180 === 0) ? P[p.type].w : P[p.type].h;
+                        let ph = (p.angle % 180 === 0) ? P[p.type].h : P[p.type].w;
+
+                        let dTop = Math.hypot(worldX - p.x, worldY - (p.y + ph/2));
+                        if (dTop < minDist) { minDist = dTop; snapX = p.x; snapY = p.y + ph/2 + nh/2; }
+
+                        let dBot = Math.hypot(worldX - p.x, worldY - (p.y - ph/2));
+                        if (dBot < minDist) { minDist = dBot; snapX = p.x; snapY = p.y - ph/2 - nh/2; }
+
+                        let dRight = Math.hypot(worldX - (p.x + pw/2), worldY - p.y);
+                        if (dRight < minDist) { minDist = dRight; snapX = p.x + pw/2 + nw/2; snapY = p.y; }
+
+                        let dLeft = Math.hypot(worldX - (p.x - pw/2), worldY - p.y);
+                        if (dLeft < minDist) { minDist = dLeft; snapX = p.x - pw/2 - nw/2; snapY = p.y; }
+                    });
+                }
+                addPart(draggedPart, snapX, snapY, currentRotation);
+                updateStats();
+            } else if (!isDraggingExisting && e.target !== canvas) {
+                // Dropped outside canvas, just destroy ghost
+            } else if (isDraggingExisting) {
+                // Return to original if dropped nowhere
+                addPart(draggedPart, worldX, worldY, currentRotation);
+                updateStats();
+            }
+
+            if (dragGhost) document.body.removeChild(dragGhost);
+            dragGhost = null;
+            draggedPart = null;
         });
 
-        function addPart(type, x, y) {
-            rocketParts.push({ type, x, y, id: Date.now() + Math.random() });
+        document.getElementById('btn-rotate').onclick = () => {
+            if (gameState === "vab") {
+                currentRotation = (currentRotation + 90) % 360;
+                if (dragGhost) dragGhost.style.transform = `rotate(${currentRotation}deg)`;
+            }
+        };
+
+        function addPart(type, x, y, angle = 0) {
+            rocketParts.push({ type, x, y, angle: angle });
         }
 
         // --- FLIGHT CONTROLS ---
@@ -311,44 +378,32 @@ game_html = """
         document.getElementById('joy-right').addEventListener('pointerdown', () => { rightPressed = true; });
         document.getElementById('joy-right').addEventListener('pointerup', () => { rightPressed = false; });
 
-        // --- STAGING LOGIC ---
+        // --- SMART STAGING ---
         document.getElementById('btn-stage').onclick = function() {
-            // Find all decouplers
-            let decouplers = rocketParts.filter(p => p.type === 'decoupler');
-            if (decouplers.length === 0) return; // Nothing to stage
-
-            // Sort by Y position (lowest first)
-            decouplers.sort((a, b) => a.y - b.y);
-            let lowestDecoupler = decouplers[0];
-
-            // Find parts to drop (everything below the decoupler, or side boosters attached via decouplers)
-            let partsToKeep = [];
-            let partsToDrop = [];
-
-            rocketParts.forEach(p => {
-                if (p.y < lowestDecoupler.y) {
-                    partsToDrop.push(p); // Everything below drops
-                } else {
-                    // Check if it's a side booster attached via decoupler
-                    let isSideDrop = false;
-                    if (p.type === 'booster' || p.type === 'tank_small') {
-                        if (Math.abs(p.x) > 20 && p.y <= lowestDecoupler.y + 50) {
-                            isSideDrop = true;
-                        }
-                    }
-                    if (isSideDrop) partsToDrop.push(p);
-                    else partsToKeep.push(p);
-                }
-            });
-
-            // Also drop the decoupler itself
-            partsToDrop.push(lowestDecoupler);
-
-            rocketParts = partsToKeep;
-            updateStats();
+            let sideDecouplers = rocketParts.filter(p => p.type === 'decoupler' && Math.abs(p.x) > 10);
             
-            // Visual effect (fake explosion of parts)
-            alert("STAGE SEPARATED!");
+            if (sideDecouplers.length > 0) {
+                // Drop side boosters
+                let dropX = sideDecouplers[0].x;
+                let partsToDrop = rocketParts.filter(p => Math.abs(p.x - dropX) < 5);
+                rocketParts = rocketParts.filter(p => !partsToDrop.includes(p));
+                
+                // Drop other side
+                let otherSide = rocketParts.find(p => p.type === 'decoupler' && Math.abs(p.x + dropX) < 5);
+                if (otherSide) {
+                    let dropX2 = otherSide.x;
+                    let partsToDrop2 = rocketParts.filter(p => Math.abs(p.x - dropX2) < 5);
+                    rocketParts = rocketParts.filter(p => !partsToDrop2.includes(p));
+                }
+            } else {
+                // Drop center stage
+                let centerDec = rocketParts.filter(p => p.type === 'decoupler');
+                if (centerDec.length === 0) return;
+                centerDec.sort((a, b) => a.y - b.y);
+                let lowest = centerDec[0];
+                rocketParts = rocketParts.filter(p => p.y >= lowest.y);
+            }
+            updateStats();
         };
 
         // --- LAUNCH ---
@@ -356,7 +411,8 @@ game_html = """
             if (gameState === "vab") {
                 let minX = 9999, maxX = -9999, minY = 9999;
                 rocketParts.forEach(p => {
-                    let pw = P[p.type].w, ph = P[p.type].h;
+                    let pw = (p.angle % 180 === 0) ? P[p.type].w : P[p.type].h;
+                    let ph = (p.angle % 180 === 0) ? P[p.type].h : P[p.type].w;
                     if (p.x - pw/2 < minX) minX = p.x - pw/2;
                     if (p.x + pw/2 > maxX) maxX = p.x + pw/2;
                     if (p.y - ph/2 < minY) minY = p.y - ph/2;
@@ -367,19 +423,19 @@ game_html = """
                 gameState = "flight";
                 document.getElementById('vab-menu').style.display = 'none';
                 document.getElementById('vab-stats').style.display = 'none';
+                document.getElementById('btn-rotate').style.display = 'none';
+                document.getElementById('trash-can').style.display = 'none';
                 this.style.display = 'none';
                 document.getElementById('hud').style.display = 'block';
                 document.getElementById('throttle-zone').style.display = 'block';
                 document.getElementById('arrow-zone').style.display = 'flex';
                 document.getElementById('btn-stage').style.display = 'block';
 
-                // Init flight state
                 let initialStats = { m: 0, f: 0 };
                 rocketParts.forEach(p => { initialStats.m += P[p.type].m; initialStats.f += P[p.type].f; });
                 state.dryMass = initialStats.m;
                 state.maxFuel = initialStats.f;
                 state.currentFuel = initialStats.f;
-                state.totalMass = state.dryMass + state.currentFuel;
             }
         };
 
@@ -396,8 +452,6 @@ game_html = """
 
             let thrust = 0;
             rocketParts.forEach(p => thrust += P[p.type].t);
-
-            // Recalculate mass based on current fuel
             state.totalMass = state.dryMass + state.currentFuel;
 
             let ay = -GRAVITY;
@@ -408,7 +462,6 @@ game_html = """
                 let rad = state.angle * (Math.PI / 180);
                 ax += thrustAccel * Math.sin(rad);
                 ay += thrustAccel * Math.cos(rad);
-                
                 state.currentFuel -= 50 * state.throttle * dt; 
                 if (state.currentFuel < 0) state.currentFuel = 0;
             }
@@ -430,7 +483,6 @@ game_html = """
             }
 
             state.cameraY += (state.y - state.cameraY) * 5 * dt;
-
             document.getElementById('val-alt').innerText = state.y.toFixed(1);
             document.getElementById('val-vel').innerText = Math.sqrt(state.vx*state.vx + state.vy*state.vy).toFixed(1);
             document.getElementById('val-mass').innerText = state.totalMass.toFixed(0);
@@ -464,24 +516,32 @@ game_html = """
         }
 
         function drawPart(p, py) {
-            const x = p.x, y = py, w = P[p.type].w, h = P[p.type].h;
+            const w = P[p.type].w, h = P[p.type].h;
+            const angle = (p.angle || 0) * Math.PI / 180;
+            
+            ctx.save();
+            ctx.translate(p.x, py);
+            ctx.rotate(angle);
+            
             if (p.type === "pod") {
-                ctx.fillStyle = "#888"; ctx.beginPath(); ctx.moveTo(x-w/2,y+h/2); ctx.lineTo(x+w/2,y+h/2); ctx.lineTo(x+w/3,y-h/2); ctx.lineTo(x-w/3,y-h/2); ctx.fill();
-                ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(x, y, w/4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#888"; 
+                ctx.beginPath(); ctx.moveTo(-w/2, h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(w/3, -h/2); ctx.lineTo(-w/3, -h/2); ctx.fill();
+                ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(0, 0, w/4, 0, Math.PI*2); ctx.fill();
             } else if (p.type === "nose") {
-                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(x-w/2,y+h/2); ctx.lineTo(x+w/2,y+h/2); ctx.lineTo(x,y-h/2); ctx.fill();
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(-w/2, h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(0, -h/2); ctx.fill();
             } else if (p.type.includes("tank")) {
-                let grad = ctx.createLinearGradient(x-w/2,0,x+w/2,0); grad.addColorStop(0,"#aaa"); grad.addColorStop(0.5,"#fff"); grad.addColorStop(1,"#888");
-                ctx.fillStyle = grad; ctx.fillRect(x-w/2, y-h/2, w, h);
+                let grad = ctx.createLinearGradient(-w/2, 0, w/2, 0); grad.addColorStop(0,"#aaa"); grad.addColorStop(0.5,"#fff"); grad.addColorStop(1,"#888");
+                ctx.fillStyle = grad; ctx.fillRect(-w/2, -h/2, w, h);
             } else if (p.type.includes("engine")) {
-                ctx.fillStyle = "#222"; ctx.beginPath(); ctx.moveTo(x-w/3,y-h/2); ctx.lineTo(x+w/3,y-h/2); ctx.lineTo(x+w/2,y+h/2); ctx.lineTo(x-w/2,y+h/2); ctx.fill();
+                ctx.fillStyle = "#222"; ctx.beginPath(); ctx.moveTo(-w/3, -h/2); ctx.lineTo(w/3, -h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(-w/2, h/2); ctx.fill();
             } else if (p.type === "booster") {
-                ctx.fillStyle = "#ddd"; ctx.fillRect(x-w/2, y-h/2, w, h);
+                ctx.fillStyle = "#ddd"; ctx.fillRect(-w/2, -h/2, w, h);
             } else if (p.type === "strut") {
-                ctx.fillStyle = "#666"; ctx.fillRect(x-w/2, y-h/2, w, h);
+                ctx.fillStyle = "#666"; ctx.fillRect(-w/2, -h/2, w, h);
             } else if (p.type === "decoupler") {
-                ctx.fillStyle = "#5c3a21"; ctx.fillRect(x-w/2, y-h/2, w, h);
+                ctx.fillStyle = "#5c3a21"; ctx.fillRect(-w/2, -h/2, w, h);
             }
+            ctx.restore();
         }
 
         function draw() {
