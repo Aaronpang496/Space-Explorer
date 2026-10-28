@@ -477,7 +477,7 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
-                state.y = 50; 
+                state.y = 50; // START SAFELY ABOVE THE GROUND
                 state.vy = 0; state.vx = 0;
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
@@ -512,6 +512,7 @@ game_html = """
         document.getElementById('btn-reset').onclick = () => window.location.reload();
 
         function updatePhysics(dt) {
+            // FIXED: Strict pause until flight mode begins
             if (gameState !== "flight") return;
 
             if (leftPressed) state.angularVelocity -= 1.5 * dt;
@@ -547,7 +548,7 @@ game_html = """
                     document.getElementById('val-fuel').style.color = "#ff4444";
                 }
 
-                // FIXED: Fire particles now rotate with the rocket
+                // Fire particles rotate with the rocket
                 for(let i=0; i<5; i++) {
                     let rad = state.angle * (Math.PI / 180);
                     let exhaustX = state.x - Math.sin(rad) * 20;
@@ -673,9 +674,9 @@ game_html = """
             if (gameState === "vab") {
                 ctx.fillStyle = "#2b3a4a";
             } else {
-                if (state.y < 1000) ctx.fillStyle = "#87CEEB"; // Blue sky
-                else if (state.y < 3000) ctx.fillStyle = "#1a3b5c"; // Dark blue
-                else ctx.fillStyle = "#000000"; // Space
+                if (state.y < 1000) ctx.fillStyle = "#87CEEB"; 
+                else if (state.y < 3000) ctx.fillStyle = "#1a3b5c"; 
+                else ctx.fillStyle = "#000000"; 
             }
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
