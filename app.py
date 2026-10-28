@@ -18,12 +18,12 @@ game_html = """
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #2b3a4a; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; }
         canvas { display: block; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
         
         /* START SCREEN */
-        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000000; }
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000000; }
         #btn-start { background: #00ffcc; color: #000; border: none; padding: 20px 50px; font-size: 28px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 0 20px #00ffcc; }
         .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 50px; text-shadow: 0 0 20px #4a90e2; }
 
@@ -59,17 +59,17 @@ game_html = """
         /* FLIGHT HUD */
         #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
         
-        /* FLIGHT CONTROLS (Pushed high for mobile) */
-        #throttle-zone { position: absolute; right: 15px; bottom: 160px; width: 40px; height: 160px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 20px; pointer-events: auto; display: none; z-index: 100000; }
+        /* FLIGHT CONTROLS (Mobile Safe Zone) */
+        #throttle-zone { position: absolute; right: 15px; bottom: 160px; width: 40px; height: 160px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 20px; pointer-events: auto; display: none; z-index: 100000; }
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 18px;}
         
         #arrow-zone { position: absolute; left: 15px; bottom: 160px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
-        .arrow-btn { width: 55px; height: 75px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
+        .arrow-btn { width: 55px; height: 75px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
         
         #btn-stage { position: absolute; bottom: 160px; right: 75px; width: 70px; height: 45px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
-        #btn-legs { position: absolute; bottom: 220px; right: 75px; width: 70px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-legs { position: absolute; bottom: 220px; right: 75px; width: 70px; height: 40px; background: rgba(255,255,255,0.1); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
-        #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.1); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
 
         /* MINIMAP */
         #minimap-container { position: absolute; top: 100px; right: 15px; width: 80px; height: 80px; border: 2px solid #555; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000;}
@@ -162,6 +162,13 @@ game_html = """
 
         let gameState = "menu"; 
         
+        const planetsDB = {
+            "Earth": { ground: "#2e4a2e", g: 9.81, color: "#4a90e2" },
+            "Moon": { ground: "#555555", g: 1.62, color: "#9ca3af" },
+            "Mars": { ground: "#8a2be2", g: 3.71, color: "#ea580c" },
+            "Jupiter": { ground: "#8b4513", g: 24.79, color: "#d4a373" }
+        };
+
         let state = {
             x: 0, y: 0, vx: 0, vy: 0, 
             angle: 0, angularVelocity: 0, 
@@ -170,12 +177,13 @@ game_html = """
             hasLiftedOff: false,
             legsDeployed: false, legsProgress: 0,
             chuteDeployed: false,
+            currentPlanet: "Earth",
             cameraY: 0, lastTime: performance.now(),
             particles: [],
+            stars: [],
             shake: 0
         };
 
-        const GRAVITY = 9.81;
         const GRID = 10;
         let rocketParts = []; 
         let currentSelectedPart = "pod";
@@ -195,6 +203,15 @@ game_html = """
             legs:        { w: 24, h: 20, m: 100,  f: 0,    t: 0 }
         };
 
+        // Generate Static Stars
+        for(let i=0; i<300; i++) {
+            state.stars.push({
+                x: Math.random() * 2000 - 1000,
+                y: Math.random() * 30000 - 15000,
+                size: Math.random() * 2 + 1
+            });
+        }
+
         document.getElementById('btn-start').onclick = function() {
             gameState = "vab";
             document.getElementById('start-screen').style.display = 'none';
@@ -205,9 +222,8 @@ game_html = """
             rocketParts = [];
             addPart("engine_med", 0, 12);
             addPart("tank_med", 0, 54);
-            addPart("tank_med", 0, 114);
-            addPart("pod", 0, 156);
-            addPart("chute", 0, 174);
+            addPart("pod", 0, 96);
+            addPart("chute", 0, 114);
             updateStats();
         };
 
@@ -216,13 +232,11 @@ game_html = """
             rocketParts.forEach(p => {
                 mass += P[p.type].m; fuel += P[p.type].f; thrust += P[p.type].t;
             });
-            const totalMass = mass + fuel;
-            document.getElementById('stat-mass').innerText = totalMass.toLocaleString() + " kg";
+            document.getElementById('stat-mass').innerText = (mass + fuel).toLocaleString() + " kg";
             document.getElementById('stat-fuel').innerText = fuel.toLocaleString() + " kg";
             document.getElementById('stat-thrust').innerText = thrust.toLocaleString() + " kN";
         }
 
-        // DRAG AND DROP (Mobile Friendly)
         let isDraggingPart = false;
         let draggedType = null;
         let dragGhost = null;
@@ -230,7 +244,7 @@ game_html = """
         document.querySelectorAll('.part-btn').forEach(item => {
             item.addEventListener('pointerdown', (e) => {
                 if (gameState !== "vab") return;
-                e.preventDefault(); // Stop mobile scrolling
+                e.preventDefault(); 
                 
                 document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
                 item.classList.add('active');
@@ -242,7 +256,12 @@ game_html = """
                 dragGhost.style.position = 'absolute';
                 dragGhost.style.width = P[draggedType].w + 'px';
                 dragGhost.style.height = P[draggedType].h + 'px';
-                dragGhost.style.backgroundColor = draggedType.includes('tank') ? '#fff' : (draggedType.includes('engine') ? '#222' : '#888');
+                
+                if (draggedType === 'chute') dragGhost.style.backgroundColor = '#f44';
+                else if (draggedType.includes('tank')) dragGhost.style.backgroundColor = '#fff';
+                else if (draggedType.includes('engine')) dragGhost.style.backgroundColor = '#222';
+                else dragGhost.style.backgroundColor = '#888';
+                
                 dragGhost.style.border = '2px dashed #00ffcc';
                 dragGhost.style.pointerEvents = 'none';
                 dragGhost.style.zIndex = 999999;
@@ -306,7 +325,6 @@ game_html = """
             rocketParts.push({ type, x, y });
         }
 
-        // FLIGHT CONTROLS
         let isDraggingThrottle = false;
         let leftPressed = false;
         let rightPressed = false;
@@ -343,12 +361,6 @@ game_html = """
                 let dropX = sideDecouplers[0].x;
                 let partsToDrop = rocketParts.filter(p => Math.abs(p.x - dropX) < 5);
                 rocketParts = rocketParts.filter(p => !partsToDrop.includes(p));
-                let otherSide = rocketParts.find(p => p.type === 'decoupler' && Math.abs(p.x + dropX) < 5);
-                if (otherSide) {
-                    let dropX2 = otherSide.x;
-                    let partsToDrop2 = rocketParts.filter(p => Math.abs(p.x - dropX2) < 5);
-                    rocketParts = rocketParts.filter(p => !partsToDrop2.includes(p));
-                }
             } else {
                 let centerDec = rocketParts.filter(p => p.type === 'decoupler');
                 if (centerDec.length === 0) return;
@@ -362,20 +374,15 @@ game_html = """
             state.dryMass = m;
             state.maxFuel = f;
             if (state.currentFuel > state.maxFuel) state.currentFuel = state.maxFuel;
-            
             updateStats();
         };
 
-        // MAP
         const mapOverlay = document.getElementById('map-overlay');
         const planetsMap = [
             { name: "Earth", color: "#4a90e2", x: 0.3 },
             { name: "Moon", color: "#9ca3af", x: 0.4 },
             { name: "Mars", color: "#ea580c", x: 0.5 },
-            { name: "Jupiter", color: "#d4a373", x: 0.6 },
-            { name: "Saturn", color: "#e3d5a1", x: 0.7 },
-            { name: "Uranus", color: "#b2e3e6", x: 0.8 },
-            { name: "Neptune", color: "#3b5bdb", x: 0.9 }
+            { name: "Jupiter", color: "#d4a373", x: 0.6 }
         ];
 
         document.getElementById('btn-map').onclick = () => {
@@ -402,6 +409,7 @@ game_html = """
             
             planetsMap.forEach(p => {
                 if (Math.abs(x - p.x) < 0.05 && Math.abs(y - 0.5) < 0.1) {
+                    state.currentPlanet = p.name;
                     state.y = 5000; 
                     state.vy = 0; state.vx = 0;
                     state.throttle = 0;
@@ -414,16 +422,11 @@ game_html = """
         document.getElementById('btn-launch').onclick = function(e) {
             e.stopPropagation();
             if (gameState === "vab") {
-                let minX = 9999, maxX = -9999, minY = 9999;
+                let minY = 9999;
                 rocketParts.forEach(p => {
-                    let pw = P[p.type].w;
-                    let ph = P[p.type].h;
-                    if (p.x - pw/2 < minX) minX = p.x - pw/2;
-                    if (p.x + pw/2 > maxX) maxX = p.x + pw/2;
-                    if (p.y - ph/2 < minY) minY = p.y - ph/2;
+                    if (p.y - P[p.type].h/2 < minY) minY = p.y - P[p.type].h/2;
                 });
-                let offsetX = (minX + maxX) / 2;
-                rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
+                rocketParts.forEach(p => { p.y -= minY; });
 
                 gameState = "flight";
                 state.y = 0; 
@@ -435,6 +438,7 @@ game_html = """
                 state.hasLiftedOff = false;
                 state.cameraY = 0; 
                 state.shake = 0;
+                state.currentPlanet = "Earth";
 
                 document.getElementById('vab-menu').style.display = 'none';
                 document.getElementById('vab-stats').style.display = 'none';
@@ -475,7 +479,8 @@ game_html = """
             rocketParts.forEach(p => thrust += P[p.type].t);
             state.totalMass = state.dryMass + state.currentFuel;
 
-            let currentGravity = GRAVITY * Math.max(0.1, 1 - (state.y / 100000)); 
+            let currentGravity = planetsDB[state.currentPlanet].g;
+
             let ay = -currentGravity;
             let ax = 0;
 
@@ -510,7 +515,6 @@ game_html = """
                 }
             }
 
-            // Auto Parachute
             if (state.hasLiftedOff && state.y < 3000 && state.vy < -10 && !state.chuteDeployed) {
                 if (rocketParts.some(p => p.type === 'chute')) {
                     state.chuteDeployed = true;
@@ -528,7 +532,6 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
-            // Ground Collision
             if (state.y <= 0) {
                 state.y = 0;
                 if (state.hasLiftedOff && (state.vy < -5 || !state.legsDeployed) && !state.chuteDeployed) {
@@ -537,9 +540,8 @@ game_html = """
                     
                     for(let i=0; i<100; i++) {
                         let col = "255,100,0"; 
-                        let r = Math.random();
-                        if (r > 0.8) col = "255,255,0"; 
-                        else if (r > 0.5) col = "255,50,0"; 
+                        if (Math.random() > 0.8) col = "255,255,0"; 
+                        else if (Math.random() > 0.5) col = "255,50,0"; 
 
                         state.particles.push({
                             x: state.x + (Math.random()-0.5)*30, 
@@ -605,7 +607,6 @@ game_html = """
 
         function drawPart(p, py) {
             const w = P[p.type].w, h = P[p.type].h;
-            
             ctx.save();
             ctx.translate(p.x, py);
             
@@ -641,30 +642,44 @@ game_html = """
                 ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
             }
 
-            // SMOOTH SKY TRANSITION
+            // SKY GRADIENT
             if (gameState === "vab") {
                 ctx.fillStyle = "#2b3a4a";
             } else {
-                let alt = state.y;
-                if (alt < 1500) {
-                    ctx.fillStyle = "#87CEEB";
-                } else if (alt < 8000) {
-                    let ratio = (alt - 1500) / (8000 - 1500);
-                    let r = 135 - (135 - 26) * ratio;
-                    let g = 206 - (206 - 59) * ratio;
-                    let b = 235 - (235 - 92) * ratio;
-                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                } else if (alt < 20000) {
-                    let ratio = (alt - 8000) / (20000 - 8000);
-                    let r = 26 - (26) * ratio;
-                    let g = 59 - (59) * ratio;
-                    let b = 92 - (92) * ratio;
-                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                if (state.currentPlanet === "Earth") {
+                    let alt = state.y;
+                    if (alt < 1500) {
+                        ctx.fillStyle = "#87CEEB";
+                    } else if (alt < 8000) {
+                        let ratio = (alt - 1500) / (8000 - 1500);
+                        let r = 135 - (135 - 26) * ratio;
+                        let g = 206 - (206 - 59) * ratio;
+                        let b = 235 - (235 - 92) * ratio;
+                        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    } else if (alt < 20000) {
+                        let ratio = (alt - 8000) / (20000 - 8000);
+                        let r = 26 - (26) * ratio;
+                        let g = 59 - (59) * ratio;
+                        let b = 92 - (92) * ratio;
+                        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    } else {
+                        ctx.fillStyle = "#000000";
+                    }
                 } else {
-                    ctx.fillStyle = "#000000";
+                    ctx.fillStyle = "#000000"; // Other planets are just black
                 }
             }
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // DRAW STARS IF IN SPACE OR ON OTHER PLANETS
+            if (gameState !== "vab" && (state.currentPlanet !== "Earth" || state.y > 8000)) {
+                ctx.fillStyle = "#fff";
+                state.stars.forEach(star => {
+                    ctx.beginPath();
+                    ctx.arc(canvas.width/2 + star.x, canvas.height/2 - (star.y - state.cameraY), star.size, 0, Math.PI*2);
+                    ctx.fill();
+                });
+            }
 
             ctx.translate(canvas.width/2, canvas.height*0.8);
             
@@ -678,7 +693,7 @@ game_html = """
             } else {
                 ctx.translate(-state.x, state.cameraY);
 
-                ctx.fillStyle = "#4a3b2c"; 
+                ctx.fillStyle = planetsDB[state.currentPlanet].ground; 
                 ctx.fillRect(-10000, 0, 20000, 10000);
                 
                 state.particles.forEach(p => {
@@ -720,7 +735,7 @@ game_html = """
             if (gameState !== "vab") {
                 minimapCtx.fillStyle = "#000";
                 minimapCtx.fillRect(0, 0, 80, 80);
-                minimapCtx.fillStyle = "#4a90e2";
+                minimapCtx.fillStyle = planetsDB[state.currentPlanet].color;
                 minimapCtx.beginPath();
                 minimapCtx.arc(40, 40 + (state.y / 100), 5, 0, Math.PI * 2); 
                 minimapCtx.fill();
