@@ -59,15 +59,15 @@ game_html = """
         /* FLIGHT HUD */
         #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
         
-        /* FLIGHT CONTROLS (Mobile Optimized) */
-        #throttle-zone { position: absolute; right: 20px; bottom: 120px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        /* FLIGHT CONTROLS */
+        #throttle-zone { position: absolute; right: 20px; bottom: 100px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 22px;}
         
-        #arrow-zone { position: absolute; left: 20px; bottom: 120px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
+        #arrow-zone { position: absolute; left: 20px; bottom: 100px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
         .arrow-btn { width: 60px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px);}
         
-        #btn-stage { position: absolute; bottom: 120px; right: 85px; width: 75px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
-        #btn-legs { position: absolute; bottom: 180px; right: 85px; width: 75px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-stage { position: absolute; bottom: 100px; right: 85px; width: 75px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-legs { position: absolute; bottom: 160px; right: 85px; width: 75px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
         #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
 
@@ -290,11 +290,17 @@ game_html = """
                 let mouseX = e.clientX - rect.left;
                 let mouseY = e.clientY - rect.top;
                 let worldX = (mouseX - canvas.width/2) / 1.2;
-                let worldY = (canvas.height * 0.8 - mouseY) / 1.2;
+                
+                // VAB Camera adjustment
+                let maxY = 0;
+                if (rocketParts.length > 0) {
+                    rocketParts.forEach(p => { if (p.y > maxY) maxY = p.y; });
+                }
+                let worldY = (canvas.height * 0.8 - maxY * 0.5 - mouseY) / 1.2;
 
                 let snapX = Math.round(worldX / GRID) * GRID;
                 let snapY = Math.round(worldY / GRID) * GRID;
-                let minDist = 40; 
+                let minDist = 70; 
 
                 let nw = P[draggedType].w;
                 let nh = P[draggedType].h;
@@ -684,16 +690,30 @@ game_html = """
                 });
             }
 
-            ctx.translate(canvas.width/2, canvas.height*0.8);
-            
-            let zoom = gameState === "vab" ? 1.2 : Math.max(0.4, 1.2 - (state.y/10000));
-            ctx.scale(zoom, zoom);
-
+            // --- CAMERA LOGIC ---
             if (gameState === "vab") {
+                let maxY = 0;
+                if (rocketParts.length > 0) {
+                    rocketParts.forEach(p => { if (p.y > maxY) maxY = p.y; });
+                }
+                // Pan camera upwards as rocket gets taller
+                ctx.translate(canvas.width/2, canvas.height * 0.8 - maxY * 0.5);
+                ctx.scale(1.2, 1.2);
+
+                ctx.fillStyle = "#444";
+                ctx.fillRect(-500, 0, 1000, 10);
+
                 ctx.strokeStyle = "rgba(255,255,255,0.1)";
                 for(let i=-1000;i<1000;i+=GRID){ctx.beginPath();ctx.moveTo(i,-1000);ctx.lineTo(i,1000);ctx.stroke();ctx.beginPath();ctx.moveTo(-1000,i);ctx.lineTo(1000,i);ctx.stroke();}
                 rocketParts.forEach(p => drawPart(p, -p.y));
+                
             } else {
+                ctx.translate(canvas.width/2, canvas.height * 0.7);
+                
+                // LIMIT ZOOM OUT: Min zoom is now 0.65 instead of 0.4
+                let zoom = Math.max(0.65, 1.2 - (state.y / 30000));
+                ctx.scale(zoom, zoom);
+                
                 ctx.translate(-state.x, state.cameraY);
 
                 ctx.fillStyle = planetsDB[state.currentPlanet].ground; 
