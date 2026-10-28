@@ -60,14 +60,14 @@ game_html = """
         #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
         
         /* FLIGHT CONTROLS */
-        #throttle-zone { position: absolute; right: 20px; bottom: 100px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #throttle-zone { position: absolute; right: 20px; bottom: 120px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 22px;}
         
-        #arrow-zone { position: absolute; left: 20px; bottom: 100px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
+        #arrow-zone { position: absolute; left: 20px; bottom: 120px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
         .arrow-btn { width: 60px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px);}
         
-        #btn-stage { position: absolute; bottom: 100px; right: 85px; width: 75px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
-        #btn-legs { position: absolute; bottom: 160px; right: 85px; width: 75px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-stage { position: absolute; bottom: 120px; right: 85px; width: 75px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-legs { position: absolute; bottom: 180px; right: 85px; width: 75px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
         #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
 
@@ -285,8 +285,9 @@ game_html = """
             dragGhost = null;
             isDraggingPart = false;
 
-            if (e.target === canvas && gameState === "vab") {
-                const rect = canvas.getBoundingClientRect();
+            // FIX: Check if drop happened anywhere inside the canvas bounds
+            const rect = canvas.getBoundingClientRect();
+            if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom && gameState === "vab") {
                 let mouseX = e.clientX - rect.left;
                 let mouseY = e.clientY - rect.top;
                 let worldX = (mouseX - canvas.width/2) / 1.2;
@@ -710,7 +711,6 @@ game_html = """
             } else {
                 ctx.translate(canvas.width/2, canvas.height * 0.7);
                 
-                // LIMIT ZOOM OUT: Min zoom is now 0.65 instead of 0.4
                 let zoom = Math.max(0.65, 1.2 - (state.y / 30000));
                 ctx.scale(zoom, zoom);
                 
