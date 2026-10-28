@@ -59,15 +59,15 @@ game_html = """
         /* FLIGHT HUD */
         #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
         
-        /* FLIGHT CONTROLS */
-        #throttle-zone { position: absolute; right: 20px; bottom: 120px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        /* FLIGHT CONTROLS - PERCENTAGE BASED FOR MOBILE */
+        #throttle-zone { position: absolute; right: 15px; bottom: 25%; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 22px;}
         
-        #arrow-zone { position: absolute; left: 20px; bottom: 120px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
+        #arrow-zone { position: absolute; left: 15px; bottom: 25%; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
         .arrow-btn { width: 60px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px);}
         
-        #btn-stage { position: absolute; bottom: 120px; right: 85px; width: 75px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
-        #btn-legs { position: absolute; bottom: 180px; right: 85px; width: 75px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-stage { position: absolute; bottom: 25%; right: 75px; width: 70px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-legs { position: absolute; bottom: 35%; right: 75px; width: 70px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
         #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
 
@@ -285,14 +285,12 @@ game_html = """
             dragGhost = null;
             isDraggingPart = false;
 
-            // FIX: Check if drop happened anywhere inside the canvas bounds
             const rect = canvas.getBoundingClientRect();
             if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom && gameState === "vab") {
                 let mouseX = e.clientX - rect.left;
                 let mouseY = e.clientY - rect.top;
                 let worldX = (mouseX - canvas.width/2) / 1.2;
                 
-                // VAB Camera adjustment
                 let maxY = 0;
                 if (rocketParts.length > 0) {
                     rocketParts.forEach(p => { if (p.y > maxY) maxY = p.y; });
@@ -512,19 +510,36 @@ game_html = """
                     document.getElementById('val-fuel').style.color = "#ff4444";
                 }
 
-                for(let i=0; i<5; i++) {
-                    let rad = state.angle * (Math.PI / 180);
-                    let exhaustX = state.x - Math.sin(rad) * 20;
-                    let exhaustY = state.y - Math.cos(rad) * 20;
-                    
-                    state.particles.push({
-                        x: exhaustX + (Math.random()-0.5)*10, 
-                        y: exhaustY + (Math.random()-0.5)*10,
-                        vx: -Math.sin(rad) * 100 + (Math.random()-0.5)*30,
-                        vy: -Math.cos(rad) * 100 + (Math.random()-0.5)*30,
-                        life: 1.0, size: Math.random()*10+5, color: "255,150,0"
-                    });
-                }
+                // --- SEPARATE FIRE FOR EACH ENGINE ---
+                let radF = state.angle * (Math.PI / 180);
+                let cosA = Math.cos(radF);
+                let sinA = Math.sin(radF);
+                
+                rocketParts.forEach(eng => {
+                    if (eng.type.includes("engine")) {
+                        // Nozzle position relative to rocket center
+                        let lx = eng.x;
+                        let ly = eng.y - (P[eng.type].h / 2);
+                        
+                        // Rotate by angle
+                        let rx = lx * cosA + ly * sinA;
+                        let ry = -lx * sinA + ly * cosA;
+                        
+                        // World position
+                        let wx = state.x + rx;
+                        let wy = state.y + ry;
+                        
+                        for(let i=0; i<3; i++) {
+                            state.particles.push({
+                                x: wx + (Math.random()-0.5)*P[eng.type].w, 
+                                y: wy, 
+                                vx: -sinA * 120 + (Math.random()-0.5)*40,
+                                vy: -cosA * 120 + (Math.random()-0.5)*40,
+                                life: 1.0, size: Math.random()*12+5, color: "255,150,0"
+                            });
+                        }
+                    }
+                });
             }
 
             if (state.hasLiftedOff && state.y < 3000 && state.vy < -10 && !state.chuteDeployed) {
@@ -697,7 +712,6 @@ game_html = """
                 if (rocketParts.length > 0) {
                     rocketParts.forEach(p => { if (p.y > maxY) maxY = p.y; });
                 }
-                // Pan camera upwards as rocket gets taller
                 ctx.translate(canvas.width/2, canvas.height * 0.8 - maxY * 0.5);
                 ctx.scale(1.2, 1.2);
 
