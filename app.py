@@ -548,7 +548,6 @@ game_html = """
                     document.getElementById('val-fuel').style.color = "#ff4444";
                 }
 
-                // Fire particles rotate with the rocket
                 for(let i=0; i<5; i++) {
                     let rad = state.angle * (Math.PI / 180);
                     let exhaustX = state.x - Math.sin(rad) * 20;
@@ -572,6 +571,7 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
+            // Fixed: Check total speed (hypot) for crash
             if (state.y < 0) {
                 state.y = 0;
                 if (Math.hypot(state.vx, state.vy) > 5 || !state.legsDeployed) {
