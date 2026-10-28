@@ -21,6 +21,7 @@ game_html = """
         body { margin: 0; overflow: hidden; background-color: #2b3a4a; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; }
         canvas { display: block; }
         
+        /* UI LAYER */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
         
         /* START SCREEN */
@@ -29,7 +30,7 @@ game_html = """
         #btn-start:active { transform: scale(0.95); }
         .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 50px; text-shadow: 0 0 20px #4a90e2; text-align: center;}
 
-        /* VAB Menu */
+        /* VAB Menu (Left) */
         #vab-menu { position: absolute; top: 10px; left: 10px; width: 100px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; display: none; flex-direction: column; align-items: center; padding: 10px 0; pointer-events: auto; max-height: 85vh; overflow-y: auto; z-index: 100000;}
         .part-btn { width: 80px; height: 60px; margin: 4px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
         .part-btn:active { cursor: grabbing; border-color: #00ffcc; }
@@ -49,7 +50,7 @@ game_html = """
         .m-strut { width: 6px; height: 30px; background: #666;}
         .m-legs { width: 20px; height: 15px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
 
-        /* VAB Stats */
+        /* VAB Stats Panel (Right) */
         #vab-stats { position: absolute; top: 10px; right: 10px; width: 150px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 15px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
@@ -73,7 +74,10 @@ game_html = """
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
         #btn-map { position: absolute; top: 15px; left: 15px; width: 60px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
 
+        /* Rotate Button */
         #btn-rotate { position: absolute; top: 200px; right: 10px; width: 60px; height: 60px; background: rgba(0, 0, 0, 0.85); border: 2px solid #00ffcc; color: white; border-radius: 10px; font-size: 24px; display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 100000; cursor: pointer;}
+
+        /* Trash Can */
         #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
         #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; transform: scale(1.1); }
 
@@ -122,7 +126,7 @@ game_html = """
             ALT: <span id="val-alt">0</span> m<br>
             VEL: <span id="val-vel">0</span> m/s<br>
             MASS: <span id="val-mass">0</span> kg<br>
-            FUEL: <span id="val-fuel">100</span>%
+            FUEL: <span id="val-fuel" style="color:#00ffcc">100</span>%
         </div>
         
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
@@ -270,7 +274,7 @@ game_html = """
                     draggedPart = p.type;
                     currentRotation = angle;
                     rocketParts.splice(i, 1);
-                    updateStats();
+                    updateStats(); // FIXED: Update stats when picking up
                     createGhost(draggedPart, currentRotation);
                     isDraggingExisting = true;
                     break;
@@ -297,6 +301,7 @@ game_html = """
                 draggedPart = null;
                 if (dragGhost) document.body.removeChild(dragGhost);
                 dragGhost = null;
+                updateStats(); // FIXED: Update stats when deleting
                 return;
             }
 
@@ -404,6 +409,14 @@ game_html = """
                 let lowest = centerDec[0];
                 rocketParts = rocketParts.filter(p => p.y >= lowest.y);
             }
+            
+            // FIXED: Recalculate mass and fuel after dropping a stage
+            let m = 0, f = 0;
+            rocketParts.forEach(p => { m += P[p.type].m; f += P[p.type].f; });
+            state.dryMass = m;
+            state.maxFuel = f;
+            if (state.currentFuel > state.maxFuel) state.currentFuel = state.maxFuel;
+            
             updateStats();
         };
 
@@ -468,6 +481,7 @@ game_html = """
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
                 state.legsDeployed = false;
+                state.cameraY = state.y; 
 
                 document.getElementById('vab-menu').style.display = 'none';
                 document.getElementById('vab-stats').style.display = 'none';
@@ -508,7 +522,9 @@ game_html = """
             rocketParts.forEach(p => thrust += P[p.type].t);
             state.totalMass = state.dryMass + state.currentFuel;
 
-            let ay = -GRAVITY;
+            // Gravity falloff based on altitude
+            let currentGravity = GRAVITY * Math.max(0.1, 1 - (state.y / 100000)); 
+            let ay = -currentGravity;
             let ax = 0;
 
             if (state.throttle > 0 && state.currentFuel > 0 && thrust > 0) {
@@ -517,17 +533,15 @@ game_html = """
                 ax += thrustAccel * Math.sin(rad);
                 ay += thrustAccel * Math.cos(rad);
                 
-                // Burn Fuel
                 state.currentFuel -= 50 * state.throttle * dt; 
                 if (state.currentFuel <= 0) {
                     state.currentFuel = 0;
-                    state.throttle = 0; // Cut engine
+                    state.throttle = 0; 
                     throttleFill.style.height = '0%';
                     document.getElementById('val-fuel').innerText = "0";
                     document.getElementById('val-fuel').style.color = "#ff4444";
                 }
 
-                // Fire Particles
                 for(let i=0; i<5; i++) {
                     state.particles.push({
                         x: state.x + (Math.random()-0.5)*15, 
@@ -544,10 +558,10 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
-            // Collision check
+            // Fixed: Check total speed (hypot) for crash
             if (state.y < 0) {
                 state.y = 0;
-                if (Math.abs(state.vy) > 5 || !state.legsDeployed) {
+                if (Math.hypot(state.vx, state.vy) > 5 || !state.legsDeployed) {
                     gameState = "crashed";
                     for(let i=0; i<100; i++) {
                         state.particles.push({
@@ -567,19 +581,18 @@ game_html = """
 
             state.cameraY += (state.y - state.cameraY) * 5 * dt;
             
-            // Update HUD
             document.getElementById('val-alt').innerText = state.y.toFixed(1);
             document.getElementById('val-vel').innerText = Math.sqrt(state.vx*state.vx + state.vy*state.vy).toFixed(1);
             document.getElementById('val-mass').innerText = state.totalMass.toFixed(0);
             
-            let fuelPercent = (state.currentFuel / state.maxFuel) * 100;
+            // Fixed: Safe NaN check for fuel
+            let fuelPercent = state.maxFuel > 0 ? (state.currentFuel / state.maxFuel) * 100 : 0;
             if (fuelPercent > 0) {
                 document.getElementById('val-fuel').innerText = fuelPercent.toFixed(1);
                 if (fuelPercent < 20) document.getElementById('val-fuel').style.color = "#ff4444";
                 else document.getElementById('val-fuel').style.color = "#00ffcc";
             }
 
-            // Update Particles
             for(let i = state.particles.length - 1; i >= 0; i--) {
                 let p = state.particles[i];
                 p.x += p.vx * dt;
@@ -652,7 +665,8 @@ game_html = """
 
             ctx.save();
             ctx.translate(canvas.width/2, canvas.height*0.8);
-            let zoom = gameState === "vab" ? 1.2 : Math.max(0.5, 1.2 - (state.y/50000));
+            
+            let zoom = gameState === "vab" ? 1.2 : Math.max(0.4, 1.2 - (state.y/20000));
             ctx.scale(zoom, zoom);
 
             if (gameState === "vab") {
@@ -660,18 +674,24 @@ game_html = """
                 for(let i=-1000;i<1000;i+=GRID){ctx.beginPath();ctx.moveTo(i,-1000);ctx.lineTo(i,1000);ctx.stroke();ctx.beginPath();ctx.moveTo(-1000,i);ctx.lineTo(1000,i);ctx.stroke();}
                 rocketParts.forEach(p => drawPart(p, -p.y));
             } else {
-                ctx.fillStyle = "#4a3b2c"; ctx.fillRect(-10000, 0, 20000, 10000);
-                ctx.translate(state.x, -state.cameraY);
-                ctx.rotate(state.angle * (Math.PI/180));
-                rocketParts.forEach(p => drawPart(p, -p.y));
+                // Camera Translation
+                ctx.translate(-state.x, state.cameraY);
 
+                // Ground
+                ctx.fillStyle = "#4a3b2c"; ctx.fillRect(-10000, 0, 20000, 10000);
+                
                 // Draw Particles
                 state.particles.forEach(p => {
                     ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
                     ctx.beginPath();
-                    ctx.arc(p.x, -p.y + state.cameraY, p.size * p.life, 0, Math.PI*2);
+                    ctx.arc(p.x, -p.y, p.size * p.life, 0, Math.PI*2);
                     ctx.fill();
                 });
+
+                // Draw Rocket
+                ctx.translate(0, -state.y); 
+                ctx.rotate(state.angle * (Math.PI/180));
+                rocketParts.forEach(p => drawPart(p, -p.y));
             }
             ctx.restore();
         }
