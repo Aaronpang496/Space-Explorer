@@ -27,51 +27,60 @@ game_html = """
         #btn-start { background: #00ffcc; color: #000; border: none; padding: 20px 50px; font-size: 28px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 0 20px #00ffcc; }
         .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 50px; text-shadow: 0 0 20px #4a90e2; }
 
-        /* VAB Menu */
-        #vab-menu { position: absolute; top: 10px; left: 10px; width: 120px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; display: none; flex-direction: column; align-items: center; padding: 10px 0; pointer-events: auto; max-height: 85vh; overflow-y: auto; z-index: 100000;}
-        .part-btn { width: 100px; height: 50px; margin: 4px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: pointer; display: flex; flex-direction: row; justify-content: space-around; align-items: center; color: white; font-size: 12px; font-weight: bold;}
+        /* VAB MENU */
+        #vab-menu { position: absolute; top: 10px; left: 10px; width: 100px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; display: none; flex-direction: column; align-items: center; padding: 10px 0; pointer-events: auto; max-height: 80vh; overflow-y: auto; z-index: 100000;}
+        .part-btn { width: 80px; height: 45px; margin: 3px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; touch-action: none;}
         .part-btn.active { border-color: #00ffcc; background: #114444; }
-        
-        /* CSS Lego Shapes (Accurate Proportions) */
-        .m-pod { width: 20px; height: 20px; background: #888; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);}
-        .m-tank-s { width: 20px; height: 20px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
-        .m-tank-m { width: 20px; height: 30px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
-        .m-engine { width: 20px; height: 15px; background: #222; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);}
+        .part-btn span { font-size: 8px; color: #aaa; position: absolute; bottom: 2px;}
 
-        /* VAB Stats */
-        #vab-stats { position: absolute; top: 10px; right: 10px; width: 160px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 15px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;}
+        /* CSS Lego Shapes */
+        .m-pod { width: 16px; height: 20px; background: #888; clip-path: polygon(50% 0%, 100% 100%, 0% 100%);}
+        .m-chute { width: 20px; height: 12px; background: #f44; border-radius: 10px 10px 0 0;}
+        .m-nose { width: 16px; height: 15px; background: #fff; clip-path: polygon(50% 0%, 100% 100%, 0% 100%);}
+        .m-tank-s { width: 16px; height: 20px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
+        .m-tank-m { width: 20px; height: 30px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
+        .m-tank-l { width: 26px; height: 40px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
+        .m-engine-s { width: 16px; height: 12px; background: #222; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);}
+        .m-engine-m { width: 20px; height: 15px; background: #222; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);}
+        .m-engine-l { width: 26px; height: 18px; background: #222; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);}
+        .m-decoupler { width: 20px; height: 5px; background: #5c3a21;}
+        .m-booster { width: 12px; height: 25px; background: #ddd; border-radius: 5px 5px 0 0;}
+        .m-legs { width: 16px; height: 10px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
+
+        /* VAB STATS */
+        #vab-stats { position: absolute; top: 10px; right: 10px; width: 140px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
 
-        /* Top Bar */
-        #top-bar { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
-        .top-btn { background: #1e3a8a; color: white; border: 2px solid #60a5fa; padding: 10px 20px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer;}
+        /* TOP BAR */
+        #top-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
+        .top-btn { background: #1e3a8a; color: white; border: 2px solid #60a5fa; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer;}
         
-        /* Flight HUD */
-        #hud { position: absolute; top: 15px; right: 15px; color: #fff; font-size: 14px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
+        /* FLIGHT HUD */
+        #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
         
-        /* Flight Controls */
-        #throttle-zone { position: absolute; right: 20px; bottom: 80px; width: 40px; height: 180px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 20px; pointer-events: auto; display: none; z-index: 100000; }
+        /* FLIGHT CONTROLS (Pushed high for mobile) */
+        #throttle-zone { position: absolute; right: 15px; bottom: 160px; width: 40px; height: 160px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 20px; pointer-events: auto; display: none; z-index: 100000; }
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 18px;}
         
-        #arrow-zone { position: absolute; left: 20px; bottom: 20px; display: none; gap: 20px; pointer-events: auto; z-index: 100000;}
-        .arrow-btn { width: 60px; height: 80px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
+        #arrow-zone { position: absolute; left: 15px; bottom: 160px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
+        .arrow-btn { width: 55px; height: 75px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
         
-        #btn-stage { position: absolute; bottom: 20px; right: 80px; width: 80px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 5px; font-size: 16px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
-        #btn-legs { position: absolute; bottom: 80px; right: 80px; width: 80px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-stage { position: absolute; bottom: 160px; right: 75px; width: 70px; height: 45px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-legs { position: absolute; bottom: 220px; right: 75px; width: 70px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
-        #btn-map { position: absolute; top: 15px; left: 15px; width: 60px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
 
-        /* Minimap */
-        #minimap-container { position: absolute; top: 120px; right: 15px; width: 100px; height: 100px; border: 2px solid #555; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000;}
+        /* MINIMAP */
+        #minimap-container { position: absolute; top: 100px; right: 15px; width: 80px; height: 80px; border: 2px solid #555; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000;}
         
-        /* Transport Map Overlay */
+        /* TRANSPORT MAP */
         #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.95); display: none; pointer-events: auto; z-index: 200000;}
         #map-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #map-title { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold;}
 
-        /* Status Message */
-        #status-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000;}
+        /* STATUS MSG */
+        #status-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 36px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000;}
     </style>
 </head>
 <body>
@@ -85,18 +94,23 @@ game_html = """
 
         <div id="vab-menu">
             <div class="part-btn active" data-type="pod"><div class="m-pod"></div><span>Pod</span></div>
+            <div class="part-btn" data-type="chute"><div class="m-chute"></div><span>Chute</span></div>
+            <div class="part-btn" data-type="nose"><div class="m-nose"></div><span>Nose</span></div>
             <div class="part-btn" data-type="tank_small"><div class="m-tank-s"></div><span>Tank S</span></div>
             <div class="part-btn" data-type="tank_med"><div class="m-tank-m"></div><span>Tank M</span></div>
-            <div class="part-btn" data-type="engine"><div class="m-engine"></div><span>Engine</span></div>
+            <div class="part-btn" data-type="tank_large"><div class="m-tank-l"></div><span>Tank L</span></div>
+            <div class="part-btn" data-type="engine_small"><div class="m-engine-s"></div><span>Engine S</span></div>
+            <div class="part-btn" data-type="engine_med"><div class="m-engine-m"></div><span>Engine M</span></div>
+            <div class="part-btn" data-type="engine_large"><div class="m-engine-l"></div><span>Engine L</span></div>
+            <div class="part-btn" data-type="decoupler"><div class="m-decoupler"></div><span>Decoupler</span></div>
+            <div class="part-btn" data-type="booster"><div class="m-booster"></div><span>Booster</span></div>
+            <div class="part-btn" data-type="legs"><div class="m-legs"></div><span>Legs</span></div>
         </div>
 
         <div id="vab-stats">
             <div class="stat-row"><span>Mass:</span> <span class="stat-val" id="stat-mass">0 kg</span></div>
             <div class="stat-row"><span>Fuel:</span> <span class="stat-val" id="stat-fuel">0 kg</span></div>
             <div class="stat-row"><span>Thrust:</span> <span class="stat-val" id="stat-thrust">0 kN</span></div>
-            <div class="stat-row" style="border-top: 1px solid #555; padding-top: 8px; margin-top: 8px;">
-                <span>TWR:</span> <span class="stat-val" id="stat-twr" style="color:#ffaa00">0.0</span>
-            </div>
         </div>
 
         <div id="top-bar">
@@ -105,12 +119,11 @@ game_html = """
         </div>
 
         <button id="btn-map">MAP</button>
-        <div id="minimap-container"><canvas id="minimap" width="100" height="100"></canvas></div>
+        <div id="minimap-container"><canvas id="minimap" width="80" height="80"></canvas></div>
 
         <div id="hud">
             ALT: <span id="val-alt">0</span> m<br>
             VEL: <span id="val-vel">0</span> m/s<br>
-            MASS: <span id="val-mass">0</span> kg<br>
             FUEL: <span id="val-fuel" style="color:#00ffcc">100</span>%
         </div>
         
@@ -120,7 +133,7 @@ game_html = """
             <div class="arrow-btn" id="joy-right">▶</div>
         </div>
         <button id="btn-stage">STAGE</button>
-        <button id="btn-legs">LEGS: DOWN</button>
+        <button id="btn-legs">LEGS: UP</button>
 
         <div id="status-msg"></div>
     </div>
@@ -154,11 +167,12 @@ game_html = """
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
-            legsDeployed: true, 
+            hasLiftedOff: false,
+            legsDeployed: false, legsProgress: 0,
+            chuteDeployed: false,
             cameraY: 0, lastTime: performance.now(),
             particles: [],
-            shake: 0, 
-            landedMsgTimer: 0
+            shake: 0
         };
 
         const GRAVITY = 9.81;
@@ -166,24 +180,20 @@ game_html = """
         let rocketParts = []; 
         let currentSelectedPart = "pod";
         
-        // Perfectly aligned sizes (Width is all 20 so they stack perfectly)
         const P = {
-            pod:         { w: 20, h: 20, m: 1500, f: 0,    t: 0 },
+            pod:         { w: 20, h: 24, m: 1500, f: 0,    t: 0 },
+            chute:       { w: 20, h: 12, m: 100,  f: 0,    t: 0 },
+            nose:        { w: 20, h: 16, m: 200,  f: 0,    t: 0 },
             tank_small:  { w: 20, h: 30, m: 500,  f: 1000, t: 0 },
             tank_med:    { w: 20, h: 60, m: 1000, f: 3000, t: 0 },
-            engine:      { w: 20, h: 20, m: 800,  f: 0,    t: 800 }
+            tank_large:  { w: 20, h: 90, m: 2500, f: 9000, t: 0 }, 
+            engine_small:{ w: 20, h: 16, m: 300,  f: 0,    t: 300 },
+            engine_med:  { w: 20, h: 24, m: 800,  f: 0,    t: 1000 },
+            engine_large:{ w: 20, h: 32, m: 2000, f: 0,    t: 3000 },
+            decoupler:   { w: 20, h: 6,  m: 100,  f: 0,    t: 0 },
+            booster:     { w: 14, h: 50, m: 600,  f: 1800, t: 600 },
+            legs:        { w: 24, h: 20, m: 100,  f: 0,    t: 0 }
         };
-
-        const menuPlanets = [
-            { color: "#888", dist: 60, size: 3, speed: 0.8, angle: 0 },
-            { color: "#e6b800", dist: 90, size: 5, speed: 0.6, angle: 1 },
-            { color: "#4a90e2", dist: 120, size: 5.5, speed: 0.5, angle: 2 },
-            { color: "#c1440e", dist: 150, size: 4, speed: 0.4, angle: 3 },
-            { color: "#d4a373", dist: 210, size: 12, speed: 0.2, angle: 4 },
-            { color: "#e3d5a1", dist: 270, size: 10, speed: 0.15, angle: 5, ring: true },
-            { color: "#b2e3e6", dist: 330, size: 8, speed: 0.1, angle: 6 },
-            { color: "#3b5bdb", dist: 380, size: 7.5, speed: 0.08, angle: 7 }
-        ];
 
         document.getElementById('btn-start').onclick = function() {
             gameState = "vab";
@@ -193,10 +203,11 @@ game_html = """
             document.getElementById('vab-stats').style.display = 'flex';
             
             rocketParts = [];
-            addPart("engine", 0, 10);
-            addPart("tank_med", 0, 50);
-            addPart("tank_med", 0, 110);
-            addPart("pod", 0, 140);
+            addPart("engine_med", 0, 12);
+            addPart("tank_med", 0, 54);
+            addPart("tank_med", 0, 114);
+            addPart("pod", 0, 156);
+            addPart("chute", 0, 174);
             updateStats();
         };
 
@@ -206,61 +217,96 @@ game_html = """
                 mass += P[p.type].m; fuel += P[p.type].f; thrust += P[p.type].t;
             });
             const totalMass = mass + fuel;
-            const twr = thrust > 0 ? (thrust * 1000) / (totalMass * GRAVITY) : 0;
             document.getElementById('stat-mass').innerText = totalMass.toLocaleString() + " kg";
             document.getElementById('stat-fuel').innerText = fuel.toLocaleString() + " kg";
             document.getElementById('stat-thrust').innerText = thrust.toLocaleString() + " kN";
-            document.getElementById('stat-twr').innerText = twr.toFixed(2);
         }
 
-        // --- CLICK TO PLACE ---
+        // DRAG AND DROP (Mobile Friendly)
+        let isDraggingPart = false;
+        let draggedType = null;
+        let dragGhost = null;
+
         document.querySelectorAll('.part-btn').forEach(item => {
             item.addEventListener('pointerdown', (e) => {
                 if (gameState !== "vab") return;
+                e.preventDefault(); // Stop mobile scrolling
+                
                 document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
                 item.classList.add('active');
                 currentSelectedPart = item.dataset.type;
+                
+                isDraggingPart = true;
+                draggedType = item.dataset.type;
+                dragGhost = document.createElement('div');
+                dragGhost.style.position = 'absolute';
+                dragGhost.style.width = P[draggedType].w + 'px';
+                dragGhost.style.height = P[draggedType].h + 'px';
+                dragGhost.style.backgroundColor = draggedType.includes('tank') ? '#fff' : (draggedType.includes('engine') ? '#222' : '#888');
+                dragGhost.style.border = '2px dashed #00ffcc';
+                dragGhost.style.pointerEvents = 'none';
+                dragGhost.style.zIndex = 999999;
+                dragGhost.style.left = (e.clientX - P[draggedType].w/2) + 'px';
+                dragGhost.style.top = (e.clientY - P[draggedType].h/2) + 'px';
+                document.body.appendChild(dragGhost);
             });
         });
 
-        canvas.addEventListener('pointerdown', (e) => {
-            if (gameState !== "vab") return;
-            
-            const rect = canvas.getBoundingClientRect();
-            let mouseX = e.clientX - rect.left;
-            let mouseY = e.clientY - rect.top;
-            let worldX = (mouseX - canvas.width/2) / 1.2;
-            let worldY = (canvas.height * 0.8 - mouseY) / 1.2;
-
-            let snapX = Math.round(worldX / GRID) * GRID;
-            let snapY = Math.round(worldY / GRID) * GRID;
-            let minDist = 35; 
-
-            let nw = P[currentSelectedPart].w;
-            let nh = P[currentSelectedPart].h;
-
-            if (rocketParts.length > 0) {
-                rocketParts.forEach(p => {
-                    let pw = P[p.type].w;
-                    let ph = P[p.type].h;
-
-                    // Snap Top
-                    let dTop = Math.hypot(worldX - p.x, worldY - (p.y + ph/2));
-                    if (dTop < minDist) { minDist = dTop; snapX = p.x; snapY = p.y + ph/2 + nh/2; }
-
-                    // Snap Bottom
-                    let dBot = Math.hypot(worldX - p.x, worldY - (p.y - ph/2));
-                    if (dBot < minDist) { minDist = dBot; snapX = p.x; snapY = p.y - ph/2 - nh/2; }
-                });
+        window.addEventListener('pointermove', (e) => {
+            if (isDraggingPart && dragGhost) {
+                dragGhost.style.left = (e.clientX - P[draggedType].w/2) + 'px';
+                dragGhost.style.top = (e.clientY - P[draggedType].h/2) + 'px';
             }
-            addPart(currentSelectedPart, snapX, snapY);
-            updateStats();
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if (!isDraggingPart) return;
+            if (dragGhost) document.body.removeChild(dragGhost);
+            dragGhost = null;
+            isDraggingPart = false;
+
+            if (e.target === canvas && gameState === "vab") {
+                const rect = canvas.getBoundingClientRect();
+                let mouseX = e.clientX - rect.left;
+                let mouseY = e.clientY - rect.top;
+                let worldX = (mouseX - canvas.width/2) / 1.2;
+                let worldY = (canvas.height * 0.8 - mouseY) / 1.2;
+
+                let snapX = Math.round(worldX / GRID) * GRID;
+                let snapY = Math.round(worldY / GRID) * GRID;
+                let minDist = 40; 
+
+                let nw = P[draggedType].w;
+                let nh = P[draggedType].h;
+
+                if (rocketParts.length > 0) {
+                    rocketParts.forEach(p => {
+                        let pw = P[p.type].w;
+                        let ph = P[p.type].h;
+
+                        let dTop = Math.hypot(worldX - p.x, worldY - (p.y + ph/2));
+                        if (dTop < minDist) { minDist = dTop; snapX = p.x; snapY = p.y + ph/2 + nh/2; }
+
+                        let dBot = Math.hypot(worldX - p.x, worldY - (p.y - ph/2));
+                        if (dBot < minDist) { minDist = dBot; snapX = p.x; snapY = p.y - ph/2 - nh/2; }
+                        
+                        let dRight = Math.hypot(worldX - (p.x + pw/2), worldY - p.y);
+                        if (dRight < minDist) { minDist = dRight; snapX = p.x + pw/2 + nw/2; snapY = p.y; }
+                        
+                        let dLeft = Math.hypot(worldX - (p.x - pw/2), worldY - p.y);
+                        if (dLeft < minDist) { minDist = dLeft; snapX = p.x - pw/2 - nw/2; snapY = p.y; }
+                    });
+                }
+                addPart(draggedType, snapX, snapY);
+                updateStats();
+            }
         });
 
         function addPart(type, x, y) {
             rocketParts.push({ type, x, y });
         }
 
+        // FLIGHT CONTROLS
         let isDraggingThrottle = false;
         let leftPressed = false;
         let rightPressed = false;
@@ -273,8 +319,8 @@ game_html = """
             if (!isDraggingThrottle) return;
             const rect = throttleZone.getBoundingClientRect();
             let y = e.clientY - rect.top;
-            if (y < 0) y = 0; if (y > 180) y = 180;
-            let percent = 100 - (y / 180) * 100;
+            if (y < 0) y = 0; if (y > 160) y = 160;
+            let percent = 100 - (y / 160) * 100;
             state.throttle = percent / 100;
             throttleFill.style.height = percent + '%';
         });
@@ -291,7 +337,36 @@ game_html = """
             else this.classList.remove('deployed');
         };
 
-        // MAP LOGIC
+        document.getElementById('btn-stage').onclick = function() {
+            let sideDecouplers = rocketParts.filter(p => p.type === 'decoupler' && Math.abs(p.x) > 10);
+            if (sideDecouplers.length > 0) {
+                let dropX = sideDecouplers[0].x;
+                let partsToDrop = rocketParts.filter(p => Math.abs(p.x - dropX) < 5);
+                rocketParts = rocketParts.filter(p => !partsToDrop.includes(p));
+                let otherSide = rocketParts.find(p => p.type === 'decoupler' && Math.abs(p.x + dropX) < 5);
+                if (otherSide) {
+                    let dropX2 = otherSide.x;
+                    let partsToDrop2 = rocketParts.filter(p => Math.abs(p.x - dropX2) < 5);
+                    rocketParts = rocketParts.filter(p => !partsToDrop2.includes(p));
+                }
+            } else {
+                let centerDec = rocketParts.filter(p => p.type === 'decoupler');
+                if (centerDec.length === 0) return;
+                centerDec.sort((a, b) => a.y - b.y);
+                let lowest = centerDec[0];
+                rocketParts = rocketParts.filter(p => p.y >= lowest.y);
+            }
+            
+            let m = 0, f = 0;
+            rocketParts.forEach(p => { m += P[p.type].m; f += P[p.type].f; });
+            state.dryMass = m;
+            state.maxFuel = f;
+            if (state.currentFuel > state.maxFuel) state.currentFuel = state.maxFuel;
+            
+            updateStats();
+        };
+
+        // MAP
         const mapOverlay = document.getElementById('map-overlay');
         const planetsMap = [
             { name: "Earth", color: "#4a90e2", x: 0.3 },
@@ -326,12 +401,11 @@ game_html = """
             const y = (e.clientY - rect.top) / rect.height;
             
             planetsMap.forEach(p => {
-                // Check both x and y distance for accurate clicking
                 if (Math.abs(x - p.x) < 0.05 && Math.abs(y - 0.5) < 0.1) {
-                    state.y = 5000; // Teleport high above the planet safely
+                    state.y = 5000; 
                     state.vy = 0; state.vx = 0;
                     state.throttle = 0;
-                    state.cameraY = state.y; // Reset camera instantly
+                    state.cameraY = state.y; 
                     mapOverlay.style.display = 'none';
                 }
             });
@@ -352,13 +426,14 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
-                state.y = 0; // Start EXACTLY on the ground
+                state.y = 0; 
                 state.vy = 0; state.vx = 0;
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
-                state.legsDeployed = true; 
+                state.legsDeployed = false; 
+                state.chuteDeployed = false;
+                state.hasLiftedOff = false;
                 state.cameraY = 0; 
-                state.landedMsgTimer = 0;
                 state.shake = 0;
 
                 document.getElementById('vab-menu').style.display = 'none';
@@ -370,6 +445,7 @@ game_html = """
                 document.getElementById('throttle-zone').style.display = 'block';
                 document.getElementById('arrow-zone').style.display = 'flex';
                 document.getElementById('btn-legs').style.display = 'block';
+                document.getElementById('btn-stage').style.display = 'block';
                 document.getElementById('btn-map').style.display = 'block';
                 document.getElementById('throttle-fill').style.height = '0%';
                 document.getElementById('status-msg').style.display = 'none';
@@ -404,6 +480,7 @@ game_html = """
             let ax = 0;
 
             if (state.throttle > 0 && state.currentFuel > 0 && thrust > 0) {
+                state.hasLiftedOff = true; 
                 let thrustAccel = (thrust * 1000 * state.throttle) / state.totalMass;
                 let rad = state.angle * (Math.PI / 180);
                 ax += thrustAccel * Math.sin(rad);
@@ -418,7 +495,6 @@ game_html = """
                     document.getElementById('val-fuel').style.color = "#ff4444";
                 }
 
-                // Exhaust Particles
                 for(let i=0; i<5; i++) {
                     let rad = state.angle * (Math.PI / 180);
                     let exhaustX = state.x - Math.sin(rad) * 20;
@@ -434,6 +510,19 @@ game_html = """
                 }
             }
 
+            // Auto Parachute
+            if (state.hasLiftedOff && state.y < 3000 && state.vy < -10 && !state.chuteDeployed) {
+                if (rocketParts.some(p => p.type === 'chute')) {
+                    state.chuteDeployed = true;
+                }
+            }
+
+            if (state.chuteDeployed) {
+                ay += 15; 
+                state.vx *= 0.98; 
+                state.vy *= 0.95;
+            }
+
             state.vx += ax * dt;
             state.vy += ay * dt;
             state.x += state.vx * dt;
@@ -442,17 +531,15 @@ game_html = """
             // Ground Collision
             if (state.y <= 0) {
                 state.y = 0;
-                if (state.vy < -5 || !state.legsDeployed) {
-                    // CRASH! CINEMATIC EXPLOSION
+                if (state.hasLiftedOff && (state.vy < -5 || !state.legsDeployed) && !state.chuteDeployed) {
                     gameState = "crashed";
-                    state.shake = 30; // Massive screen shake
+                    state.shake = 30; 
                     
-                    // Spawn Fire
                     for(let i=0; i<100; i++) {
-                        let col = "255,100,0"; // Orange
+                        let col = "255,100,0"; 
                         let r = Math.random();
-                        if (r > 0.8) col = "255,255,0"; // Yellow
-                        else if (r > 0.5) col = "255,50,0"; // Red
+                        if (r > 0.8) col = "255,255,0"; 
+                        else if (r > 0.5) col = "255,50,0"; 
 
                         state.particles.push({
                             x: state.x + (Math.random()-0.5)*30, 
@@ -464,7 +551,6 @@ game_html = """
                             color: col
                         });
                     }
-                    // Spawn Smoke
                     for(let i=0; i<50; i++) {
                         state.particles.push({
                             x: state.x + (Math.random()-0.5)*40, 
@@ -482,23 +568,21 @@ game_html = """
                     document.getElementById('status-msg').style.display = 'block';
                 } else {
                     state.vy = 0; state.vx = 0; state.throttle = 0;
-                    state.landedMsgTimer += dt;
-                    if (state.landedMsgTimer > 0.5) {
+                    if (state.hasLiftedOff) {
                         document.getElementById('status-msg').innerText = "🏆 LANDED SAFELY";
                         document.getElementById('status-msg').style.color = "#00ffcc";
                         document.getElementById('status-msg').style.display = 'block';
                     }
                 }
-            } else {
-                state.landedMsgTimer = 0;
-                document.getElementById('status-msg').style.display = 'none';
             }
 
             state.cameraY += (state.y - state.cameraY) * 5 * dt;
             
+            if (state.legsDeployed && state.legsProgress < 1) state.legsProgress += 2 * dt;
+            if (!state.legsDeployed && state.legsProgress > 0) state.legsProgress -= 2 * dt;
+            
             document.getElementById('val-alt').innerText = state.y.toFixed(1);
             document.getElementById('val-vel').innerText = Math.sqrt(state.vx*state.vx + state.vy*state.vy).toFixed(1);
-            document.getElementById('val-mass').innerText = state.totalMass.toFixed(0);
             
             let fuelPercent = state.maxFuel > 0 ? (state.currentFuel / state.maxFuel) * 100 : 0;
             if (fuelPercent > 0) {
@@ -507,41 +591,16 @@ game_html = """
                 else document.getElementById('val-fuel').style.color = "#00ffcc";
             }
 
-            // Update Particles
             for(let i = state.particles.length - 1; i >= 0; i--) {
                 let p = state.particles[i];
                 p.x += p.vx * dt;
                 p.y += p.vy * dt;
-                if(gameState === "crashed") p.vy += 100 * dt; // Gravity on explosion bits
+                if(gameState === "crashed") p.vy += 100 * dt; 
                 p.life -= dt * 1.5;
                 if(p.life <= 0) state.particles.splice(i, 1);
             }
             
             state.shake = Math.max(0, state.shake - 50 * dt);
-        }
-
-        function drawMenu(dt) {
-            ctx.fillStyle = "#000511";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            const cx = canvas.width / 2; const cy = canvas.height / 2;
-
-            ctx.fillStyle = "#ffdd00";
-            ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fill();
-            ctx.shadowColor = "#ffdd00"; ctx.shadowBlur = 50; ctx.fill(); ctx.shadowBlur = 0; 
-
-            menuPlanets.forEach(p => {
-                p.angle += p.speed * dt;
-                ctx.strokeStyle = "rgba(255,255,255,0.1)";
-                ctx.beginPath(); ctx.arc(cx, cy, p.dist, 0, Math.PI * 2); ctx.stroke();
-                let px = cx + Math.cos(p.angle) * p.dist;
-                let py = cy + Math.sin(p.angle) * p.dist;
-                ctx.fillStyle = p.color;
-                ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2); ctx.fill();
-                if (p.ring) {
-                    ctx.strokeStyle = "rgba(227, 213, 161, 0.6)"; ctx.lineWidth = 3;
-                    ctx.beginPath(); ctx.ellipse(px, py, p.size * 2, p.size * 0.5, Math.PI/4, 0, Math.PI * 2); ctx.stroke();
-                }
-            });
         }
 
         function drawPart(p, py) {
@@ -554,30 +613,23 @@ game_html = """
                 ctx.fillStyle = "#888"; 
                 ctx.beginPath(); ctx.moveTo(-w/2, h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(w/3, -h/2); ctx.lineTo(-w/3, -h/2); ctx.fill();
                 ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(0, 0, w/4, 0, Math.PI*2); ctx.fill();
+            } else if (p.type === "chute") {
+                if (!state.chuteDeployed) {
+                    ctx.fillStyle = "#555"; ctx.fillRect(-w/3, -h/2, w/1.5, h);
+                }
+            } else if (p.type === "nose") {
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(-w/2, h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(0, -h/2); ctx.fill();
             } else if (p.type.includes("tank")) {
                 let grad = ctx.createLinearGradient(-w/2, 0, w/2, 0); grad.addColorStop(0,"#aaa"); grad.addColorStop(0.5,"#fff"); grad.addColorStop(1,"#888");
                 ctx.fillStyle = grad; ctx.fillRect(-w/2, -h/2, w, h);
-            } else if (p.type === "engine") {
+            } else if (p.type.includes("engine")) {
                 ctx.fillStyle = "#222"; ctx.beginPath(); ctx.moveTo(-w/3, -h/2); ctx.lineTo(w/3, -h/2); ctx.lineTo(w/2, h/2); ctx.lineTo(-w/2, h/2); ctx.fill();
+            } else if (p.type === "decoupler") {
+                ctx.fillStyle = "#5c3a21"; ctx.fillRect(-w/2, -h/2, w, h);
+            } else if (p.type === "booster") {
+                ctx.fillStyle = "#ddd"; ctx.fillRect(-w/2, -h/2, w, h);
             }
             ctx.restore();
-        }
-
-        function drawMinimap() {
-            minimapCtx.fillStyle = "#000";
-            minimapCtx.fillRect(0, 0, 100, 100);
-            
-            // Draw Earth
-            minimapCtx.fillStyle = "#4a90e2";
-            minimapCtx.beginPath();
-            minimapCtx.arc(50, 50 + (state.y / 100), 5, 0, Math.PI * 2); 
-            minimapCtx.fill();
-
-            // Draw Rocket
-            minimapCtx.fillStyle = "#00ffcc";
-            minimapCtx.beginPath();
-            minimapCtx.arc(50, 80, 2, 0, Math.PI * 2);
-            minimapCtx.fill();
         }
 
         function draw() {
@@ -585,17 +637,32 @@ game_html = """
 
             ctx.save();
             
-            // Apply Screen Shake
             if (state.shake > 0) {
                 ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
             }
 
+            // SMOOTH SKY TRANSITION
             if (gameState === "vab") {
                 ctx.fillStyle = "#2b3a4a";
             } else {
-                if (state.y < 1000) ctx.fillStyle = "#87CEEB"; 
-                else if (state.y < 3000) ctx.fillStyle = "#1a3b5c"; 
-                else ctx.fillStyle = "#000000"; 
+                let alt = state.y;
+                if (alt < 1500) {
+                    ctx.fillStyle = "#87CEEB";
+                } else if (alt < 8000) {
+                    let ratio = (alt - 1500) / (8000 - 1500);
+                    let r = 135 - (135 - 26) * ratio;
+                    let g = 206 - (206 - 59) * ratio;
+                    let b = 235 - (235 - 92) * ratio;
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                } else if (alt < 20000) {
+                    let ratio = (alt - 8000) / (20000 - 8000);
+                    let r = 26 - (26) * ratio;
+                    let g = 59 - (59) * ratio;
+                    let b = 92 - (92) * ratio;
+                    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                } else {
+                    ctx.fillStyle = "#000000";
+                }
             }
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -614,7 +681,6 @@ game_html = """
                 ctx.fillStyle = "#4a3b2c"; 
                 ctx.fillRect(-10000, 0, 20000, 10000);
                 
-                // Particles
                 state.particles.forEach(p => {
                     ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
                     ctx.beginPath();
@@ -625,12 +691,44 @@ game_html = """
                 if (gameState !== "crashed") {
                     ctx.translate(state.x, -state.y); 
                     ctx.rotate(state.angle * (Math.PI/180));
+                    
                     rocketParts.forEach(p => drawPart(p, -p.y));
+
+                    if (state.legsProgress > 0) {
+                        let legLen = 20 * state.legsProgress;
+                        ctx.strokeStyle = "#888"; ctx.lineWidth = 4;
+                        ctx.beginPath();
+                        ctx.moveTo(-6, 10); ctx.lineTo(-6 - legLen, 10 + legLen);
+                        ctx.moveTo(6, 10); ctx.lineTo(6 + legLen, 10 + legLen);
+                        ctx.stroke();
+                    }
+
+                    if (state.chuteDeployed) {
+                        ctx.strokeStyle = "#fff"; ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(-15, -110); ctx.lineTo(-5, -50); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(15, -110); ctx.lineTo(5, -50); ctx.stroke();
+                        ctx.fillStyle = "#f44";
+                        ctx.beginPath(); ctx.arc(0, -110, 30, Math.PI, 0); ctx.fill();
+                        ctx.fillStyle = "#fff";
+                        ctx.beginPath(); ctx.arc(0, -110, 30, Math.PI, Math.PI * 1.3); ctx.fill();
+                        ctx.beginPath(); ctx.arc(0, -110, 30, Math.PI * 1.6, Math.PI * 2); ctx.fill();
+                    }
                 }
             }
             ctx.restore();
-
-            if (gameState === "flight" || gameState === "crashed") drawMinimap();
+            
+            if (gameState !== "vab") {
+                minimapCtx.fillStyle = "#000";
+                minimapCtx.fillRect(0, 0, 80, 80);
+                minimapCtx.fillStyle = "#4a90e2";
+                minimapCtx.beginPath();
+                minimapCtx.arc(40, 40 + (state.y / 100), 5, 0, Math.PI * 2); 
+                minimapCtx.fill();
+                minimapCtx.fillStyle = "#00ffcc";
+                minimapCtx.beginPath();
+                minimapCtx.arc(40, 65, 2, 0, Math.PI * 2);
+                minimapCtx.fill();
+            }
         }
 
         function loop(time) {
@@ -638,12 +736,10 @@ game_html = """
             state.lastTime = time;
             if (dt > 0.1) dt = 0.1;
 
-            if (gameState === "menu") {
-                drawMenu(dt);
-            } else {
+            if (gameState !== "menu") {
                 updatePhysics(dt);
-                draw();
             }
+            draw();
             requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
