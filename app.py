@@ -18,7 +18,7 @@ game_html = """
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; height: 100dvh; width: 100vw; }
         canvas { display: block; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
         
@@ -59,17 +59,17 @@ game_html = """
         /* FLIGHT HUD */
         #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
         
-        /* FLIGHT CONTROLS (Mobile Safe Zone) */
-        #throttle-zone { position: absolute; right: 15px; bottom: 160px; width: 40px; height: 160px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 20px; pointer-events: auto; display: none; z-index: 100000; }
-        #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 18px;}
+        /* FLIGHT CONTROLS (Mobile Optimized) */
+        #throttle-zone { position: absolute; right: 20px; bottom: 120px; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 22px;}
         
-        #arrow-zone { position: absolute; left: 15px; bottom: 160px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
-        .arrow-btn { width: 55px; height: 75px; background: rgba(255,255,255,0.1); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 28px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
+        #arrow-zone { position: absolute; left: 20px; bottom: 120px; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
+        .arrow-btn { width: 60px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px);}
         
-        #btn-stage { position: absolute; bottom: 160px; right: 75px; width: 70px; height: 45px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
-        #btn-legs { position: absolute; bottom: 220px; right: 75px; width: 70px; height: 40px; background: rgba(255,255,255,0.1); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-stage { position: absolute; bottom: 120px; right: 85px; width: 75px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-legs { position: absolute; bottom: 180px; right: 85px; width: 75px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
-        #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.1); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
 
         /* MINIMAP */
         #minimap-container { position: absolute; top: 100px; right: 15px; width: 80px; height: 80px; border: 2px solid #555; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000;}
@@ -237,6 +237,7 @@ game_html = """
             document.getElementById('stat-thrust').innerText = thrust.toLocaleString() + " kN";
         }
 
+        // DRAG AND DROP
         let isDraggingPart = false;
         let draggedType = null;
         let dragGhost = null;
@@ -325,6 +326,7 @@ game_html = """
             rocketParts.push({ type, x, y });
         }
 
+        // FLIGHT CONTROLS
         let isDraggingThrottle = false;
         let leftPressed = false;
         let rightPressed = false;
@@ -345,8 +347,11 @@ game_html = """
 
         document.getElementById('joy-left').addEventListener('pointerdown', () => { leftPressed = true; });
         document.getElementById('joy-left').addEventListener('pointerup', () => { leftPressed = false; });
+        document.getElementById('joy-left').addEventListener('pointerleave', () => { leftPressed = false; });
+
         document.getElementById('joy-right').addEventListener('pointerdown', () => { rightPressed = true; });
         document.getElementById('joy-right').addEventListener('pointerup', () => { rightPressed = false; });
+        document.getElementById('joy-right').addEventListener('pointerleave', () => { rightPressed = false; });
 
         document.getElementById('btn-legs').onclick = function() {
             state.legsDeployed = !state.legsDeployed;
@@ -642,7 +647,6 @@ game_html = """
                 ctx.translate((Math.random()-0.5)*state.shake, (Math.random()-0.5)*state.shake);
             }
 
-            // SKY GRADIENT
             if (gameState === "vab") {
                 ctx.fillStyle = "#2b3a4a";
             } else {
@@ -666,12 +670,11 @@ game_html = """
                         ctx.fillStyle = "#000000";
                     }
                 } else {
-                    ctx.fillStyle = "#000000"; // Other planets are just black
+                    ctx.fillStyle = "#000000"; 
                 }
             }
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // DRAW STARS IF IN SPACE OR ON OTHER PLANETS
             if (gameState !== "vab" && (state.currentPlanet !== "Earth" || state.y > 8000)) {
                 ctx.fillStyle = "#fff";
                 state.stars.forEach(star => {
