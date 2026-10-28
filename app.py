@@ -86,7 +86,6 @@ game_html = """
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
-    <canvas id="minimap" width="100" height="100"></canvas>
     
     <div id="ui-layer">
         <div id="start-screen">
@@ -138,7 +137,7 @@ game_html = """
             <div class="arrow-btn" id="joy-right">▶</div>
         </div>
         <button id="btn-stage">STAGE</button>
-        <button id="btn-legs">LEGS: UP</button>
+        <button id="btn-legs">LEGS: DOWN</button>
 
         <div id="btn-rotate">🔄</div>
         <div id="trash-can">🗑️</div>
@@ -169,12 +168,12 @@ game_html = """
         let gameState = "menu"; 
         
         let state = {
-            x: 0, y: 50, vx: 0, vy: 0, // Start safely in the air
+            x: 0, y: 0, vx: 0, vy: 0, // Start on the pad
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
-            legsDeployed: false,
-            cameraY: 50, lastTime: performance.now(),
+            legsDeployed: true, // Start with legs down so you don't instantly crash
+            cameraY: 0, lastTime: performance.now(),
             particles: []
         };
 
@@ -484,11 +483,11 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
-                state.y = 50; // START SAFELY ABOVE THE GROUND
+                state.y = 0; 
                 state.vy = 0; state.vx = 0;
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
-                state.legsDeployed = false;
+                state.legsDeployed = true; // Legs down so you don't instantly crash
                 state.cameraY = state.y; 
 
                 document.getElementById('vab-menu').style.display = 'none';
@@ -578,9 +577,10 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
+            // Safer Collision Check
             if (state.y < 0) {
                 state.y = 0;
-                if (Math.hypot(state.vx, state.vy) > 5 || !state.legsDeployed) {
+                if (state.vy < -5 && !state.legsDeployed) {
                     gameState = "crashed";
                     for(let i=0; i<100; i++) {
                         state.particles.push({
