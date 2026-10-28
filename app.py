@@ -48,6 +48,7 @@ game_html = """
         .m-decoupler { width: 20px; height: 6px; background: #5c3a21;}
         .m-booster { width: 14px; height: 35px; background: #ddd; border-radius: 5px 5px 0 0;}
         .m-strut { width: 6px; height: 30px; background: #666;}
+        .m-legs { width: 20px; height: 15px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
 
         /* VAB Stats Panel (Right) */
         #vab-stats { position: absolute; top: 10px; right: 10px; width: 150px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 15px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
@@ -69,6 +70,9 @@ game_html = """
         .arrow-btn { width: 60px; height: 80px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer;}
         
         #btn-stage { position: absolute; bottom: 20px; right: 80px; width: 80px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 5px; font-size: 16px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-legs { position: absolute; bottom: 80px; right: 80px; width: 80px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
+        #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
+        #btn-map { position: absolute; top: 15px; left: 15px; width: 60px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
 
         /* Rotate Button */
         #btn-rotate { position: absolute; top: 200px; right: 10px; width: 60px; height: 60px; background: rgba(0, 0, 0, 0.85); border: 2px solid #00ffcc; color: white; border-radius: 10px; font-size: 24px; display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 100000; cursor: pointer;}
@@ -76,6 +80,11 @@ game_html = """
         /* Trash Can */
         #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
         #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; transform: scale(1.1); }
+
+        /* Map Overlay */
+        #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.95); display: none; pointer-events: auto; z-index: 200000;}
+        #map-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #map-title { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold;}
     </style>
 </head>
 <body>
@@ -90,15 +99,11 @@ game_html = """
         <div id="vab-menu">
             <div class="part-btn" data-type="pod"><div class="m-pod"></div><span>Pod</span></div>
             <div class="part-btn" data-type="nose"><div class="m-nose"></div><span>Nose</span></div>
-            <div class="part-btn" data-type="tank_small"><div class="m-tank-s"></div><span>Tank S</span></div>
-            <div class="part-btn" data-type="tank_med"><div class="m-tank-m"></div><span>Tank M</span></div>
-            <div class="part-btn" data-type="tank_large"><div class="m-tank-l"></div><span>Tank L</span></div>
+            <div class="part-btn" data-type="tank_med"><div class="m-tank-m"></div><span>Tank</span></div>
             <div class="part-btn" data-type="decoupler"><div class="m-decoupler"></div><span>Decoupler</span></div>
-            <div class="part-btn" data-type="engine_small"><div class="m-engine-s"></div><span>Engine S</span></div>
-            <div class="part-btn" data-type="engine_med"><div class="m-engine-m"></div><span>Engine M</span></div>
-            <div class="part-btn" data-type="engine_large"><div class="m-engine-l"></div><span>Engine L</span></div>
+            <div class="part-btn" data-type="engine_med"><div class="m-engine-m"></div><span>Engine</span></div>
             <div class="part-btn" data-type="booster"><div class="m-booster"></div><span>Booster</span></div>
-            <div class="part-btn" data-type="strut"><div class="m-strut"></div><span>Strut</span></div>
+            <div class="part-btn" data-type="legs"><div class="m-legs"></div><span>Legs</span></div>
         </div>
 
         <div id="vab-stats">
@@ -115,6 +120,8 @@ game_html = """
             <button class="top-btn" id="btn-reset">RESET 🔄</button>
         </div>
 
+        <button id="btn-map">MAP</button>
+
         <div id="hud">
             ALT: <span id="val-alt">0</span> m<br>
             VEL: <span id="val-vel">0</span> m/s<br>
@@ -127,19 +134,28 @@ game_html = """
             <div class="arrow-btn" id="joy-right">▶</div>
         </div>
         <button id="btn-stage">STAGE</button>
+        <button id="btn-legs">LEGS: UP</button>
 
-        <!-- Rotate & Trash -->
         <div id="btn-rotate">🔄</div>
         <div id="trash-can">🗑️</div>
+    </div>
+
+    <div id="map-overlay">
+        <canvas id="map-canvas"></canvas>
+        <div id="map-title">SOLAR SYSTEM</div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const mapCanvas = document.getElementById('map-canvas');
+        const mapCtx = mapCanvas.getContext('2d');
         
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            mapCanvas.width = window.innerWidth;
+            mapCanvas.height = window.innerHeight;
         }
         window.addEventListener('resize', resize);
         resize();
@@ -151,7 +167,9 @@ game_html = """
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
-            cameraY: 0, lastTime: performance.now()
+            legsDeployed: false,
+            cameraY: 0, lastTime: performance.now(),
+            particles: []
         };
 
         const GRAVITY = 9.81;
@@ -159,19 +177,14 @@ game_html = """
         let rocketParts = []; 
         let currentRotation = 0; 
         
-        // --- PART DEFINITIONS ---
         const P = {
             pod:        { w: 30, h: 30, m: 1500, f: 0,   t: 0 },
             nose:       { w: 30, h: 20, m: 200,  f: 0,   t: 0 },
-            tank_small: { w: 24, h: 30, m: 500,  f: 1000, t: 0 },
             tank_med:   { w: 30, h: 60, m: 1000, f: 2500, t: 0 },
-            tank_large: { w: 45, h: 90, m: 2000, f: 6000, t: 0 },
             decoupler:  { w: 30, h: 8,  m: 100,  f: 0,   t: 0 },
-            engine_small:{ w: 18, h: 18, m: 300,  f: 0,   t: 200 },
             engine_med: { w: 24, h: 24, m: 800,  f: 0,   t: 600 },
-            engine_large:{ w: 36, h: 36, m: 2000, f: 0,   t: 1500 },
             booster:    { w: 20, h: 50, m: 600,  f: 1500, t: 300 },
-            strut:      { w: 10, h: 30, m: 50,   f: 0,   t: 0 }
+            legs:       { w: 30, h: 20, m: 100,  f: 0,   t: 0 }
         };
 
         const menuPlanets = [
@@ -202,7 +215,6 @@ game_html = """
             updateStats();
         };
 
-        // --- STATS ---
         function updateStats() {
             let mass = 0, fuel = 0, thrust = 0;
             rocketParts.forEach(p => {
@@ -216,7 +228,6 @@ game_html = """
             document.getElementById('stat-twr').innerText = twr.toFixed(2);
         }
 
-        // --- DRAG AND DROP ---
         let draggedPart = null;
         let dragGhost = null;
         let isDraggingExisting = false;
@@ -244,10 +255,8 @@ game_html = """
             });
         });
 
-        // PICK UP EXISTING PART
         canvas.addEventListener('pointerdown', (e) => {
             if (gameState !== "vab" || draggedPart) return;
-            
             const rect = canvas.getBoundingClientRect();
             let mouseX = e.clientX - rect.left;
             let mouseY = e.clientY - rect.top;
@@ -279,7 +288,6 @@ game_html = """
             }
         });
 
-        // TRASH CAN HOVER
         const trashCan = document.getElementById('trash-can');
         trashCan.addEventListener('pointerenter', () => trashCan.classList.add('hover'));
         trashCan.addEventListener('pointerleave', () => trashCan.classList.remove('hover'));
@@ -287,7 +295,6 @@ game_html = """
         window.addEventListener('pointerup', (e) => {
             if (!draggedPart) return;
 
-            // Check Trash Can
             const tr = trashCan.getBoundingClientRect();
             if (e.clientX >= tr.left && e.clientX <= tr.right && e.clientY >= tr.top && e.clientY <= tr.bottom) {
                 draggedPart = null;
@@ -330,10 +337,7 @@ game_html = """
                 }
                 addPart(draggedPart, snapX, snapY, currentRotation);
                 updateStats();
-            } else if (!isDraggingExisting && e.target !== canvas) {
-                // Dropped outside canvas, just destroy ghost
             } else if (isDraggingExisting) {
-                // Return to original if dropped nowhere
                 addPart(draggedPart, worldX, worldY, currentRotation);
                 updateStats();
             }
@@ -354,7 +358,6 @@ game_html = """
             rocketParts.push({ type, x, y, angle: angle });
         }
 
-        // --- FLIGHT CONTROLS ---
         let isDraggingThrottle = false;
         let leftPressed = false;
         let rightPressed = false;
@@ -378,17 +381,19 @@ game_html = """
         document.getElementById('joy-right').addEventListener('pointerdown', () => { rightPressed = true; });
         document.getElementById('joy-right').addEventListener('pointerup', () => { rightPressed = false; });
 
-        // --- SMART STAGING ---
+        document.getElementById('btn-legs').onclick = function() {
+            state.legsDeployed = !state.legsDeployed;
+            this.innerText = state.legsDeployed ? "LEGS: DOWN" : "LEGS: UP";
+            if(state.legsDeployed) this.classList.add('deployed');
+            else this.classList.remove('deployed');
+        };
+
         document.getElementById('btn-stage').onclick = function() {
             let sideDecouplers = rocketParts.filter(p => p.type === 'decoupler' && Math.abs(p.x) > 10);
-            
             if (sideDecouplers.length > 0) {
-                // Drop side boosters
                 let dropX = sideDecouplers[0].x;
                 let partsToDrop = rocketParts.filter(p => Math.abs(p.x - dropX) < 5);
                 rocketParts = rocketParts.filter(p => !partsToDrop.includes(p));
-                
-                // Drop other side
                 let otherSide = rocketParts.find(p => p.type === 'decoupler' && Math.abs(p.x + dropX) < 5);
                 if (otherSide) {
                     let dropX2 = otherSide.x;
@@ -396,7 +401,6 @@ game_html = """
                     rocketParts = rocketParts.filter(p => !partsToDrop2.includes(p));
                 }
             } else {
-                // Drop center stage
                 let centerDec = rocketParts.filter(p => p.type === 'decoupler');
                 if (centerDec.length === 0) return;
                 centerDec.sort((a, b) => a.y - b.y);
@@ -406,7 +410,47 @@ game_html = """
             updateStats();
         };
 
-        // --- LAUNCH ---
+        const mapOverlay = document.getElementById('map-overlay');
+        const planetsMap = [
+            { name: "Earth", color: "#4a90e2", x: 0.3 },
+            { name: "Moon", color: "#9ca3af", x: 0.4 },
+            { name: "Mars", color: "#ea580c", x: 0.5 },
+            { name: "Jupiter", color: "#d4a373", x: 0.6 },
+            { name: "Saturn", color: "#e3d5a1", x: 0.7 },
+            { name: "Uranus", color: "#b2e3e6", x: 0.8 },
+            { name: "Neptune", color: "#3b5bdb", x: 0.9 }
+        ];
+
+        document.getElementById('btn-map').onclick = () => {
+            if (gameState !== "flight") return;
+            mapOverlay.style.display = 'block';
+            mapCtx.fillStyle = "#000511";
+            mapCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
+            
+            planetsMap.forEach(p => {
+                mapCtx.fillStyle = p.color;
+                mapCtx.beginPath();
+                mapCtx.arc(p.x * mapCanvas.width, mapCanvas.height/2, 20, 0, Math.PI*2);
+                mapCtx.fill();
+                mapCtx.fillStyle = "#fff";
+                mapCtx.font = "16px Arial";
+                mapCtx.fillText(p.name, p.x * mapCanvas.width - 15, mapCanvas.height/2 + 40);
+            });
+        };
+
+        mapCanvas.addEventListener('pointerdown', (e) => {
+            const rect = mapCanvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            planetsMap.forEach(p => {
+                if (Math.abs(x - p.x) < 0.05) {
+                    state.y = 1000; 
+                    state.vy = 0; state.vx = 0;
+                    state.throttle = 0;
+                    mapOverlay.style.display = 'none';
+                }
+            });
+        });
+
         document.getElementById('btn-launch').onclick = function() {
             if (gameState === "vab") {
                 let minX = 9999, maxX = -9999, minY = 9999;
@@ -425,11 +469,13 @@ game_html = """
                 document.getElementById('vab-stats').style.display = 'none';
                 document.getElementById('btn-rotate').style.display = 'none';
                 document.getElementById('trash-can').style.display = 'none';
-                this.style.display = 'none';
+                document.getElementById('top-bar').style.display = 'none';
                 document.getElementById('hud').style.display = 'block';
                 document.getElementById('throttle-zone').style.display = 'block';
                 document.getElementById('arrow-zone').style.display = 'flex';
                 document.getElementById('btn-stage').style.display = 'block';
+                document.getElementById('btn-legs').style.display = 'block';
+                document.getElementById('btn-map').style.display = 'block';
 
                 let initialStats = { m: 0, f: 0 };
                 rocketParts.forEach(p => { initialStats.m += P[p.type].m; initialStats.f += P[p.type].f; });
@@ -441,7 +487,6 @@ game_html = """
 
         document.getElementById('btn-reset').onclick = () => window.location.reload();
 
-        // --- PHYSICS ---
         function updatePhysics(dt) {
             if (gameState !== "flight") return;
 
@@ -473,12 +518,20 @@ game_html = """
 
             if (state.y < 0) {
                 state.y = 0;
-                if (Math.abs(state.vy) > 5) {
+                if (Math.abs(state.vy) > 5 || !state.legsDeployed) {
                     gameState = "crashed";
+                    for(let i=0; i<50; i++) {
+                        state.particles.push({
+                            x: state.x, y: state.y,
+                            vx: (Math.random()-0.5)*200,
+                            vy: (Math.random()-0.5)*200,
+                            life: 1.5, size: Math.random()*15+5, color: "255,50,0"
+                        });
+                    }
                     document.getElementById('hud').innerText = "CRASHED";
                 } else {
                     state.vy = 0; state.vx = 0; state.throttle = 0;
-                    document.getElementById('hud').innerText = "LANDED";
+                    document.getElementById('hud').innerText = "LANDED SAFELY";
                 }
             }
 
@@ -488,7 +541,6 @@ game_html = """
             document.getElementById('val-mass').innerText = state.totalMass.toFixed(0);
         }
 
-        // --- DRAWING ---
         function drawMenu(dt) {
             ctx.fillStyle = "#000511";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -502,12 +554,10 @@ game_html = """
                 p.angle += p.speed * dt;
                 ctx.strokeStyle = "rgba(255,255,255,0.1)";
                 ctx.beginPath(); ctx.arc(cx, cy, p.dist, 0, Math.PI * 2); ctx.stroke();
-
                 let px = cx + Math.cos(p.angle) * p.dist;
                 let py = cy + Math.sin(p.angle) * p.dist;
                 ctx.fillStyle = p.color;
                 ctx.beginPath(); ctx.arc(px, py, p.size, 0, Math.PI * 2); ctx.fill();
-
                 if (p.ring) {
                     ctx.strokeStyle = "rgba(227, 213, 161, 0.6)"; ctx.lineWidth = 3;
                     ctx.beginPath(); ctx.ellipse(px, py, p.size * 2, p.size * 0.5, Math.PI/4, 0, Math.PI * 2); ctx.stroke();
@@ -540,6 +590,8 @@ game_html = """
                 ctx.fillStyle = "#666"; ctx.fillRect(-w/2, -h/2, w, h);
             } else if (p.type === "decoupler") {
                 ctx.fillStyle = "#5c3a21"; ctx.fillRect(-w/2, -h/2, w, h);
+            } else if (p.type === "legs") {
+                ctx.fillStyle = "#555"; ctx.beginPath(); ctx.moveTo(-w/2, -h/2); ctx.lineTo(w/2, -h/2); ctx.lineTo(w/3, h/2); ctx.lineTo(-w/3, h/2); ctx.fill();
             }
             ctx.restore();
         }
