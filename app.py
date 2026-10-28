@@ -21,7 +21,6 @@ game_html = """
         body { margin: 0; overflow: hidden; background-color: #2b3a4a; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; }
         canvas { display: block; }
         
-        /* UI LAYER */
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
         
         /* START SCREEN */
@@ -30,7 +29,7 @@ game_html = """
         #btn-start:active { transform: scale(0.95); }
         .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 50px; text-shadow: 0 0 20px #4a90e2; text-align: center;}
 
-        /* VAB Menu (Left) */
+        /* VAB Menu */
         #vab-menu { position: absolute; top: 10px; left: 10px; width: 100px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; display: none; flex-direction: column; align-items: center; padding: 10px 0; pointer-events: auto; max-height: 85vh; overflow-y: auto; z-index: 100000;}
         .part-btn { width: 80px; height: 60px; margin: 4px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
         .part-btn:active { cursor: grabbing; border-color: #00ffcc; }
@@ -50,7 +49,7 @@ game_html = """
         .m-strut { width: 6px; height: 30px; background: #666;}
         .m-legs { width: 20px; height: 15px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
 
-        /* VAB Stats Panel (Right) */
+        /* VAB Stats */
         #vab-stats { position: absolute; top: 10px; right: 10px; width: 150px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 15px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
@@ -74,10 +73,7 @@ game_html = """
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
         #btn-map { position: absolute; top: 15px; left: 15px; width: 60px; height: 40px; background: rgba(0,0,0,0.5); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000;}
 
-        /* Rotate Button */
         #btn-rotate { position: absolute; top: 200px; right: 10px; width: 60px; height: 60px; background: rgba(0, 0, 0, 0.85); border: 2px solid #00ffcc; color: white; border-radius: 10px; font-size: 24px; display: none; justify-content: center; align-items: center; pointer-events: auto; z-index: 100000; cursor: pointer;}
-
-        /* Trash Can */
         #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
         #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; transform: scale(1.1); }
 
@@ -125,7 +121,8 @@ game_html = """
         <div id="hud">
             ALT: <span id="val-alt">0</span> m<br>
             VEL: <span id="val-vel">0</span> m/s<br>
-            MASS: <span id="val-mass">0</span> kg
+            MASS: <span id="val-mass">0</span> kg<br>
+            FUEL: <span id="val-fuel">100</span>%
         </div>
         
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
@@ -163,7 +160,7 @@ game_html = """
         let gameState = "menu"; 
         
         let state = {
-            x: 0, y: 50, vx: 0, vy: 0,
+            x: 0, y: 10, vx: 0, vy: 0, 
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
@@ -466,7 +463,7 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
-                state.y = 50; // START ABOVE THE GROUND TO PREVENT INSTANT CRASH
+                state.y = 10; 
                 state.vy = 0; state.vx = 0;
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
@@ -491,6 +488,9 @@ game_html = """
                 state.dryMass = initialStats.m;
                 state.maxFuel = initialStats.f;
                 state.currentFuel = initialStats.f;
+                
+                document.getElementById('val-fuel').innerText = "100";
+                document.getElementById('val-fuel').style.color = "#00ffcc";
             }
         };
 
@@ -516,8 +516,27 @@ game_html = """
                 let rad = state.angle * (Math.PI / 180);
                 ax += thrustAccel * Math.sin(rad);
                 ay += thrustAccel * Math.cos(rad);
+                
+                // Burn Fuel
                 state.currentFuel -= 50 * state.throttle * dt; 
-                if (state.currentFuel < 0) state.currentFuel = 0;
+                if (state.currentFuel <= 0) {
+                    state.currentFuel = 0;
+                    state.throttle = 0; // Cut engine
+                    throttleFill.style.height = '0%';
+                    document.getElementById('val-fuel').innerText = "0";
+                    document.getElementById('val-fuel').style.color = "#ff4444";
+                }
+
+                // Fire Particles
+                for(let i=0; i<5; i++) {
+                    state.particles.push({
+                        x: state.x + (Math.random()-0.5)*15, 
+                        y: state.y + (Math.random()-0.5)*15,
+                        vx: (Math.random()-0.5)*30,
+                        vy: -Math.random()*100 - 50,
+                        life: 1.0, size: Math.random()*10+5, color: "255,150,0"
+                    });
+                }
             }
 
             state.vx += ax * dt;
@@ -525,17 +544,18 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
-            // Collision check against the ground (y=0 is ground, rocket bottom is at state.y)
+            // Collision check
             if (state.y < 0) {
                 state.y = 0;
                 if (Math.abs(state.vy) > 5 || !state.legsDeployed) {
                     gameState = "crashed";
-                    for(let i=0; i<50; i++) {
+                    for(let i=0; i<100; i++) {
                         state.particles.push({
-                            x: state.x, y: state.y,
+                            x: state.x + (Math.random()-0.5)*30, 
+                            y: state.y + (Math.random()-0.5)*30,
                             vx: (Math.random()-0.5)*200,
                             vy: (Math.random()-0.5)*200,
-                            life: 1.5, size: Math.random()*15+5, color: "255,50,0"
+                            life: 1.5, size: Math.random()*20+10, color: "255,50,0"
                         });
                     }
                     document.getElementById('hud').innerText = "CRASHED";
@@ -546,9 +566,27 @@ game_html = """
             }
 
             state.cameraY += (state.y - state.cameraY) * 5 * dt;
+            
+            // Update HUD
             document.getElementById('val-alt').innerText = state.y.toFixed(1);
             document.getElementById('val-vel').innerText = Math.sqrt(state.vx*state.vx + state.vy*state.vy).toFixed(1);
             document.getElementById('val-mass').innerText = state.totalMass.toFixed(0);
+            
+            let fuelPercent = (state.currentFuel / state.maxFuel) * 100;
+            if (fuelPercent > 0) {
+                document.getElementById('val-fuel').innerText = fuelPercent.toFixed(1);
+                if (fuelPercent < 20) document.getElementById('val-fuel').style.color = "#ff4444";
+                else document.getElementById('val-fuel').style.color = "#00ffcc";
+            }
+
+            // Update Particles
+            for(let i = state.particles.length - 1; i >= 0; i--) {
+                let p = state.particles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.life -= dt * 1.5;
+                if(p.life <= 0) state.particles.splice(i, 1);
+            }
         }
 
         function drawMenu(dt) {
@@ -626,6 +664,14 @@ game_html = """
                 ctx.translate(state.x, -state.cameraY);
                 ctx.rotate(state.angle * (Math.PI/180));
                 rocketParts.forEach(p => drawPart(p, -p.y));
+
+                // Draw Particles
+                state.particles.forEach(p => {
+                    ctx.fillStyle = `rgba(${p.color}, ${p.life})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, -p.y + state.cameraY, p.size * p.life, 0, Math.PI*2);
+                    ctx.fill();
+                });
             }
             ctx.restore();
         }
