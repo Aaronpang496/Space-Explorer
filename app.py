@@ -163,7 +163,7 @@ game_html = """
         let gameState = "menu"; 
         
         let state = {
-            x: 0, y: 0, vx: 0, vy: 0,
+            x: 0, y: 50, vx: 0, vy: 0,
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
@@ -451,7 +451,8 @@ game_html = """
             });
         });
 
-        document.getElementById('btn-launch').onclick = function() {
+        document.getElementById('btn-launch').onclick = function(e) {
+            e.stopPropagation();
             if (gameState === "vab") {
                 let minX = 9999, maxX = -9999, minY = 9999;
                 rocketParts.forEach(p => {
@@ -465,17 +466,25 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
+                state.y = 50; // START ABOVE THE GROUND TO PREVENT INSTANT CRASH
+                state.vy = 0; state.vx = 0;
+                state.angle = 0; state.angularVelocity = 0;
+                state.throttle = 0;
+                state.legsDeployed = false;
+
                 document.getElementById('vab-menu').style.display = 'none';
                 document.getElementById('vab-stats').style.display = 'none';
                 document.getElementById('btn-rotate').style.display = 'none';
                 document.getElementById('trash-can').style.display = 'none';
                 document.getElementById('top-bar').style.display = 'none';
+                
                 document.getElementById('hud').style.display = 'block';
                 document.getElementById('throttle-zone').style.display = 'block';
                 document.getElementById('arrow-zone').style.display = 'flex';
                 document.getElementById('btn-stage').style.display = 'block';
                 document.getElementById('btn-legs').style.display = 'block';
                 document.getElementById('btn-map').style.display = 'block';
+                document.getElementById('throttle-fill').style.height = '0%';
 
                 let initialStats = { m: 0, f: 0 };
                 rocketParts.forEach(p => { initialStats.m += P[p.type].m; initialStats.f += P[p.type].f; });
@@ -516,6 +525,7 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
+            // Collision check against the ground (y=0 is ground, rocket bottom is at state.y)
             if (state.y < 0) {
                 state.y = 0;
                 if (Math.abs(state.vy) > 5 || !state.legsDeployed) {
@@ -612,7 +622,7 @@ game_html = """
                 for(let i=-1000;i<1000;i+=GRID){ctx.beginPath();ctx.moveTo(i,-1000);ctx.lineTo(i,1000);ctx.stroke();ctx.beginPath();ctx.moveTo(-1000,i);ctx.lineTo(1000,i);ctx.stroke();}
                 rocketParts.forEach(p => drawPart(p, -p.y));
             } else {
-                ctx.fillStyle = "#4a3b2c"; ctx.fillRect(-10000, 0, 20000, -10000);
+                ctx.fillStyle = "#4a3b2c"; ctx.fillRect(-10000, 0, 20000, 10000);
                 ctx.translate(state.x, -state.cameraY);
                 ctx.rotate(state.angle * (Math.PI/180));
                 rocketParts.forEach(p => drawPart(p, -p.y));
