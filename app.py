@@ -34,7 +34,7 @@ game_html = """
         .part-btn:active { cursor: grabbing; border-color: #00ffcc; }
         .part-btn span { font-size: 9px; color: #aaa; position: absolute; bottom: 2px;}
 
-        /* CSS Lego Shapes (Accurate Proportions) */
+        /* CSS Lego Shapes */
         .m-pod { width: 20px; height: 25px; background: #888; border-radius: 5px 5px 0 0; border-bottom: 3px solid #444;}
         .m-nose { width: 20px; height: 20px; background: #fff; clip-path: polygon(50% 0%, 100% 100%, 0% 100%);}
         .m-tank-s { width: 16px; height: 25px; background: #eee; border-left: 2px solid #ccc; border-right: 2px solid #ccc;}
@@ -162,7 +162,7 @@ game_html = """
         let gameState = "menu"; 
         
         let state = {
-            x: 0, y: 50, vx: 0, vy: 0, // Start safely in the air
+            x: 0, y: 50, vx: 0, vy: 0, 
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
@@ -176,7 +176,6 @@ game_html = """
         let rocketParts = []; 
         let currentRotation = 0; 
         
-        // --- ACCURATE SIZES & WEIGHTS ---
         const P = {
             pod:         { w: 30, h: 30, m: 1500, f: 0,    t: 0 },
             nose:        { w: 30, h: 20, m: 200,  f: 0,    t: 0 },
@@ -211,7 +210,6 @@ game_html = """
             document.getElementById('btn-rotate').style.display = 'flex';
             document.getElementById('trash-can').style.display = 'flex';
             
-            // Default rocket build
             rocketParts = [];
             addPart("engine_med", 0, 12, 0);
             addPart("tank_med", 0, 54, 0);
@@ -479,7 +477,7 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
-                state.y = 50; // START SAFELY ABOVE THE GROUND
+                state.y = 50; 
                 state.vy = 0; state.vx = 0;
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
@@ -529,7 +527,6 @@ game_html = """
             let ay = -currentGravity;
             let ax = 0;
             
-            // Aerodynamic Drag (slows you down in the atmosphere)
             let drag = 0;
             if (state.y < 10000) {
                 drag = (Math.abs(state.vx) + Math.abs(state.vy)) * 0.005;
@@ -550,18 +547,22 @@ game_html = """
                     document.getElementById('val-fuel').style.color = "#ff4444";
                 }
 
+                // FIXED: Fire particles now rotate with the rocket
                 for(let i=0; i<5; i++) {
+                    let rad = state.angle * (Math.PI / 180);
+                    let exhaustX = state.x - Math.sin(rad) * 20;
+                    let exhaustY = state.y - Math.cos(rad) * 20;
+                    
                     state.particles.push({
-                        x: state.x + (Math.random()-0.5)*15, 
-                        y: state.y + (Math.random()-0.5)*15,
-                        vx: (Math.random()-0.5)*30,
-                        vy: -Math.random()*100 - 50,
+                        x: exhaustX + (Math.random()-0.5)*10, 
+                        y: exhaustY + (Math.random()-0.5)*10,
+                        vx: -Math.sin(rad) * 100 + (Math.random()-0.5)*30,
+                        vy: -Math.cos(rad) * 100 + (Math.random()-0.5)*30,
                         life: 1.0, size: Math.random()*10+5, color: "255,150,0"
                     });
                 }
             }
 
-            // Apply Drag
             state.vx -= Math.sign(state.vx) * drag * dt;
             state.vy -= Math.sign(state.vy) * drag * dt;
 
@@ -668,13 +669,20 @@ game_html = """
         function draw() {
             if (gameState === "menu") return; 
 
-            ctx.fillStyle = gameState === "vab" ? "#2b3a4a" : "#87CEEB";
+            // Faster sky transition
+            if (gameState === "vab") {
+                ctx.fillStyle = "#2b3a4a";
+            } else {
+                if (state.y < 1000) ctx.fillStyle = "#87CEEB"; // Blue sky
+                else if (state.y < 3000) ctx.fillStyle = "#1a3b5c"; // Dark blue
+                else ctx.fillStyle = "#000000"; // Space
+            }
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.save();
             ctx.translate(canvas.width/2, canvas.height*0.8);
             
-            let zoom = gameState === "vab" ? 1.2 : Math.max(0.4, 1.2 - (state.y/20000));
+            let zoom = gameState === "vab" ? 1.2 : Math.max(0.4, 1.2 - (state.y/10000));
             ctx.scale(zoom, zoom);
 
             if (gameState === "vab") {
