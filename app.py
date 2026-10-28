@@ -82,6 +82,9 @@ game_html = """
         #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.95); display: none; pointer-events: auto; z-index: 200000;}
         #map-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #map-title { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold;}
+
+        /* Status Message */
+        #status-msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000;}
     </style>
 </head>
 <body>
@@ -137,10 +140,12 @@ game_html = """
             <div class="arrow-btn" id="joy-right">▶</div>
         </div>
         <button id="btn-stage">STAGE</button>
-        <button id="btn-legs">LEGS: DOWN</button>
+        <button id="btn-legs">LEGS: UP</button>
 
         <div id="btn-rotate">🔄</div>
         <div id="trash-can">🗑️</div>
+
+        <div id="status-msg"></div>
     </div>
 
     <div id="map-overlay">
@@ -168,13 +173,14 @@ game_html = """
         let gameState = "menu"; 
         
         let state = {
-            x: 0, y: 0, vx: 0, vy: 0, // Start on the pad
+            x: 0, y: 0, vx: 0, vy: 0, 
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
-            legsDeployed: true, // Start with legs down so you don't instantly crash
+            legsDeployed: true, 
             cameraY: 0, lastTime: performance.now(),
-            particles: []
+            particles: [],
+            landedMsgTimer: 0
         };
 
         const GRAVITY = 9.81;
@@ -483,7 +489,7 @@ game_html = """
                 rocketParts.forEach(p => { p.x -= offsetX; p.y -= minY; });
 
                 gameState = "flight";
-                state.y = 0; 
+                state.y = 10; // START SAFELY ABOVE THE GROUND
                 state.vy = 0; state.vx = 0;
                 state.angle = 0; state.angularVelocity = 0;
                 state.throttle = 0;
@@ -504,6 +510,7 @@ game_html = """
                 document.getElementById('btn-legs').style.display = 'block';
                 document.getElementById('btn-map').style.display = 'block';
                 document.getElementById('throttle-fill').style.height = '0%';
+                document.getElementById('status-msg').style.display = 'none';
 
                 let initialStats = { m: 0, f: 0 };
                 rocketParts.forEach(p => { initialStats.m += P[p.type].m; initialStats.f += P[p.type].f; });
@@ -577,10 +584,10 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
-            // Safer Collision Check
-            if (state.y < 0) {
+            // Ground Collision
+            if (state.y <= 0) {
                 state.y = 0;
-                if (state.vy < -5 && !state.legsDeployed) {
+                if (state.vy < -5 || !state.legsDeployed) {
                     gameState = "crashed";
                     for(let i=0; i<100; i++) {
                         state.particles.push({
@@ -591,11 +598,21 @@ game_html = """
                             life: 1.5, size: Math.random()*20+10, color: "255,50,0"
                         });
                     }
-                    document.getElementById('hud').innerText = "CRASHED";
+                    document.getElementById('status-msg').innerText = "💥 CRASHED";
+                    document.getElementById('status-msg').style.color = "#ff4444";
+                    document.getElementById('status-msg').style.display = 'block';
                 } else {
                     state.vy = 0; state.vx = 0; state.throttle = 0;
-                    document.getElementById('hud').innerText = "LANDED SAFELY";
+                    state.landedMsgTimer += dt;
+                    if (state.landedMsgTimer > 0.1) {
+                        document.getElementById('status-msg').innerText = "🏆 LANDED SAFELY";
+                        document.getElementById('status-msg').style.color = "#00ffcc";
+                        document.getElementById('status-msg').style.display = 'block';
+                    }
                 }
+            } else {
+                state.landedMsgTimer = 0;
+                document.getElementById('status-msg').style.display = 'none';
             }
 
             state.cameraY += (state.y - state.cameraY) * 5 * dt;
@@ -713,6 +730,7 @@ game_html = """
                 for(let i=-1000;i<1000;i+=GRID){ctx.beginPath();ctx.moveTo(i,-1000);ctx.lineTo(i,1000);ctx.stroke();ctx.beginPath();ctx.moveTo(-1000,i);ctx.lineTo(1000,i);ctx.stroke();}
                 rocketParts.forEach(p => drawPart(p, -p.y));
             } else {
+                // Camera Follow
                 ctx.translate(-state.x, state.cameraY);
 
                 ctx.fillStyle = "#4a3b2c"; ctx.fillRect(-10000, 0, 20000, 10000);
@@ -724,7 +742,8 @@ game_html = """
                     ctx.fill();
                 });
 
-                ctx.translate(0, -state.y); 
+                // Draw Rocket
+                ctx.translate(state.x, -state.y); 
                 ctx.rotate(state.angle * (Math.PI/180));
                 rocketParts.forEach(p => drawPart(p, -p.y));
             }
