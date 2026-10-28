@@ -75,7 +75,10 @@ game_html = """
         #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; }
         #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; }
 
-        /* Map Overlay */
+        /* Minimap */
+        #minimap-container { position: absolute; top: 120px; right: 15px; width: 100px; height: 100px; border: 2px solid #555; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000;}
+        
+        /* Transport Map Overlay */
         #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.95); display: none; pointer-events: auto; z-index: 200000;}
         #map-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #map-title { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold;}
@@ -83,6 +86,7 @@ game_html = """
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+    <canvas id="minimap" width="100" height="100"></canvas>
     
     <div id="ui-layer">
         <div id="start-screen">
@@ -119,6 +123,7 @@ game_html = """
         </div>
 
         <button id="btn-map">MAP</button>
+        <div id="minimap-container"><canvas id="minimap" width="100" height="100"></canvas></div>
 
         <div id="hud">
             ALT: <span id="val-alt">0</span> m<br>
@@ -141,7 +146,7 @@ game_html = """
 
     <div id="map-overlay">
         <canvas id="map-canvas"></canvas>
-        <div id="map-title">SOLAR SYSTEM</div>
+        <div id="map-title">SOLAR SYSTEM MAP</div>
     </div>
 
     <script>
@@ -149,6 +154,8 @@ game_html = """
         const ctx = canvas.getContext('2d');
         const mapCanvas = document.getElementById('map-canvas');
         const mapCtx = mapCanvas.getContext('2d');
+        const minimapCanvas = document.getElementById('minimap');
+        const minimapCtx = minimapCanvas.getContext('2d');
         
         function resize() {
             canvas.width = window.innerWidth;
@@ -162,7 +169,7 @@ game_html = """
         let gameState = "menu"; 
         
         let state = {
-            x: 0, y: 50, vx: 0, vy: 0, 
+            x: 0, y: 50, vx: 0, vy: 0, // Start safely in the air
             angle: 0, angularVelocity: 0, 
             throttle: 0, 
             currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
@@ -491,6 +498,7 @@ game_html = """
                 document.getElementById('top-bar').style.display = 'none';
                 
                 document.getElementById('hud').style.display = 'block';
+                document.getElementById('minimap-container').style.display = 'block';
                 document.getElementById('throttle-zone').style.display = 'block';
                 document.getElementById('arrow-zone').style.display = 'flex';
                 document.getElementById('btn-stage').style.display = 'block';
@@ -512,7 +520,6 @@ game_html = """
         document.getElementById('btn-reset').onclick = () => window.location.reload();
 
         function updatePhysics(dt) {
-            // FIXED: Strict pause until flight mode begins
             if (gameState !== "flight") return;
 
             if (leftPressed) state.angularVelocity -= 1.5 * dt;
@@ -571,7 +578,6 @@ game_html = """
             state.x += state.vx * dt;
             state.y += state.vy * dt;
 
-            // Fixed: Check total speed (hypot) for crash
             if (state.y < 0) {
                 state.y = 0;
                 if (Math.hypot(state.vx, state.vy) > 5 || !state.legsDeployed) {
@@ -667,10 +673,26 @@ game_html = """
             ctx.restore();
         }
 
+        function drawMinimap() {
+            minimapCtx.fillStyle = "#000";
+            minimapCtx.fillRect(0, 0, 100, 100);
+            
+            // Draw Earth
+            minimapCtx.fillStyle = "#4a90e2";
+            minimapCtx.beginPath();
+            minimapCtx.arc(50, 50 + (state.y / 100), 5, 0, Math.PI * 2); // Earth moves down as we go up
+            minimapCtx.fill();
+
+            // Draw Rocket
+            minimapCtx.fillStyle = "#00ffcc";
+            minimapCtx.beginPath();
+            minimapCtx.arc(50, 80, 2, 0, Math.PI * 2);
+            minimapCtx.fill();
+        }
+
         function draw() {
             if (gameState === "menu") return; 
 
-            // Faster sky transition
             if (gameState === "vab") {
                 ctx.fillStyle = "#2b3a4a";
             } else {
@@ -707,6 +729,8 @@ game_html = """
                 rocketParts.forEach(p => drawPart(p, -p.y));
             }
             ctx.restore();
+
+            if (gameState === "flight") drawMinimap();
         }
 
         function loop(time) {
