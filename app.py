@@ -57,6 +57,8 @@ game_html = """
         .top-btn { background: #1e3a8a; color: white; border: 2px solid #60a5fa; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer;}
 
         #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
+        #hud-planet { color: #ffcc44; font-weight: bold; }
+        #hud-space { color: #00ffcc; font-weight: bold; display: none; }
 
         #throttle-zone { position: absolute; right: 15px; top: 60%; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 22px;}
@@ -79,6 +81,11 @@ game_html = """
         #status-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 36px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000;}
 
         #btn-rebuild { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; padding: 15px 30px; background: #1e3a8a; color: #fff; border: 2px solid #60a5fa; border-radius: 8px; font-size: 16px; font-weight: bold; pointer-events: auto; z-index: 100000; cursor: pointer;}
+
+        #warp-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #ffffff 0%, #aaddff 40%, rgba(0,0,20,0) 100%);
+            opacity: 0; pointer-events: none; z-index: 500000; transition: opacity 0.3s ease-out; }
+        #warp-flash.active { opacity: 1; }
     </style>
 </head>
 <body>
@@ -122,9 +129,11 @@ game_html = """
         <div id="minimap-container"><canvas id="minimap" width="80" height="80"></canvas></div>
 
         <div id="hud">
+            <span id="hud-planet">Earth</span><br>
             ALT: <span id="val-alt">0</span> m<br>
             VEL: <span id="val-vel">0</span> m/s<br>
-            FUEL: <span id="val-fuel" style="color:#00ffcc">100</span>%
+            FUEL: <span id="val-fuel" style="color:#00ffcc">100</span>%<br>
+            <span id="hud-space">★ IN SPACE ★</span>
         </div>
 
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
@@ -142,8 +151,10 @@ game_html = """
     <div id="map-overlay">
         <canvas id="map-canvas"></canvas>
         <div id="map-title">SOLAR SYSTEM MAP</div>
-        <div id="map-hint">Tap a planet to travel there</div>
+        <div id="map-hint">Tap a planet to warp there</div>
     </div>
+
+    <div id="warp-flash"></div>
 
     <script>
     const canvas = document.getElementById('gameCanvas');
@@ -210,7 +221,6 @@ game_html = """
         "Jupiter": { ground: "#8b4513", g: 24.79, color: "#d4a373", sky: [216, 170, 130], atmo: 15000 }
     };
 
-    /* ---- terrain marks, seeded per planet ---- */
     function makeSurface(seed) {
         const arr = [];
         let s = seed >>> 0;
@@ -235,6 +245,7 @@ game_html = """
         angle: 0, angularVelocity: 0,
         throttle: 0,
         currentFuel: 0, maxFuel: 0, dryMass: 0, totalMass: 0,
+        rocketCenterY: 0,
         hasLiftedOff: false,
         onGround: true,
         legsDeployed: false, legsProgress: 0,
@@ -268,7 +279,6 @@ game_html = """
         return m;
     }
 
-    /* ---- VAB view: rocket is vertically CENTERED on screen ---- */
     function vabView() {
         const maxY = rocketMaxY();
         const rh = Math.max(maxY, 60);
@@ -283,6 +293,17 @@ game_html = """
         const my = clientY - rect.top;
         const v = vabView();
         return { x: (mx - v.ox) / v.sc, y: (v.oy - my) / v.sc };
+    }
+
+    /* Compute rocket center of mass in "part-y" space */
+    function computeRocketCenter() {
+        let totalMass = 0, weightedY = 0;
+        rocketParts.forEach(function (p) {
+            const m = P[p.type].m + P[p.type].f;
+            totalMass += m;
+            weightedY += p.y * m;
+        });
+        state.rocketCenterY = totalMass > 0 ? weightedY / totalMass : 0;
     }
 
     document.getElementById('btn-start').onclick = function () {
@@ -499,6 +520,7 @@ game_html = """
         state.dryMass = m;
         state.maxFuel = f;
         if (state.currentFuel > state.maxFuel) state.currentFuel = state.maxFuel;
+        computeRocketCenter();
         updateStats();
     };
 
@@ -535,7 +557,6 @@ game_html = """
             const cx = p.x * mapCanvas.width;
             const cy = mapCanvas.height / 2;
 
-            /* sphere shading */
             const g = mapCtx.createRadialGradient(cx - 9, cy - 9, 3, cx, cy, 26);
             g.addColorStop(0, "#ffffff");
             g.addColorStop(0.25, p.color);
@@ -579,23 +600,40 @@ game_html = """
             const cx = p.x * mapCanvas.width;
             const cy = mapCanvas.height / 2;
             if (Math.hypot(mx - cx, my - cy) < 48) {
-                travelTo(p.name);
+                warpTravel(p.name);
             }
         });
     });
 
-    /* ---- transport: land the rocket ON the surface of the new planet ---- */
+    /* Warp with a flash effect */
+    function warpTravel(name) {
+        if (name === state.currentPlanet && state.y < 10) {
+            mapOverlay.style.display = 'none';
+            showStatus("ALREADY HERE", "#ffaa00", 1.5);
+            return;
+        }
+        const flash = document.getElementById('warp-flash');
+        flash.classList.add('active');
+        mapOverlay.style.display = 'none';
+        setTimeout(function () {
+            travelTo(name);
+            setTimeout(function () {
+                flash.classList.remove('active');
+            }, 120);
+        }, 380);
+    }
+
     function travelTo(name) {
         state.currentPlanet = name;
         state.x = 0;
-        state.y = 0;                 /* ON the ground, not floating */
+        state.y = 0;
         state.vx = 0;
         state.vy = 0;
         state.angle = 0;
         state.angularVelocity = 0;
         state.throttle = 0;
         state.chuteDeployed = false;
-        state.hasLiftedOff = false;  /* prevents auto-parachute */
+        state.hasLiftedOff = false;
         state.onGround = true;
         state.legsDeployed = false;
         state.legsProgress = 0;
@@ -607,6 +645,8 @@ game_html = """
         state.currentFuel = state.maxFuel;
         throttleFill.style.height = '0%';
 
+        computeRocketCenter();
+
         const legsBtn = document.getElementById('btn-legs');
         legsBtn.innerText = "LEGS: UP";
         legsBtn.classList.remove('deployed');
@@ -614,10 +654,11 @@ game_html = """
         if (gameState === "crashed") {
             gameState = "flight";
             rebuildBtn.style.display = 'none';
+            document.getElementById('status-msg').style.display = 'none';
         }
 
-        mapOverlay.style.display = 'none';
-        showStatus("ARRIVED AT " + name.toUpperCase(), "#00ffcc", 2.5);
+        document.getElementById('hud-planet').innerText = name;
+        showStatus("WARPED TO " + name.toUpperCase(), "#00ffcc", 2.5);
     }
 
     document.getElementById('btn-launch').onclick = function (e) {
@@ -632,6 +673,8 @@ game_html = """
         let minY = Infinity;
         rocketParts.forEach(function (p) { minY = Math.min(minY, p.y - P[p.type].h / 2); });
         rocketParts.forEach(function (p) { p.y -= minY; });
+
+        computeRocketCenter();
 
         gameState = "flight";
 
@@ -661,6 +704,7 @@ game_html = """
         document.getElementById('trash-can').style.display = 'none';
 
         document.getElementById('hud').style.display = 'block';
+        document.getElementById('hud-planet').innerText = "Earth";
         document.getElementById('minimap-container').style.display = 'block';
         document.getElementById('throttle-zone').style.display = 'block';
         document.getElementById('arrow-zone').style.display = 'flex';
@@ -777,25 +821,25 @@ game_html = """
             const cosA = Math.cos(rad);
             const sinA = Math.sin(rad);
 
+            /* Particle spawn using centre-of-mass pivot */
             rocketParts.forEach(function (eng) {
                 if (eng.type.indexOf("engine") === -1) return;
 
                 const hw = P[eng.type].w;
-                const lx = eng.x;
-                const lyScreen = -(eng.y - P[eng.type].h / 2);
-
-                const rx = lx * cosA - lyScreen * sinA;
-                const ry = lx * sinA + lyScreen * cosA;
-
-                const wx = state.x + rx;
-                const wy = state.y - ry;
+                const exBottom = eng.y - P[eng.type].h / 2;
+                const dxScreen = eng.x;
+                const dyScreen = state.rocketCenterY - exBottom;
+                const dxRot = dxScreen * cosA - dyScreen * sinA;
+                const dyRot = dxScreen * sinA + dyScreen * cosA;
+                const wx = state.x + dxRot;
+                const wy = state.y + state.rocketCenterY - dyRot;
 
                 for (let i = 0; i < 3; i++) {
                     state.particles.push({
                         x: wx + (Math.random() - 0.5) * hw,
                         y: wy + (Math.random() - 0.5) * 4,
-                        vx: -sinA * 120 + (Math.random() - 0.5) * 40,
-                        vy: -cosA * 120 + (Math.random() - 0.5) * 40,
+                        vx: -sinA * 140 + (Math.random() - 0.5) * 50,
+                        vy: -cosA * 140 + (Math.random() - 0.5) * 50,
                         life: 1.0,
                         size: Math.random() * 12 + 5,
                         color: "255,150,0"
@@ -804,7 +848,6 @@ game_html = """
             });
         }
 
-        /* auto-parachute only AFTER flying under power */
         if (state.hasLiftedOff && state.y < 3000 && state.vy < -10 && !state.chuteDeployed) {
             if (rocketParts.some(function (p) { return p.type === 'chute'; })) {
                 state.chuteDeployed = true;
@@ -871,6 +914,16 @@ game_html = """
         const fuelEl = document.getElementById('val-fuel');
         fuelEl.innerText = fp.toFixed(1);
         fuelEl.style.color = fp < 20 ? "#ff4444" : "#00ffcc";
+
+        const planet = planetsDB[state.currentPlanet];
+        const spaceEl = document.getElementById('hud-space');
+        if (planet.atmo > 0 && state.y > planet.atmo) {
+            spaceEl.style.display = 'block';
+        } else if (planet.atmo === 0) {
+            spaceEl.style.display = 'block';
+        } else {
+            spaceEl.style.display = 'none';
+        }
     }
 
     function drawPart(p, py) {
@@ -923,16 +976,32 @@ game_html = """
             ctx.fill();
 
             if (state.throttle > 0 && state.currentFuel > 0 && gameState === "flight") {
-                const flameLen = 30 + Math.random() * 40 * state.throttle;
+                const flameLen = 40 + Math.random() * 55 * state.throttle;
+
+                /* Outer flame (orange) */
                 const fg = ctx.createLinearGradient(0, h / 2, 0, h / 2 + flameLen);
                 fg.addColorStop(0, "rgba(255,255,255,1)");
-                fg.addColorStop(0.4, "rgba(255,200,0,0.8)");
+                fg.addColorStop(0.3, "rgba(255,220,0,0.95)");
+                fg.addColorStop(0.65, "rgba(255,110,0,0.65)");
                 fg.addColorStop(1, "rgba(255,0,0,0)");
                 ctx.fillStyle = fg;
                 ctx.beginPath();
-                ctx.moveTo(-w / 3, h / 2);
-                ctx.lineTo(w / 3, h / 2);
+                ctx.moveTo(-w / 2.4, h / 2);
+                ctx.lineTo(w / 2.4, h / 2);
                 ctx.lineTo(0, h / 2 + flameLen);
+                ctx.fill();
+
+                /* Inner flame (white core) */
+                const coreLen = flameLen * 0.6;
+                const cg = ctx.createLinearGradient(0, h / 2, 0, h / 2 + coreLen);
+                cg.addColorStop(0, "rgba(255,255,255,1)");
+                cg.addColorStop(0.5, "rgba(255,255,190,0.9)");
+                cg.addColorStop(1, "rgba(255,210,0,0)");
+                ctx.fillStyle = cg;
+                ctx.beginPath();
+                ctx.moveTo(-w / 4.5, h / 2);
+                ctx.lineTo(w / 4.5, h / 2);
+                ctx.lineTo(0, h / 2 + coreLen);
                 ctx.fill();
             }
 
@@ -986,7 +1055,6 @@ game_html = """
 
         const planet = planetsDB[state.currentPlanet];
 
-        /* ---------- sky ---------- */
         const alt = Math.max(0, state.y);
         let t = planet.atmo > 0 ? Math.min(1, alt / planet.atmo) : 1;
         t = Math.pow(t, 0.6);
@@ -1005,7 +1073,6 @@ game_html = """
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, W, H);
 
-        /* ---------- stars ---------- */
         if (t > 0.04) {
             const px = state.cameraX * 0.04;
             const py = state.cameraY * 0.04;
@@ -1022,7 +1089,6 @@ game_html = """
             ctx.globalAlpha = 1;
         }
 
-        /* ---------- world ---------- */
         const zoom = Math.max(0.55, 1.1 - state.y / 25000);
 
         ctx.save();
@@ -1030,14 +1096,12 @@ game_html = """
         ctx.scale(zoom, zoom);
         ctx.translate(-state.cameraX, state.cameraY);
 
-        /* planet body: giant sphere whose north pole is at y = 0 */
         const R = 50000;
         ctx.fillStyle = planet.ground;
         ctx.beginPath();
         ctx.arc(0, R, R, 0, Math.PI * 2);
         ctx.fill();
 
-        /* surface terrain marks (craters / rocks) */
         if (planet.surface) {
             for (let i = 0; i < planet.surface.length; i++) {
                 const f = planet.surface[i];
@@ -1051,14 +1115,12 @@ game_html = """
             }
         }
 
-        /* subtle horizon highlight */
         ctx.strokeStyle = "rgba(255,255,255,0.18)";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(0, R, R, -Math.PI / 2 - 0.35, -Math.PI / 2 + 0.35);
         ctx.stroke();
 
-        /* particles */
         for (let i = 0; i < state.particles.length; i++) {
             const p = state.particles[i];
             const life = Math.max(0, p.life);
@@ -1068,48 +1130,52 @@ game_html = """
             ctx.fill();
         }
 
-        /* rocket */
         if (gameState !== "crashed") {
+            /* ---- ROTATE AROUND CENTRE OF MASS ---- */
             ctx.save();
-            ctx.translate(state.x, -state.y);
+            ctx.translate(state.x, -(state.y + state.rocketCenterY));
             ctx.rotate(state.angle * Math.PI / 180);
 
-            rocketParts.forEach(function (p) { drawPart(p, -p.y); });
+            rocketParts.forEach(function (p) {
+                drawPart(p, -(p.y - state.rocketCenterY));
+            });
 
             if (state.legsProgress > 0) {
                 const legLen = 22 * state.legsProgress;
+                const legsBase = -(0 - state.rocketCenterY);
                 ctx.strokeStyle = "#888";
                 ctx.lineWidth = 4;
                 ctx.beginPath();
-                ctx.moveTo(-6, 10);
-                ctx.lineTo(-6 - legLen, 10 + legLen);
-                ctx.moveTo(6, 10);
-                ctx.lineTo(6 + legLen, 10 + legLen);
+                ctx.moveTo(-6, legsBase);
+                ctx.lineTo(-6 - legLen, legsBase + legLen);
+                ctx.moveTo(6, legsBase);
+                ctx.lineTo(6 + legLen, legsBase + legLen);
                 ctx.stroke();
             }
 
             if (state.chuteDeployed) {
+                const chuteTop = -(120 - state.rocketCenterY);
                 ctx.strokeStyle = "#fff";
                 ctx.lineWidth = 1;
                 ctx.beginPath();
-                ctx.moveTo(-15, -115);
-                ctx.lineTo(-5, -55);
+                ctx.moveTo(-15, chuteTop);
+                ctx.lineTo(-5, chuteTop + 60);
                 ctx.stroke();
                 ctx.beginPath();
-                ctx.moveTo(15, -115);
-                ctx.lineTo(5, -55);
+                ctx.moveTo(15, chuteTop);
+                ctx.lineTo(5, chuteTop + 60);
                 ctx.stroke();
 
                 ctx.fillStyle = "#f44";
                 ctx.beginPath();
-                ctx.arc(0, -115, 30, Math.PI, 0);
+                ctx.arc(0, chuteTop, 30, Math.PI, 0);
                 ctx.fill();
                 ctx.fillStyle = "#fff";
                 ctx.beginPath();
-                ctx.arc(0, -115, 30, Math.PI, Math.PI * 1.3);
+                ctx.arc(0, chuteTop, 30, Math.PI, Math.PI * 1.3);
                 ctx.fill();
                 ctx.beginPath();
-                ctx.arc(0, -115, 30, Math.PI * 1.6, Math.PI * 2);
+                ctx.arc(0, chuteTop, 30, Math.PI * 1.6, Math.PI * 2);
                 ctx.fill();
             }
 
