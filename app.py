@@ -46,12 +46,13 @@ game_html = """
         .m-booster { width: 12px; height: 25px; background: #ddd; border-radius: 5px 5px 0 0;}
         .m-legs { width: 16px; height: 10px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
 
-        #vab-stats { position: absolute; top: 10px; right: 10px; width: 140px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
+        #vab-stats { position: absolute; top: 10px; right: 10px; width: 150px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
+        .stat-hint { margin-top: 8px; padding-top: 8px; border-top: 1px solid #333; font-size: 10px; color: #8ab; line-height: 1.35; }
 
-        #trash-can { position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
-        #trash-can.hover { background: rgba(255,0,0,0.8); border-style: solid; transform: scale(1.1); }
+        #trash-can { position: absolute; bottom: 20px; right: 20px; width: 68px; height: 68px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 32px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
+        #trash-can.hover { background: rgba(255,0,0,0.85); border-style: solid; transform: scale(1.12); }
 
         #top-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
         .top-btn { background: #1e3a8a; color: white; border: 2px solid #60a5fa; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer;}
@@ -64,7 +65,8 @@ game_html = """
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 22px;}
 
         #arrow-zone { position: absolute; left: 15px; top: 65%; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
-        .arrow-btn { width: 60px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px);}
+        .arrow-btn { width: 60px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); touch-action: none; transition: transform 0.05s, background 0.05s;}
+        .arrow-btn:active { background: rgba(0,255,204,0.35); transform: scale(0.94); }
 
         #btn-stage { position: absolute; top: 65%; right: 75px; width: 70px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #btn-legs { position: absolute; top: 55%; right: 75px; width: 70px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
@@ -116,6 +118,7 @@ game_html = """
             <div class="stat-row"><span>Mass:</span> <span class="stat-val" id="stat-mass">0 kg</span></div>
             <div class="stat-row"><span>Fuel:</span> <span class="stat-val" id="stat-fuel">0 kg</span></div>
             <div class="stat-row"><span>Thrust:</span> <span class="stat-val" id="stat-thrust">0 kN</span></div>
+            <div class="stat-hint">Tap a part to <b style="color:#ff6666">delete</b><br>Drag to move · drop on 🗑️ to remove</div>
         </div>
 
         <div id="trash-can">🗑️</div>
@@ -295,7 +298,6 @@ game_html = """
         return { x: (mx - v.ox) / v.sc, y: (v.oy - my) / v.sc };
     }
 
-    /* Compute rocket center of mass in "part-y" space */
     function computeRocketCenter() {
         let totalMass = 0, weightedY = 0;
         rocketParts.forEach(function (p) {
@@ -334,9 +336,14 @@ game_html = """
         document.getElementById('stat-thrust').innerText = thrust.toLocaleString() + " kN";
     }
 
+    /* =========================
+       DRAG & DELETE
+       ========================= */
     let isDraggingPart = false;
     let draggedType = null;
     let dragGhost = null;
+    let dragFromCanvas = false;
+    let dragStartX = 0, dragStartY = 0;
 
     document.querySelectorAll('.part-btn').forEach(function (item) {
         item.addEventListener('pointerdown', function (e) {
@@ -345,7 +352,7 @@ game_html = """
             document.querySelectorAll('.part-btn').forEach(function (b) { b.classList.remove('active'); });
             item.classList.add('active');
             currentSelectedPart = item.dataset.type;
-            startDrag(currentSelectedPart, e.clientX, e.clientY);
+            startDrag(currentSelectedPart, e.clientX, e.clientY, false);
         });
     });
 
@@ -356,18 +363,22 @@ game_html = """
         for (let i = rocketParts.length - 1; i >= 0; i--) {
             const p = rocketParts[i];
             const pw = P[p.type].w, ph = P[p.type].h;
-            if (Math.abs(b.x - p.x) < pw / 2 + 3 && Math.abs(b.y - p.y) < ph / 2 + 3) {
+            if (Math.abs(b.x - p.x) < pw / 2 + 6 && Math.abs(b.y - p.y) < ph / 2 + 6) {
                 rocketParts.splice(i, 1);
                 updateStats();
-                startDrag(p.type, e.clientX, e.clientY);
+                startDrag(p.type, e.clientX, e.clientY, true);
                 break;
             }
         }
     });
 
-    function startDrag(type, cx, cy) {
+    function startDrag(type, cx, cy, fromCanvas) {
         isDraggingPart = true;
         draggedType = type;
+        dragFromCanvas = !!fromCanvas;
+        dragStartX = cx;
+        dragStartY = cy;
+
         const v = vabView();
         const gw = P[type].w * v.sc;
         const gh = P[type].h * v.sc;
@@ -410,16 +421,28 @@ game_html = """
 
         if (dragGhost) { dragGhost.remove(); dragGhost = null; }
         isDraggingPart = false;
-        const type = draggedType;
-        draggedType = null;
 
+        const type = draggedType;
+        const fromCanvas = dragFromCanvas;
+        draggedType = null;
+        dragFromCanvas = false;
+
+        if (!type) return;
+
+        /* dropped on trash? */
         const tr = trashCan.getBoundingClientRect();
-        if (e.clientX >= tr.left && e.clientX <= tr.right && e.clientY >= tr.top && e.clientY <= tr.bottom) {
+        const overTrash = (e.clientX >= tr.left && e.clientX <= tr.right &&
+                           e.clientY >= tr.top  && e.clientY <= tr.bottom);
+        if (overTrash) { updateStats(); return; }
+
+        /* tapped on an existing part = delete */
+        const moved = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
+        if (fromCanvas && moved < 12) {
             updateStats();
             return;
         }
 
-        if (gameState !== "vab" || !type) return;
+        if (gameState !== "vab") { updateStats(); return; }
 
         const rect = canvas.getBoundingClientRect();
         if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
@@ -458,9 +481,15 @@ game_html = """
         rocketParts.push({ type: type, x: x, y: y });
     }
 
+    /* =========================
+       FLIGHT CONTROLS
+       ========================= */
     let isDraggingThrottle = false;
     let leftPressed = false;
     let rightPressed = false;
+
+    const TURN_ACCEL = 280;   /* deg/s^2 */
+    const TURN_MAX   = 150;   /* deg/s   */
 
     const throttleZone = document.getElementById('throttle-zone');
 
@@ -486,12 +515,30 @@ game_html = """
         throttleFill.style.height = percent + '%';
     }
 
-    document.getElementById('joy-left').addEventListener('pointerdown', function () { leftPressed = true; });
-    document.getElementById('joy-left').addEventListener('pointerup', function () { leftPressed = false; });
-    document.getElementById('joy-left').addEventListener('pointerleave', function () { leftPressed = false; });
-    document.getElementById('joy-right').addEventListener('pointerdown', function () { rightPressed = true; });
-    document.getElementById('joy-right').addEventListener('pointerup', function () { rightPressed = false; });
-    document.getElementById('joy-right').addEventListener('pointerleave', function () { rightPressed = false; });
+    function bindHold(el, onDown, onUp) {
+        el.addEventListener('pointerdown', function (e) {
+            e.preventDefault();
+            try { el.setPointerCapture(e.pointerId); } catch (err) {}
+            onDown();
+        });
+        ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(function (ev) {
+            el.addEventListener(ev, function () { onUp(); });
+        });
+        el.addEventListener('pointerleave', function (e) {
+            if (e.buttons === 0) onUp();
+        });
+    }
+
+    bindHold(
+        document.getElementById('joy-left'),
+        function () { leftPressed = true; },
+        function () { leftPressed = false; }
+    );
+    bindHold(
+        document.getElementById('joy-right'),
+        function () { rightPressed = true; },
+        function () { rightPressed = false; }
+    );
 
     document.getElementById('btn-legs').onclick = function () {
         state.legsDeployed = !state.legsDeployed;
@@ -524,6 +571,9 @@ game_html = """
         updateStats();
     };
 
+    /* =========================
+       MAP / WARP
+       ========================= */
     const planetsMap = [
         { name: "Earth",   color: "#4a90e2", x: 0.20 },
         { name: "Moon",    color: "#9ca3af", x: 0.40 },
@@ -605,7 +655,6 @@ game_html = """
         });
     });
 
-    /* Warp with a flash effect */
     function warpTravel(name) {
         if (name === state.currentPlanet && state.y < 10) {
             mapOverlay.style.display = 'none';
@@ -617,9 +666,7 @@ game_html = """
         mapOverlay.style.display = 'none';
         setTimeout(function () {
             travelTo(name);
-            setTimeout(function () {
-                flash.classList.remove('active');
-            }, 120);
+            setTimeout(function () { flash.classList.remove('active'); }, 120);
         }, 380);
     }
 
@@ -644,7 +691,6 @@ game_html = """
 
         state.currentFuel = state.maxFuel;
         throttleFill.style.height = '0%';
-
         computeRocketCenter();
 
         const legsBtn = document.getElementById('btn-legs');
@@ -654,7 +700,7 @@ game_html = """
         if (gameState === "crashed") {
             gameState = "flight";
             rebuildBtn.style.display = 'none';
-            document.getElementById('status-msg').style.display = 'none';
+            statusEl.style.display = 'none';
         }
 
         document.getElementById('hud-planet').innerText = name;
@@ -726,15 +772,18 @@ game_html = """
     document.getElementById('btn-reset').onclick = function () { window.location.reload(); };
     rebuildBtn.onclick = function () { window.location.reload(); };
 
+    /* =========================
+       PARTICLES
+       ========================= */
     function updateParticles(dt) {
         for (let i = state.particles.length - 1; i >= 0; i--) {
             const p = state.particles[i];
             p.x += p.vx * dt;
             p.y += p.vy * dt;
-            p.vy -= 200 * dt;
-            p.vx *= Math.pow(0.35, dt);
-            p.vy *= Math.pow(0.6, dt);
-            p.life -= dt * 1.1;
+            p.vy -= 45 * dt;                       /* light downward drift */
+            p.vx *= Math.pow(0.45, dt);
+            p.vy *= Math.pow(0.55, dt);
+            p.life -= dt * 1.25;
             if (p.life <= 0) state.particles.splice(i, 1);
         }
     }
@@ -775,6 +824,9 @@ game_html = """
         rebuildBtn.style.display = 'block';
     }
 
+    /* =========================
+       PHYSICS
+       ========================= */
     function updatePhysics(dt) {
         if (gameState === "crashed") {
             updateParticles(dt);
@@ -785,12 +837,13 @@ game_html = """
         }
         if (gameState !== "flight") return;
 
-        if (leftPressed) state.angularVelocity -= 120 * dt;
-        if (rightPressed) state.angularVelocity += 120 * dt;
+        /* ---- rotation (responsive) ---- */
+        if (leftPressed) state.angularVelocity -= TURN_ACCEL * dt;
+        if (rightPressed) state.angularVelocity += TURN_ACCEL * dt;
         if (!leftPressed && !rightPressed) {
-            state.angularVelocity *= Math.pow(0.02, dt);
+            state.angularVelocity *= Math.pow(0.12, dt);
         }
-        state.angularVelocity = Math.max(-90, Math.min(90, state.angularVelocity));
+        state.angularVelocity = Math.max(-TURN_MAX, Math.min(TURN_MAX, state.angularVelocity));
         state.angle += state.angularVelocity * dt;
 
         let thrust = 0;
@@ -821,7 +874,7 @@ game_html = """
             const cosA = Math.cos(rad);
             const sinA = Math.sin(rad);
 
-            /* Particle spawn using centre-of-mass pivot */
+            /* exhaust particles spawn at true nozzle position, aligned with rocket */
             rocketParts.forEach(function (eng) {
                 if (eng.type.indexOf("engine") === -1) return;
 
@@ -834,15 +887,27 @@ game_html = """
                 const wx = state.x + dxRot;
                 const wy = state.y + state.rocketCenterY - dyRot;
 
-                for (let i = 0; i < 3; i++) {
+                const exV = 240 + 140 * state.throttle;
+
+                for (let i = 0; i < 4; i++) {
+                    const spread = (Math.random() - 0.5) * 0.55;
+                    const ca = Math.cos(rad + spread);
+                    const sa = Math.sin(rad + spread);
+
+                    const r = Math.random();
+                    let col = "255,150,0";
+                    if (r > 0.66) col = "255,240,150";
+                    else if (r > 0.33) col = "255,170,40";
+                    else col = "255,90,10";
+
                     state.particles.push({
-                        x: wx + (Math.random() - 0.5) * hw,
+                        x: wx + (Math.random() - 0.5) * hw * 0.6,
                         y: wy + (Math.random() - 0.5) * 4,
-                        vx: -sinA * 140 + (Math.random() - 0.5) * 50,
-                        vy: -cosA * 140 + (Math.random() - 0.5) * 50,
-                        life: 1.0,
-                        size: Math.random() * 12 + 5,
-                        color: "255,150,0"
+                        vx: -sa * exV,
+                        vy: -ca * exV,
+                        life: 0.9,
+                        size: Math.random() * 10 + 6,
+                        color: col
                     });
                 }
             });
@@ -917,15 +982,16 @@ game_html = """
 
         const planet = planetsDB[state.currentPlanet];
         const spaceEl = document.getElementById('hud-space');
-        if (planet.atmo > 0 && state.y > planet.atmo) {
-            spaceEl.style.display = 'block';
-        } else if (planet.atmo === 0) {
+        if (planet.atmo === 0 || state.y > planet.atmo) {
             spaceEl.style.display = 'block';
         } else {
             spaceEl.style.display = 'none';
         }
     }
 
+    /* =========================
+       DRAWING
+       ========================= */
     function drawPart(p, py) {
         const w = P[p.type].w, h = P[p.type].h;
         ctx.save();
@@ -976,32 +1042,45 @@ game_html = """
             ctx.fill();
 
             if (state.throttle > 0 && state.currentFuel > 0 && gameState === "flight") {
-                const flameLen = 40 + Math.random() * 55 * state.throttle;
+                const th = state.throttle;
+                const flick = 0.85 + Math.random() * 0.3;
+                const flameLen = (50 + 100 * th) * flick;
+                const nozzleY = h / 2;
 
-                /* Outer flame (orange) */
-                const fg = ctx.createLinearGradient(0, h / 2, 0, h / 2 + flameLen);
+                /* glow halo */
+                const glow = ctx.createRadialGradient(0, nozzleY, 2, 0, nozzleY, flameLen * 0.75);
+                glow.addColorStop(0, "rgba(255,245,190,0.85)");
+                glow.addColorStop(0.45, "rgba(255,150,20,0.35)");
+                glow.addColorStop(1, "rgba(255,80,0,0)");
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(0, nozzleY, flameLen * 0.75, 0, Math.PI * 2);
+                ctx.fill();
+
+                /* outer flame */
+                const fg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + flameLen);
                 fg.addColorStop(0, "rgba(255,255,255,1)");
-                fg.addColorStop(0.3, "rgba(255,220,0,0.95)");
-                fg.addColorStop(0.65, "rgba(255,110,0,0.65)");
+                fg.addColorStop(0.25, "rgba(255,225,60,0.95)");
+                fg.addColorStop(0.6, "rgba(255,120,0,0.7)");
                 fg.addColorStop(1, "rgba(255,0,0,0)");
                 ctx.fillStyle = fg;
                 ctx.beginPath();
-                ctx.moveTo(-w / 2.4, h / 2);
-                ctx.lineTo(w / 2.4, h / 2);
-                ctx.lineTo(0, h / 2 + flameLen);
+                ctx.moveTo(-w / 2.2, nozzleY);
+                ctx.lineTo(w / 2.2, nozzleY);
+                ctx.lineTo(0, nozzleY + flameLen);
                 ctx.fill();
 
-                /* Inner flame (white core) */
-                const coreLen = flameLen * 0.6;
-                const cg = ctx.createLinearGradient(0, h / 2, 0, h / 2 + coreLen);
+                /* inner core */
+                const coreLen = flameLen * 0.55;
+                const cg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + coreLen);
                 cg.addColorStop(0, "rgba(255,255,255,1)");
-                cg.addColorStop(0.5, "rgba(255,255,190,0.9)");
-                cg.addColorStop(1, "rgba(255,210,0,0)");
+                cg.addColorStop(0.6, "rgba(255,255,210,0.9)");
+                cg.addColorStop(1, "rgba(255,220,80,0)");
                 ctx.fillStyle = cg;
                 ctx.beginPath();
-                ctx.moveTo(-w / 4.5, h / 2);
-                ctx.lineTo(w / 4.5, h / 2);
-                ctx.lineTo(0, h / 2 + coreLen);
+                ctx.moveTo(-w / 4.2, nozzleY);
+                ctx.lineTo(w / 4.2, nozzleY);
+                ctx.lineTo(0, nozzleY + coreLen);
                 ctx.fill();
             }
 
@@ -1092,6 +1171,9 @@ game_html = """
         const zoom = Math.max(0.55, 1.1 - state.y / 25000);
 
         ctx.save();
+        if (state.shake > 0) {
+            ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
+        }
         ctx.translate(W / 2, H * 0.68);
         ctx.scale(zoom, zoom);
         ctx.translate(-state.cameraX, state.cameraY);
@@ -1131,7 +1213,7 @@ game_html = """
         }
 
         if (gameState !== "crashed") {
-            /* ---- ROTATE AROUND CENTRE OF MASS ---- */
+            /* rotate around centre of mass — flame is drawn inside this transform, so it follows the rocket */
             ctx.save();
             ctx.translate(state.x, -(state.y + state.rocketCenterY));
             ctx.rotate(state.angle * Math.PI / 180);
@@ -1206,19 +1288,8 @@ game_html = """
 
     function draw() {
         if (gameState === "menu") return;
-
-        if (state.shake > 0) {
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.clearRect(0, 0, W, H);
-            ctx.save();
-            ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
-            if (gameState === "vab") drawVAB(); else drawFlight();
-            ctx.restore();
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-        } else {
-            if (gameState === "vab") drawVAB();
-            else drawFlight();
-        }
+        if (gameState === "vab") drawVAB();
+        else drawFlight();
     }
 
     function loop(time) {
