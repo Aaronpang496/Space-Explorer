@@ -30,56 +30,39 @@ game_html = """
         .subtitle { color: #7ab; font-size: 13px; margin-bottom: 20px; text-align: center; max-width: 320px; line-height: 1.6;}
         .gold-guide { color: #ffcc44; font-size: 12px; margin-bottom: 30px; text-align: center; line-height: 1.75; max-width: 320px; background: rgba(255,204,68,0.08); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(255,204,68,0.3); }
 
+        /* SFS Style Menus & UI */
         #vab-menu {
             position: absolute; top: 10px; left: 10px; width: 100px;
-            background: rgba(0,0,0,0.9); border: 2px solid #555; border-radius: 10px;
+            background: rgba(20, 30, 40, 0.95); border: 2px solid #34495e; border-radius: 10px;
             display: none; flex-direction: column; align-items: center;
             padding: 10px 0; pointer-events: auto;
             max-height: 82vh; overflow-y: auto; overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior: contain;
-            touch-action: pan-y;
-            z-index: 100000;
-            scrollbar-width: thin;
-            scrollbar-color: #00ffcc #222;
+            -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y;
+            z-index: 100000; scrollbar-width: thin; scrollbar-color: #00ffcc #222;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
         #vab-menu::-webkit-scrollbar { width: 6px; }
         #vab-menu::-webkit-scrollbar-track { background: #111; border-radius: 3px; }
-        #vab-menu::-webkit-scrollbar-thumb { background: #00ffcc; border-radius: 3px; }
+        #vab-menu::-webkit-scrollbar-thumb { background: #4a90e2; border-radius: 3px; }
 
-        #vab-scroll-hint {
+        .vab-scroll-hint {
             position: absolute; left: 10px; width: 100px;
             text-align: center; font-size: 14px; color: #00ffcc;
             pointer-events: none; z-index: 100001;
             display: none; opacity: 0.9;
             text-shadow: 0 0 6px #00ffcc;
         }
-        #vab-scroll-hint.up   { top: 4px; }
-        #vab-scroll-hint.down { bottom: 4px; }
-        #vab-scroll-hint.visible { display: block; }
+        .vab-scroll-hint.up   { top: 4px; }
+        .vab-scroll-hint.down { bottom: 4px; }
+        .vab-scroll-hint.visible { display: block; }
 
-        .part-btn { width: 80px; height: 45px; margin: 3px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; touch-action: none;}
+        .part-btn { width: 80px; height: 45px; margin: 3px 0; background: #2c3e50; border: 2px solid #34495e; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; touch-action: none;}
         .part-btn.active { border-color: #00ffcc; background: #114444; }
         .part-btn span { font-size: 8px; color: #aaa; position: absolute; bottom: 2px; font-weight: bold;}
         .part-btn.locked { opacity: 0.6; filter: grayscale(0.7); cursor: pointer; border-color: #886622;}
         .part-btn.locked span { color: #ffcc44; }
-        .part-btn.locked::before {
-            content: "🔒";
-            position: absolute;
-            top: 1px; right: 2px;
-            font-size: 11px;
-            color: #ffcc44;
-            text-shadow: 0 0 4px #000;
-            z-index: 2;
-        }
-        .part-btn.locked::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.25);
-            border-radius: 4px;
-            pointer-events: none;
-        }
+        .part-btn.locked::before { content: "🔒"; position: absolute; top: 1px; right: 2px; font-size: 11px; color: #ffcc44; text-shadow: 0 0 4px #000; z-index: 2; }
+        .part-btn.locked::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,0.25); border-radius: 4px; pointer-events: none; }
         .part-section { width: 88px; margin: 8px 0 4px 0; padding: 6px 0 4px 0; border-top: 2px solid #ffcc44; font-size: 9px; color: #ffcc44; text-align: center; letter-spacing: 1px; font-weight: bold; }
 
         .m-pod { width: 16px; height: 20px; background: #888; clip-path: polygon(50% 0%, 100% 100%, 0% 100%);}
@@ -94,7 +77,6 @@ game_html = """
         .m-decoupler { width: 20px; height: 5px; background: #5c3a21;}
         .m-booster { width: 12px; height: 25px; background: #ddd; border-radius: 5px 5px 0 0;}
         .m-legs { width: 16px; height: 10px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
-
         .m-gyro { width: 16px; height: 10px; background: #fa4; border-radius: 5px; box-shadow: 0 0 6px #fa4; }
         .m-heat { width: 28px; height: 8px; background: #844; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%); box-shadow: 0 0 4px #f84; }
         .m-booster-l { width: 14px; height: 38px; background: #fdd; border: 1px solid #e88; border-radius: 5px 5px 0 0; }
@@ -102,7 +84,7 @@ game_html = """
         .m-engine-ion { width: 18px; height: 14px; background: #3af; clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%); box-shadow: 0 0 8px #3af; }
         .m-engine-xl { width: 26px; height: 20px; background: #222; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%); box-shadow: inset 0 -3px 0 #f90; }
 
-        #vab-stats { position: absolute; top: 10px; right: 10px; width: 175px; background: rgba(0,0,0,0.88); border: 2px solid #555; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
+        #vab-stats { position: absolute; top: 10px; right: 10px; width: 175px; background: rgba(20, 30, 40, 0.9); border: 2px solid #34495e; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
         .stat-gold { color: #ffcc44 !important; font-size: 16px;}
@@ -113,39 +95,53 @@ game_html = """
         #trash-can.hover { background: rgba(255,0,0,0.85); border-style: solid; transform: scale(1.12); }
 
         #top-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
-        .top-btn { background: #1e3a8a; color: white; border: 2px solid #60a5fa; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer;}
+        
+        /* SFS Styled Buttons */
+        .top-btn { background: #2c3e50; color: white; border: 2px solid #4a90e2; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
+        .top-btn:active { background: #4a90e2; }
 
-        #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000; line-height: 1.5;}
-        #hud-planet { color: #ffcc44; font-weight: bold; font-size: 14px;}
-        #hud-space { color: #00ffcc; font-weight: bold; display: none; }
+        /* SFS HUD */
+        #hud { position: absolute; top: 20px; right: 20px; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; text-align: right; display: none; z-index: 100000; line-height: 1.4; text-shadow: 1px 1px 2px #000;}
+        #hud .val { font-weight: bold; font-size: 16px; }
+        #hud-space { color: #00ffcc; font-weight: bold; display: none; font-size: 16px; margin-bottom: 5px;}
 
-        #throttle-zone { position: absolute; right: 15px; top: 60%; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
-        #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #ffaa00; border-radius: 22px;}
+        /* SFS Fuel Gauges */
+        #fuel-gauges { position: absolute; bottom: 20px; left: 20px; display: none; flex-direction: column; gap: 4px; z-index: 100000; pointer-events: none;}
+        .fuel-row { display: flex; align-items: center; gap: 10px; }
+        .fuel-text { color: #fff; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000; width: 70px;}
+        .fuel-bar-bg { width: 80px; height: 10px; background: rgba(0,0,0,0.5); border: 1px solid #888; }
+        .fuel-bar-fill { height: 100%; background: #ddd; width: 100%; transition: width 0.1s; }
 
-        #arrow-zone { position: absolute; left: 15px; top: 65%; display: none; gap: 15px; pointer-events: auto; z-index: 100000;}
-        .arrow-btn { width: 60px; height: 80px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 10px; color: white; font-size: 30px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); touch-action: none; transition: transform 0.05s, background 0.05s;}
-        .arrow-btn:active { background: rgba(0,255,204,0.35); transform: scale(0.94); }
+        #heat-ui { position: absolute; bottom: 20px; left: 20px; display: none; z-index: 100000; color: #ff8844; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000;}
 
-        #btn-stage { position: absolute; top: 65%; right: 75px; width: 70px; height: 50px; background: rgba(200, 50, 0, 0.8); border: 2px solid #ffaa00; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
-        #btn-legs { position: absolute; top: 55%; right: 75px; width: 70px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
-        #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
-        #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
-        #btn-exit { position: absolute; top: 10px; left: 85px; width: 60px; height: 40px; background: rgba(180,40,40,0.75); border: 2px solid #ff6666; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); cursor: pointer; }
+        #throttle-zone { position: absolute; right: 15px; top: 60%; width: 35px; height: 160px; background: rgba(44, 62, 80, 0.4); border: 2px solid #7f8c8d; border-radius: 20px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #fff; border-radius: 18px;}
 
-        #minimap-container { position: absolute; top: 100px; right: 15px; width: 80px; height: 80px; border: 2px solid #555; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000;}
+        #arrow-zone { position: absolute; left: 15px; bottom: 15px; display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
+        .arrow-btn { width: 65px; height: 65px; background: rgba(44, 62, 80, 0.6); border: none; border-radius: 8px; color: #fff; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); touch-action: none; transition: transform 0.05s, background 0.05s; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        .arrow-btn:active { background: rgba(52, 152, 219, 0.8); transform: scale(0.94); }
+
+        #btn-stage { position: absolute; bottom: 15px; right: 70px; width: 60px; height: 65px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        #btn-legs { position: absolute; bottom: 90px; right: 70px; width: 60px; height: 40px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        #btn-legs.deployed { color: #00ffcc; }
+        
+        #btn-map { position: absolute; top: 15px; left: 15px; width: 50px; height: 35px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 6px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        #btn-exit { position: absolute; top: 15px; left: 75px; width: 50px; height: 35px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 6px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+
+        #minimap-container { position: absolute; top: 60px; right: 15px; width: 80px; height: 80px; border: 2px solid #34495e; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
 
         #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.97); display: none; pointer-events: auto; z-index: 200000;}
         #map-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #map-title { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold;}
         #map-hint { position: absolute; bottom: 24px; left: 0; width: 100%; text-align: center; color: #9ab; font-size: 13px; }
 
-        #status-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 32px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000; max-width: 90%;}
+        #status-msg { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 26px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000; max-width: 90%;}
 
-        #btn-rebuild { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; padding: 15px 30px; background: #1e3a8a; color: #fff; border: 2px solid #60a5fa; border-radius: 8px; font-size: 16px; font-weight: bold; pointer-events: auto; z-index: 100000; cursor: pointer;}
+        #btn-rebuild { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; padding: 15px 30px; background: #2c3e50; color: #fff; border: 2px solid #4a90e2; border-radius: 8px; font-size: 16px; font-weight: bold; pointer-events: auto; z-index: 100000; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
 
         #planet-info {
             position: absolute; top: 22%; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 15, 35, 0.94); border: 2px solid #00ffcc; border-radius: 12px;
+            background: rgba(20, 30, 40, 0.95); border: 2px solid #00ffcc; border-radius: 12px;
             padding: 16px 24px; color: white; text-align: center; display: none;
             z-index: 1000000; pointer-events: none; min-width: 240px;
             box-shadow: 0 0 40px rgba(0,255,204,0.35);
@@ -172,7 +168,7 @@ game_html = """
     <div id="ui-layer">
         <div id="start-screen">
             <div class="title">SPACE EXPLORER</div>
-            <div class="subtitle">All 12 base parts are yours.<br>Unlock 6 advanced parts with gold.</div>
+            <div class="subtitle">Build, Launch, and Explore the Solar System.</div>
             <div class="gold-guide">
                 🪙 <b>How to earn gold:</b><br>
                 +25 &nbsp;first safe landing on a planet<br>
@@ -208,8 +204,8 @@ game_html = """
             <div class="part-btn locked" data-type="engine_xl"><div class="m-engine-xl"></div><span>Engine XL · 250🪙</span></div>
         </div>
 
-        <div id="vab-scroll-hint" class="up">▲</div>
-        <div id="vab-scroll-hint" class="down">▼</div>
+        <div class="vab-scroll-hint up">▲</div>
+        <div class="vab-scroll-hint down">▼</div>
 
         <div id="vab-stats">
             <div class="stat-row"><span style="color:#ffcc44">🪙 Gold:</span> <span class="stat-val stat-gold" id="stat-gold">0</span></div>
@@ -229,27 +225,37 @@ game_html = """
             <button class="top-btn" id="btn-reset">RESET 🔄</button>
         </div>
 
-        <button id="btn-map">MAP</button>
-        <button id="btn-exit">EXIT</button>
+        <button id="btn-map">Map</button>
+        <button id="btn-exit">Exit</button>
         <div id="minimap-container"><canvas id="minimap" width="80" height="80"></canvas></div>
 
+        <!-- SFS STYLE HUD -->
         <div id="hud">
-            <span id="hud-planet">Earth</span><br>
-            ALT: <span id="val-alt">0</span> m<br>
-            BEST: <span id="val-best">0</span> m<br>
-            VEL: <span id="val-vel">0</span> m/s<br>
-            FUEL: <span id="val-fuel" style="color:#00ffcc">100</span>%<br>
-            🪙 <span id="val-gold" style="color:#ffcc44">0</span><br>
             <span id="hud-space">★ IN SPACE ★</span>
+            <span id="hud-planet" style="display:none;">Earth</span>
+            Height:<br>
+            <span class="val" id="val-alt">0m</span><br>
+            Velocity:<br>
+            <span class="val" id="val-vel">0m/s</span><br>
+            <span style="color:#ffcc44; margin-top:5px; display:inline-block;">🪙 <span id="val-gold">0</span></span>
         </div>
+
+        <!-- SFS STYLE FUEL GAUGES -->
+        <div id="fuel-gauges">
+            <div class="fuel-row">
+                <div class="fuel-text">Liquid fuel:</div>
+                <div class="fuel-bar-bg"><div class="fuel-bar-fill" id="fuel-bar-1"></div></div>
+            </div>
+        </div>
+        <div id="heat-ui">Heat Shield: <span id="val-heat">0</span>°C</div>
 
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
         <div id="arrow-zone">
             <div class="arrow-btn" id="joy-left">◀</div>
             <div class="arrow-btn" id="joy-right">▶</div>
         </div>
-        <button id="btn-stage">STAGE</button>
-        <button id="btn-legs">LEGS: UP</button>
+        <button id="btn-stage">Stage</button>
+        <button id="btn-legs">Legs</button>
 
         <div id="planet-info">
             <h2 id="pi-name">Earth</h2>
@@ -273,6 +279,21 @@ game_html = """
     <div id="warp-flash"></div>
 
     <script>
+    function fitParent() {
+        try {
+            const f = window.frameElement;
+            if (!f) return;
+            f.style.width    = window.parent.innerWidth  + 'px';
+            f.style.height   = window.parent.innerHeight + 'px';
+            f.style.position = 'fixed';
+            f.style.top = f.style.left = '0';
+            f.style.border = 'none';
+            f.style.zIndex = '9999';
+        } catch (e) {}
+    }
+    fitParent();
+    window.addEventListener('resize', fitParent);
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const mapCanvas = document.getElementById('map-canvas');
@@ -315,6 +336,7 @@ game_html = """
 
     const GRID = 10;
     let rocketParts = [];
+    let debrisParts = []; // NEW: For staging visuals
     let vabRocket = [];
     let currentSelectedPart = "pod";
 
@@ -416,7 +438,8 @@ game_html = """
         gold: 0,
         reachedSpace: {},
         altitudeMilestones: {},
-        unlocked: {}
+        unlocked: {},
+        heat: 0
     };
 
     Object.keys(planetsDB).forEach(function (k) {
@@ -803,15 +826,46 @@ game_html = """
         if (gameState !== "flight") return;
 
         const sideDecouplers = rocketParts.filter(function (p) { return p.type === 'decoupler' && Math.abs(p.x) > 10; });
+        let droppedParts = [];
+
         if (sideDecouplers.length > 0) {
             const dropX = sideDecouplers[0].x;
+            droppedParts = rocketParts.filter(function (p) { return Math.abs(p.x - dropX) < 5; });
             rocketParts = rocketParts.filter(function (p) { return Math.abs(p.x - dropX) >= 5; });
         } else {
             const centerDec = rocketParts.filter(function (p) { return p.type === 'decoupler'; });
             if (centerDec.length === 0) return;
             centerDec.sort(function (a, b) { return a.y - b.y; });
             const lowest = centerDec[0];
+            droppedParts = rocketParts.filter(function (p) { return p.y < lowest.y; });
             rocketParts = rocketParts.filter(function (p) { return p.y >= lowest.y; });
+        }
+
+        // Move dropped parts into debris array for visual falling
+        if (droppedParts.length > 0) {
+            const rad = state.angle * Math.PI / 180;
+            const cosA = Math.cos(rad);
+            const sinA = Math.sin(rad);
+            
+            droppedParts.forEach(p => {
+                // Calculate world position of the part
+                const dxScreen = p.x;
+                const dyScreen = state.rocketCenterY - p.y;
+                const dxRot = dxScreen * cosA - dyScreen * sinA;
+                const dyRot = dxScreen * sinA + dyScreen * cosA;
+                const wx = state.x + dxRot;
+                const wy = state.y + state.rocketCenterY - dyRot;
+
+                debrisParts.push({
+                    type: p.type,
+                    x: wx, y: wy,
+                    vx: state.vx + (Math.random() - 0.5) * 20,
+                    vy: state.vy + (Math.random() - 0.5) * 20,
+                    angle: state.angle,
+                    angularVelocity: (Math.random() - 0.5) * 40,
+                    life: 1.0
+                });
+            });
         }
 
         let m = 0, f = 0;
@@ -823,18 +877,17 @@ game_html = """
         updateStats();
     };
 
-    document.getElementById('btn-exit').onclick = function () {
-        if (gameState !== "flight" && gameState !== "crashed") return;
-
+    function returnToVAB(message) {
         rocketParts = JSON.parse(JSON.stringify(vabRocket));
         computeRocketCenter();
-
         gameState = "vab";
 
         document.getElementById('hud').style.display = 'none';
         document.getElementById('minimap-container').style.display = 'none';
         document.getElementById('throttle-zone').style.display = 'none';
         document.getElementById('arrow-zone').style.display = 'none';
+        document.getElementById('fuel-gauges').style.display = 'none';
+        document.getElementById('heat-ui').style.display = 'none';
         document.getElementById('btn-legs').style.display = 'none';
         document.getElementById('btn-stage').style.display = 'none';
         document.getElementById('btn-map').style.display = 'none';
@@ -853,8 +906,15 @@ game_html = """
 
         updateStats();
         updateScrollHints();
-        showStatus("BACK IN BUILD MODE", "#00ffcc", 2);
+        if (message) showStatus(message, "#00ffcc", 2);
+    }
+
+    document.getElementById('btn-exit').onclick = function () {
+        if (gameState !== "flight" && gameState !== "crashed") return;
+        returnToVAB("BACK IN BUILD MODE");
     };
+    rebuildBtn.onclick = function () { returnToVAB("GOLD KEPT 🪙 — BACK TO VAB"); };
+    document.getElementById('btn-reset').onclick = function () { window.location.reload(); };
 
     const planetsMap = [
         { name: "Mercury", color: "#b0a89c", x: 0.15, row: 0 },
@@ -940,10 +1000,40 @@ game_html = """
             mapCtx.font = "14px Arial";
             mapCtx.fillText(p.name, cx, cy + rad + 22);
         });
+
+        // SFS Style Trajectory Line
+        if (gameState === "flight" || gameState === "crashed") {
+            mapCtx.strokeStyle = "rgba(255,255,255,0.7)";
+            mapCtx.lineWidth = 1.5;
+            mapCtx.setLineDash([6, 6]);
+            
+            // Find current planet on map
+            const currentP = planetsMap.find(p => p.name === state.currentPlanet);
+            if (currentP) {
+                let simX = currentP.x * mapCanvas.width;
+                let simY = mapRowY(currentP.row);
+                
+                // Fake orbital mechanics simulation for visualization
+                let simVX = Math.sin(state.angle * Math.PI/180) * (state.vx * 0.1);
+                let simVY = -Math.cos(state.angle * Math.PI/180) * (state.vy * 0.1);
+                if (simVX === 0 && simVY === 0) { simVX = 2; simVY = -2; }
+                
+                mapCtx.beginPath();
+                mapCtx.moveTo(simX, simY);
+                for(let i=0; i<50; i++) {
+                    simX += simVX;
+                    simY += simVY;
+                    simVY += 0.5; // Gravity curve
+                    mapCtx.lineTo(simX, simY);
+                }
+                mapCtx.stroke();
+            }
+            mapCtx.setLineDash([]);
+        }
     }
 
     document.getElementById('btn-map').onclick = function () {
-        if (gameState !== "flight" && gameState !== "crashed") return;
+        if (gameState !== "flight") return;
         if (mapOverlay.style.display === 'block') {
             mapOverlay.style.display = 'none';
         } else {
@@ -981,9 +1071,6 @@ game_html = """
         }, 380);
     }
 
-    /* ==================================================
-       TRAVEL — arrive in orbit, no auto gold, no lingering popup
-       ================================================== */
     function travelTo(name) {
         state.currentPlanet = name;
 
@@ -998,8 +1085,8 @@ game_html = """
 
         state.hasLiftedOff = true;
         state.onGround = false;
-        /* KEY: forces player to actually land before space bonus can fire */
         state.beenOnGround = false;
+        state.heat = 0;
 
         state.legsDeployed = false;
         state.legsProgress = 0;
@@ -1007,13 +1094,14 @@ game_html = """
         state.cameraY = 300;
         state.particles = [];
         state.shake = 0;
+        debrisParts = [];
 
         state.currentFuel = state.maxFuel;
         throttleFill.style.height = '0%';
         computeRocketCenter();
 
         const legsBtn = document.getElementById('btn-legs');
-        legsBtn.innerText = "LEGS: UP";
+        legsBtn.innerText = "Legs";
         legsBtn.classList.remove('deployed');
 
         if (gameState === "crashed") {
@@ -1024,10 +1112,8 @@ game_html = """
             gameState = "flight";
         }
 
-        /* clear any lingering +50 popup from before transport */
         hideGoldPopup();
 
-        document.getElementById('hud-planet').innerText = name;
         showPlanetInfo(name, 3.5);
         showStatus("ARRIVING AT " + name.toUpperCase() + " — LAND TO EARN 🪙", "#00ffcc", 3);
     }
@@ -1060,10 +1146,12 @@ game_html = """
         state.chuteDeployed = false;
         state.hasLiftedOff = false;
         state.onGround = true;
-        state.beenOnGround = true;   /* launched from ground → space bonus OK */
+        state.beenOnGround = true;
         state.cameraX = 0; state.cameraY = 0;
         state.shake = 0;
         state.particles = [];
+        state.heat = 0;
+        debrisParts = [];
 
         let m = 0, f = 0;
         rocketParts.forEach(function (p) { m += P[p.type].m; f += P[p.type].f; });
@@ -1078,10 +1166,11 @@ game_html = """
         document.getElementById('trash-can').style.display = 'none';
 
         document.getElementById('hud').style.display = 'block';
-        document.getElementById('hud-planet').innerText = "Earth";
         document.getElementById('minimap-container').style.display = 'block';
         document.getElementById('throttle-zone').style.display = 'block';
         document.getElementById('arrow-zone').style.display = 'flex';
+        document.getElementById('fuel-gauges').style.display = 'flex';
+        document.getElementById('heat-ui').style.display = 'block';
         document.getElementById('btn-legs').style.display = 'block';
         document.getElementById('btn-stage').style.display = 'block';
         document.getElementById('btn-map').style.display = 'block';
@@ -1093,16 +1182,13 @@ game_html = """
         mapOverlay.style.display = 'none';
         hideGoldPopup();
 
-        document.getElementById('btn-legs').innerText = "LEGS: UP";
+        document.getElementById('btn-legs').innerText = "Legs";
         document.getElementById('btn-legs').classList.remove('deployed');
 
         showPlanetInfo("Earth", 3.5);
         updateStats();
         updateHUD();
     };
-
-    document.getElementById('btn-reset').onclick = function () { window.location.reload(); };
-    rebuildBtn.onclick = function () { window.location.reload(); };
 
     function updateParticles(dt) {
         for (let i = state.particles.length - 1; i >= 0; i--) {
@@ -1153,9 +1239,34 @@ game_html = """
         rebuildBtn.style.display = 'block';
     }
 
+    function updateDebris(dt) {
+        for (let i = debrisParts.length - 1; i >= 0; i--) {
+            const d = debrisParts[i];
+            d.vy -= planetsDB[state.currentPlanet].g * dt;
+            d.x += d.vx * dt;
+            d.y += d.vy * dt;
+            d.angle += d.angularVelocity * dt;
+            
+            // Simple ground collision for debris
+            if (d.y < 0) {
+                d.y = 0;
+                d.vy = -d.vy * 0.3;
+                d.vx *= 0.8;
+                d.angularVelocity *= 0.5;
+                if (Math.abs(d.vy) < 2) { d.vy = 0; d.vx = 0; d.angularVelocity = 0; }
+            }
+
+            // Remove off-screen debris
+            if (Math.abs(d.x - state.cameraX) > W * 2 || d.y < -200) {
+                debrisParts.splice(i, 1);
+            }
+        }
+    }
+
     function updatePhysics(dt) {
         if (gameState === "crashed") {
             updateParticles(dt);
+            updateDebris(dt);
             state.shake = Math.max(0, state.shake - 50 * dt);
             state.cameraX += (state.x - state.cameraX) * Math.min(1, 8 * dt);
             state.cameraY += (state.y - state.cameraY) * Math.min(1, 8 * dt);
@@ -1176,14 +1287,18 @@ game_html = """
         state.angle += state.angularVelocity * dt;
 
         let thrust = 0;
-        let fuelRate = 1.0;
+        let fuelRate = null;
         let hasHeatShield = false;
 
         rocketParts.forEach(function (p) {
             thrust += P[p.type].t;
             if (p.type === 'heat_shield') hasHeatShield = true;
-            if (P[p.type].fuelRate) fuelRate = Math.min(fuelRate, P[p.type].fuelRate);
+            if (p.type.indexOf('engine') !== -1) {
+                const r = (P[p.type].fuelRate !== undefined) ? P[p.type].fuelRate : 1.0;
+                fuelRate = fuelRate === null ? r : Math.max(fuelRate, r);
+            }
         });
+        if (fuelRate === null) fuelRate = 1.0;
 
         state.totalMass = state.dryMass + state.currentFuel;
         const g = planetsDB[state.currentPlanet].g;
@@ -1271,6 +1386,26 @@ game_html = """
         state.x += state.vx * dt;
         state.y += state.vy * dt;
 
+        // Re-entry heat logic
+        const isInAtmo = state.y < planetsDB[state.currentPlanet].atmo;
+        const speed = Math.hypot(state.vx, state.vy);
+        if (isInAtmo && speed > 500) {
+            state.heat = Math.min(1137, (speed - 500) * 2); 
+            if (Math.random() < (state.heat/1137)) {
+                state.particles.push({
+                    x: state.x + (Math.random() - 0.5) * 20,
+                    y: state.y + (Math.random() - 0.5) * 40,
+                    vx: -state.vx * 0.2 + (Math.random() - 0.5) * 50,
+                    vy: -state.vy * 0.2 + (Math.random() - 0.5) * 50,
+                    life: 0.5 + Math.random() * 0.5,
+                    size: Math.random() * 15 + 5,
+                    color: "255,150,50"
+                });
+            }
+        } else {
+            state.heat = Math.max(0, state.heat - dt * 100);
+        }
+
         if (state.y <= 0) {
             state.y = 0;
             state.beenOnGround = true;
@@ -1316,22 +1451,23 @@ game_html = """
         state.cameraX += (state.x - state.cameraX) * Math.min(1, 8 * dt);
         state.cameraY += (state.y - state.cameraY) * Math.min(1, 8 * dt);
 
-        /* track best altitude (display only) */
         if (state.y > state.records[state.currentPlanet]) {
             state.records[state.currentPlanet] = state.y;
         }
 
-        /* ---- ALTITUDE MILESTONES (once per planet) ---- */
         const pName = state.currentPlanet;
+        let pendingGold = 0;
         for (let i = 0; i < MILESTONES.length; i++) {
             if (state.y >= MILESTONES[i] && !state.altitudeMilestones[pName][i]) {
                 state.altitudeMilestones[pName][i] = true;
-                addGold(MILESTONE_GOLD[i]);
-                showStatus("🏔 " + (MILESTONES[i] / 1000) + " KM  +" + MILESTONE_GOLD[i] + "🪙", "#ffcc44", 2.5);
+                pendingGold += MILESTONE_GOLD[i];
             }
         }
+        if (pendingGold > 0) {
+            addGold(pendingGold);
+            showStatus("🏔 MILESTONE  +" + pendingGold + "🪙", "#ffcc44", 2.5);
+        }
 
-        /* ---- SPACE BONUS (once per planet, requires beenOnGround) ---- */
         if (!state.reachedSpace[state.currentPlanet] && state.beenOnGround) {
             const planet = planetsDB[state.currentPlanet];
             const isSpace = planet.atmo === 0 ? state.y > 1000 : state.y > planet.atmo;
@@ -1346,20 +1482,34 @@ game_html = """
         if (!state.legsDeployed && state.legsProgress > 0) state.legsProgress = Math.max(0, state.legsProgress - 2 * dt);
 
         updateParticles(dt);
+        updateDebris(dt);
         state.shake = Math.max(0, state.shake - 50 * dt);
     }
 
     function updateHUD() {
-        document.getElementById('val-alt').innerText = state.y.toFixed(1);
-        document.getElementById('val-best').innerText = Math.floor(state.records[state.currentPlanet] || 0);
-        document.getElementById('val-vel').innerText = Math.hypot(state.vx, state.vy).toFixed(1);
+        // SFS Format
+        const alt = state.y;
+        const vel = Math.hypot(state.vx, state.vy);
+        
+        // Format height nicely (m or km)
+        let altStr = alt > 1000 ? (alt/1000).toFixed(1) + "km" : alt.toFixed(1) + "m";
+        let velStr = vel > 1000 ? (vel/1000).toFixed(1) + "km/s" : vel.toFixed(1) + "m/s";
+        
+        document.getElementById('val-alt').innerText = altStr;
+        document.getElementById('val-vel').innerText = velStr;
+        document.getElementById('val-gold').innerText = state.gold;
 
         const fp = state.maxFuel > 0 ? (state.currentFuel / state.maxFuel) * 100 : 0;
-        const fuelEl = document.getElementById('val-fuel');
-        fuelEl.innerText = fp.toFixed(1);
-        fuelEl.style.color = fp < 20 ? "#ff4444" : "#00ffcc";
+        document.getElementById('fuel-bar-1').style.width = fp + '%';
 
-        document.getElementById('val-gold').innerText = state.gold;
+        if (state.heat > 0) {
+            document.getElementById('heat-ui').style.display = 'block';
+            document.getElementById('fuel-gauges').style.display = 'none';
+            document.getElementById('val-heat').innerText = Math.round(state.heat);
+        } else {
+            document.getElementById('heat-ui').style.display = 'none';
+            document.getElementById('fuel-gauges').style.display = 'flex';
+        }
 
         const planet = planetsDB[state.currentPlanet];
         const spaceEl = document.getElementById('hud-space');
@@ -1376,163 +1526,166 @@ game_html = """
         ctx.save();
         ctx.translate(p.x, py);
 
+        function drawMetalTank(width, height, isXL) {
+            const grad = ctx.createLinearGradient(-width / 2, 0, width / 2, 0);
+            if (isXL) {
+                grad.addColorStop(0, "#9988bb"); grad.addColorStop(0.2, "#d8c8ee"); 
+                grad.addColorStop(0.5, "#f8f0ff"); grad.addColorStop(0.8, "#b0a0cc"); grad.addColorStop(1, "#776699");
+            } else {
+                grad.addColorStop(0, "#666666"); grad.addColorStop(0.2, "#dddddd"); 
+                grad.addColorStop(0.5, "#ffffff"); grad.addColorStop(0.8, "#bbbbbb"); grad.addColorStop(1, "#555555");
+            }
+            ctx.fillStyle = grad;
+            ctx.fillRect(-width / 2, -height / 2, width, height);
+            
+            ctx.fillStyle = "rgba(0,0,0,0.4)";
+            ctx.fillRect(-width / 2, -height / 2, width, 2);
+            ctx.fillRect(-width / 2, height / 2 - 2, width, 2);
+            
+            ctx.fillStyle = "rgba(0,0,0,0.15)";
+            ctx.fillRect(-width / 2, 0, width, 1);
+        }
+
+        function drawMetalCone(width, height, colorLeft, colorMid, colorRight) {
+            const grad = ctx.createLinearGradient(-width / 2, 0, width / 2, 0);
+            grad.addColorStop(0, colorLeft);
+            grad.addColorStop(0.5, colorMid);
+            grad.addColorStop(1, colorRight);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(-width / 2, height / 2);
+            ctx.lineTo(width / 2, height / 2);
+            ctx.lineTo(0, -height / 2);
+            ctx.fill();
+        }
+
         if (p.type === "pod") {
-            ctx.fillStyle = "#888";
+            const grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+            grad.addColorStop(0, "#444"); grad.addColorStop(0.5, "#999"); grad.addColorStop(1, "#333");
+            ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.moveTo(-w / 2, h / 2);
             ctx.lineTo(w / 2, h / 2);
             ctx.lineTo(w / 3, -h / 2);
             ctx.lineTo(-w / 3, -h / 2);
             ctx.fill();
-            ctx.fillStyle = "#222";
+            
+            ctx.fillStyle = "#111";
             ctx.beginPath();
             ctx.arc(0, 0, w / 4, 0, Math.PI * 2);
             ctx.fill();
+            ctx.fillStyle = "#4a90e2";
+            ctx.beginPath();
+            ctx.arc(0, 0, w / 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#ddd";
+            ctx.fillRect(-w/2, h/2 - 3, w, 3);
 
         } else if (p.type === "chute") {
             if (!state.chuteDeployed) {
+                drawMetalTank(w, h, false);
                 ctx.fillStyle = "#555";
-                ctx.fillRect(-w / 3, -h / 2, w / 1.5, h);
+                ctx.fillRect(-w/2, -h/2, w, 3);
             }
 
         } else if (p.type === "nose") {
-            ctx.fillStyle = "#fff";
-            ctx.beginPath();
-            ctx.moveTo(-w / 2, h / 2);
-            ctx.lineTo(w / 2, h / 2);
-            ctx.lineTo(0, -h / 2);
-            ctx.fill();
+            drawMetalCone(w, h, "#666", "#fff", "#555");
 
         } else if (p.type.indexOf("tank") !== -1) {
-            let c1 = "#aaa", c2 = "#fff", c3 = "#888";
-            if (p.type === "tank_xl") { c1 = "#c8b8ee"; c2 = "#f0e8ff"; c3 = "#9c88c8"; }
-            const grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
-            grad.addColorStop(0, c1);
-            grad.addColorStop(0.5, c2);
-            grad.addColorStop(1, c3);
-            ctx.fillStyle = grad;
-            ctx.fillRect(-w / 2, -h / 2, w, h);
-
-        } else if (p.type === "engine_ion") {
-            ctx.fillStyle = "#1a2a4a";
-            ctx.beginPath();
-            ctx.moveTo(-w / 3, -h / 2);
-            ctx.lineTo(w / 3, -h / 2);
-            ctx.lineTo(w / 2, h / 2);
-            ctx.lineTo(-w / 2, h / 2);
-            ctx.fill();
-
-            if (state.throttle > 0 && state.currentFuel > 0 && gameState === "flight") {
-                const flameLen = (35 + 80 * state.throttle) * (0.9 + Math.random() * 0.2);
-                const nozzleY = h / 2;
-                const glow = ctx.createRadialGradient(0, nozzleY, 2, 0, nozzleY, flameLen * 0.8);
-                glow.addColorStop(0, "rgba(180,240,255,0.9)");
-                glow.addColorStop(0.5, "rgba(80,180,255,0.4)");
-                glow.addColorStop(1, "rgba(50,100,255,0)");
-                ctx.fillStyle = glow;
-                ctx.beginPath();
-                ctx.arc(0, nozzleY, flameLen * 0.8, 0, Math.PI * 2);
-                ctx.fill();
-
-                const fg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + flameLen);
-                fg.addColorStop(0, "rgba(255,255,255,1)");
-                fg.addColorStop(0.4, "rgba(150,230,255,0.9)");
-                fg.addColorStop(1, "rgba(50,120,255,0)");
-                ctx.fillStyle = fg;
-                ctx.beginPath();
-                ctx.moveTo(-w / 2.4, nozzleY);
-                ctx.lineTo(w / 2.4, nozzleY);
-                ctx.lineTo(0, nozzleY + flameLen);
-                ctx.fill();
-            }
+            drawMetalTank(w, h, p.type === "tank_xl");
 
         } else if (p.type.indexOf("engine") !== -1) {
-            ctx.fillStyle = "#222";
+            const isIon = p.type === "engine_ion";
+            
+            ctx.fillStyle = "#444";
+            ctx.fillRect(-w/2, -h/2, w, h/3);
+
+            const bellGrad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+            if (isIon) {
+                bellGrad.addColorStop(0, "#1a2a4a"); bellGrad.addColorStop(0.5, "#4a6a9a"); bellGrad.addColorStop(1, "#1a2a4a");
+            } else {
+                bellGrad.addColorStop(0, "#222"); bellGrad.addColorStop(0.3, "#777"); bellGrad.addColorStop(0.6, "#333"); bellGrad.addColorStop(1, "#111");
+            }
+            
+            ctx.fillStyle = bellGrad;
             ctx.beginPath();
-            ctx.moveTo(-w / 3, -h / 2);
-            ctx.lineTo(w / 3, -h / 2);
-            ctx.lineTo(w / 2, h / 2);
-            ctx.lineTo(-w / 2, h / 2);
+            ctx.moveTo(-w / 3, -h / 2 + h/3);
+            ctx.lineTo(w / 3, -h / 2 + h/3);
+            ctx.lineTo(w / 1.8, h / 2);
+            ctx.lineTo(-w / 1.8, h / 2);
             ctx.fill();
 
-            if (state.throttle > 0 && state.currentFuel > 0 && gameState === "flight") {
+            if (state.throttle > 0 && state.currentFuel > 0 && (gameState === "flight" || gameState === "crashed")) {
                 const th = state.throttle;
                 const flick = 0.85 + Math.random() * 0.3;
                 const flameLen = (50 + 100 * th) * flick;
                 const nozzleY = h / 2;
 
                 const glow = ctx.createRadialGradient(0, nozzleY, 2, 0, nozzleY, flameLen * 0.75);
-                glow.addColorStop(0, "rgba(255,245,190,0.85)");
-                glow.addColorStop(0.45, "rgba(255,150,20,0.35)");
-                glow.addColorStop(1, "rgba(255,80,0,0)");
+                glow.addColorStop(0, isIon ? "rgba(180,240,255,0.9)" : "rgba(255,245,190,0.85)");
+                glow.addColorStop(0.45, isIon ? "rgba(80,180,255,0.4)" : "rgba(255,150,20,0.35)");
+                glow.addColorStop(1, "rgba(0,0,0,0)");
                 ctx.fillStyle = glow;
                 ctx.beginPath();
                 ctx.arc(0, nozzleY, flameLen * 0.75, 0, Math.PI * 2);
                 ctx.fill();
 
                 const fg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + flameLen);
-                fg.addColorStop(0, "rgba(255,255,255,1)");
-                fg.addColorStop(0.25, "rgba(255,225,60,0.95)");
-                fg.addColorStop(0.6, "rgba(255,120,0,0.7)");
-                fg.addColorStop(1, "rgba(255,0,0,0)");
+                if (isIon) {
+                    fg.addColorStop(0, "rgba(255,255,255,1)");
+                    fg.addColorStop(0.5, "rgba(80,200,255,0.8)");
+                    fg.addColorStop(1, "rgba(50,100,255,0)");
+                } else {
+                    fg.addColorStop(0, "rgba(255,255,255,1)");
+                    fg.addColorStop(0.25, "rgba(255,225,60,0.95)");
+                    fg.addColorStop(0.6, "rgba(255,120,0,0.7)");
+                    fg.addColorStop(1, "rgba(255,0,0,0)");
+                }
+                
                 ctx.fillStyle = fg;
                 ctx.beginPath();
                 ctx.moveTo(-w / 2.2, nozzleY);
                 ctx.lineTo(w / 2.2, nozzleY);
                 ctx.lineTo(0, nozzleY + flameLen);
                 ctx.fill();
-
-                const coreLen = flameLen * 0.55;
-                const cg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + coreLen);
-                cg.addColorStop(0, "rgba(255,255,255,1)");
-                cg.addColorStop(0.6, "rgba(255,255,210,0.9)");
-                cg.addColorStop(1, "rgba(255,220,80,0)");
-                ctx.fillStyle = cg;
-                ctx.beginPath();
-                ctx.moveTo(-w / 4.2, nozzleY);
-                ctx.lineTo(w / 4.2, nozzleY);
-                ctx.lineTo(0, nozzleY + coreLen);
-                ctx.fill();
             }
 
         } else if (p.type === "decoupler") {
-            ctx.fillStyle = "#5c3a21";
+            const grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+            grad.addColorStop(0, "#222"); grad.addColorStop(0.5, "#666"); grad.addColorStop(1, "#222");
+            ctx.fillStyle = grad;
             ctx.fillRect(-w / 2, -h / 2, w, h);
+            ctx.fillStyle = "#ffcc44";
+            ctx.fillRect(-w/4, -h/2, 2, h);
+            ctx.fillRect(w/4, -h/2, 2, h);
 
         } else if (p.type === "booster" || p.type === "booster_large") {
-            const col = p.type === 'booster_large' ? '#fdd' : '#ddd';
-            ctx.fillStyle = col;
-            ctx.fillRect(-w / 2, -h / 2, w, h);
-            if (p.type === 'booster_large') {
-                ctx.strokeStyle = "#e88";
-                ctx.lineWidth = 1;
-                ctx.strokeRect(-w / 2, -h / 2, w, h);
-            }
-
+            drawMetalTank(w, h, false);
+            drawMetalCone(w, h * 0.2, "#666", "#fff", "#555");
+            
         } else if (p.type === "legs") {
-            ctx.fillStyle = "#555";
+            ctx.fillStyle = "#444";
             ctx.fillRect(-w / 2, -h / 2, w, h);
 
         } else if (p.type === "gyroscope") {
-            ctx.fillStyle = "#fa4";
+            const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, w/2);
+            grad.addColorStop(0, "#ffdd88"); grad.addColorStop(1, "#cc8800");
+            ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.arc(0, 0, w / 2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = "#ffa";
-            ctx.lineWidth = 1;
-            ctx.stroke();
 
         } else if (p.type === "heat_shield") {
-            ctx.fillStyle = "#844";
+            const grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+            grad.addColorStop(0, "#331111"); grad.addColorStop(0.5, "#884444"); grad.addColorStop(1, "#331111");
+            ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.moveTo(-w / 2, -h / 2);
             ctx.lineTo(w / 2, -h / 2);
             ctx.lineTo(w / 2.8, h / 2);
             ctx.lineTo(-w / 2.8, h / 2);
             ctx.fill();
-            ctx.strokeStyle = "#f84";
-            ctx.lineWidth = 1;
-            ctx.stroke();
         }
 
         ctx.restore();
@@ -1541,7 +1694,7 @@ game_html = """
     function drawVAB() {
         ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-        ctx.fillStyle = "#2b3a4a";
+        ctx.fillStyle = "#1a252f";
         ctx.fillRect(0, 0, W, H);
 
         const v = vabView();
@@ -1549,7 +1702,7 @@ game_html = """
         ctx.translate(v.ox, v.oy);
         ctx.scale(v.sc, v.sc);
 
-        ctx.strokeStyle = "rgba(255,255,255,0.07)";
+        ctx.strokeStyle = "rgba(74, 144, 226, 0.15)";
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let i = -60; i <= 60; i++) {
@@ -1560,7 +1713,7 @@ game_html = """
         }
         ctx.stroke();
 
-        ctx.fillStyle = "#444";
+        ctx.fillStyle = "#34495e";
         ctx.fillRect(-220, 0, 440, 10);
 
         rocketParts.forEach(function (p) { drawPart(p, -p.y); });
@@ -1620,13 +1773,16 @@ game_html = """
             ctx.globalAlpha = 1;
         }
 
-        const zoom = Math.max(0.55, 1.1 - state.y / 25000);
+        // ** HUGE ROCKET ZOOM **
+        const zoom = Math.max(0.6, 2.2 - state.y / 15000);
 
         ctx.save();
         if (state.shake > 0) {
             ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
         }
-        ctx.translate(W / 2, H * 0.68);
+        
+        // Camera Follows Rocket Center
+        ctx.translate(W / 2, H * 0.65);
         ctx.scale(zoom, zoom);
         ctx.translate(-state.cameraX, state.cameraY);
 
@@ -1655,6 +1811,17 @@ game_html = """
         ctx.arc(0, R, R, -Math.PI / 2 - 0.35, -Math.PI / 2 + 0.35);
         ctx.stroke();
 
+        // Draw Debris
+        debrisParts.forEach(function(d) {
+            ctx.save();
+            ctx.translate(d.x, -d.y);
+            ctx.rotate(d.angle * Math.PI / 180);
+            // Draw as a generic chunk
+            ctx.fillStyle = "#666";
+            ctx.fillRect(-10, -20, 20, 40);
+            ctx.restore();
+        });
+
         for (let i = 0; i < state.particles.length; i++) {
             const p = state.particles[i];
             const life = Math.max(0, p.life);
@@ -1662,6 +1829,29 @@ game_html = """
             ctx.beginPath();
             ctx.arc(p.x, -p.y, Math.max(0.5, p.size * life), 0, Math.PI * 2);
             ctx.fill();
+        }
+
+        // Re-entry Plasma Effect
+        if (state.heat > 0 && gameState !== "crashed") {
+            ctx.save();
+            ctx.translate(state.x, -(state.y + state.rocketCenterY));
+            ctx.rotate(state.angle * Math.PI / 180);
+            
+            // Draw plasma trail behind rocket
+            const plasmaLen = 200 * (state.heat / 1137);
+            const plasmaGrad = ctx.createLinearGradient(0, 0, 0, plasmaLen);
+            plasmaGrad.addColorStop(0, `rgba(255, 100, 0, ${state.heat/1137})`);
+            plasmaGrad.addColorStop(0.5, `rgba(255, 50, 0, ${state.heat/1137 * 0.5})`);
+            plasmaGrad.addColorStop(1, "rgba(255, 0, 0, 0)");
+            
+            ctx.fillStyle = plasmaGrad;
+            ctx.beginPath();
+            ctx.moveTo(-20, 0);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(0, plasmaLen);
+            ctx.fill();
+            
+            ctx.restore();
         }
 
         if (gameState !== "crashed") {
@@ -1687,29 +1877,33 @@ game_html = """
             }
 
             if (state.chuteDeployed) {
-                const chuteTop = -(120 - state.rocketCenterY);
-                ctx.strokeStyle = "#fff";
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(-15, chuteTop);
-                ctx.lineTo(-5, chuteTop + 60);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(15, chuteTop);
-                ctx.lineTo(5, chuteTop + 60);
-                ctx.stroke();
+                const chutePart = rocketParts.find(p => p.type === 'chute');
+                if (chutePart) {
+                    const chuteTop = -(chutePart.y - state.rocketCenterY + 80);
+                    const chuteRadius = 45;
+                    
+                    ctx.strokeStyle = "rgba(255,255,255,0.6)";
+                    ctx.lineWidth = 1;
+                    for (let i = -3; i <= 3; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(i * 5, chuteTop);
+                        ctx.lineTo(0, -(chutePart.y - state.rocketCenterY));
+                        ctx.stroke();
+                    }
 
-                ctx.fillStyle = "#f44";
-                ctx.beginPath();
-                ctx.arc(0, chuteTop, 30, Math.PI, 0);
-                ctx.fill();
-                ctx.fillStyle = "#fff";
-                ctx.beginPath();
-                ctx.arc(0, chuteTop, 30, Math.PI, Math.PI * 1.3);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(0, chuteTop, 30, Math.PI * 1.6, Math.PI * 2);
-                ctx.fill();
+                    ctx.fillStyle = "#eeeeee";
+                    ctx.beginPath();
+                    ctx.arc(0, chuteTop, chuteRadius, Math.PI, 0);
+                    ctx.fill();
+                    
+                    ctx.fillStyle = "#dd3333";
+                    for (let i = -2; i <= 2; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, chuteTop);
+                        ctx.arc(0, chuteTop, chuteRadius, Math.PI + (i * 0.3) - 0.1, Math.PI + (i * 0.3) + 0.1);
+                        ctx.fill();
+                    }
+                }
             }
 
             ctx.restore();
@@ -1744,8 +1938,8 @@ game_html = """
     }
 
     const vabMenuEl = document.getElementById('vab-menu');
-    const hintUp = document.querySelector('#vab-scroll-hint.up');
-    const hintDown = document.querySelector('#vab-scroll-hint.down');
+    const hintUp = document.querySelector('.vab-scroll-hint.up');
+    const hintDown = document.querySelector('.vab-scroll-hint.down');
 
     function updateScrollHints() {
         if (!vabMenuEl || vabMenuEl.style.display === 'none') {
