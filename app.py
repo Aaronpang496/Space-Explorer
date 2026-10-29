@@ -24,9 +24,10 @@ game_html = """
         canvas { display: block; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
 
-        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000000; }
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000000; padding: 0 20px; box-sizing: border-box; }
         #btn-start { background: #00ffcc; color: #000; border: none; padding: 20px 50px; font-size: 28px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 0 20px #00ffcc; }
-        .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 50px; text-shadow: 0 0 20px #4a90e2; }
+        .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 12px; text-shadow: 0 0 20px #4a90e2; text-align: center; }
+        .subtitle { color: #7ab; font-size: 14px; margin-bottom: 40px; text-align: center; }
 
         #vab-menu { position: absolute; top: 10px; left: 10px; width: 100px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; display: none; flex-direction: column; align-items: center; padding: 10px 0; pointer-events: auto; max-height: 80vh; overflow-y: auto; z-index: 100000;}
         .part-btn { width: 80px; height: 45px; margin: 3px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; touch-action: none;}
@@ -46,7 +47,7 @@ game_html = """
         .m-booster { width: 12px; height: 25px; background: #ddd; border-radius: 5px 5px 0 0;}
         .m-legs { width: 16px; height: 10px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
 
-        #vab-stats { position: absolute; top: 10px; right: 10px; width: 150px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
+        #vab-stats { position: absolute; top: 10px; right: 10px; width: 155px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
         .stat-hint { margin-top: 8px; padding-top: 8px; border-top: 1px solid #333; font-size: 10px; color: #8ab; line-height: 1.35; }
@@ -57,8 +58,8 @@ game_html = """
         #top-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
         .top-btn { background: #1e3a8a; color: white; border: 2px solid #60a5fa; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer;}
 
-        #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000;}
-        #hud-planet { color: #ffcc44; font-weight: bold; }
+        #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.65); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000; line-height: 1.5;}
+        #hud-planet { color: #ffcc44; font-weight: bold; font-size: 14px;}
         #hud-space { color: #00ffcc; font-weight: bold; display: none; }
 
         #throttle-zone { position: absolute; right: 15px; top: 60%; width: 45px; height: 160px; background: rgba(255,255,255,0.15); border: 2px solid #fff; border-radius: 25px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
@@ -75,7 +76,7 @@ game_html = """
 
         #minimap-container { position: absolute; top: 100px; right: 15px; width: 80px; height: 80px; border: 2px solid #555; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000;}
 
-        #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.95); display: none; pointer-events: auto; z-index: 200000;}
+        #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.97); display: none; pointer-events: auto; z-index: 200000;}
         #map-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
         #map-title { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold;}
         #map-hint { position: absolute; bottom: 24px; left: 0; width: 100%; text-align: center; color: #9ab; font-size: 13px; }
@@ -83,6 +84,29 @@ game_html = """
         #status-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 36px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000;}
 
         #btn-rebuild { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; padding: 15px 30px; background: #1e3a8a; color: #fff; border: 2px solid #60a5fa; border-radius: 8px; font-size: 16px; font-weight: bold; pointer-events: auto; z-index: 100000; cursor: pointer;}
+
+        /* PLANET INFO CARD */
+        #planet-info {
+            position: absolute;
+            top: 22%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 15, 35, 0.94);
+            border: 2px solid #00ffcc;
+            border-radius: 12px;
+            padding: 16px 24px;
+            color: white;
+            text-align: center;
+            display: none;
+            z-index: 1000000;
+            pointer-events: none;
+            min-width: 240px;
+            box-shadow: 0 0 40px rgba(0,255,204,0.35);
+        }
+        #planet-info h2 { margin: 0 0 6px 0; color: #00ffcc; font-size: 26px; letter-spacing: 1px;}
+        #planet-info .fact { font-size: 12px; color: #aaccee; margin-bottom: 10px; font-style: italic; }
+        #planet-info .row { font-size: 12px; color: #fff; display: flex; justify-content: space-between; padding: 3px 0; gap: 20px;}
+        #planet-info .row span:last-child { color: #ffcc44; font-weight: bold;}
 
         #warp-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle, #ffffff 0%, #aaddff 40%, rgba(0,0,20,0) 100%);
@@ -96,6 +120,7 @@ game_html = """
     <div id="ui-layer">
         <div id="start-screen">
             <div class="title">SPACE EXPLORER</div>
+            <div class="subtitle">Build a rocket · Launch · Explore all 8 planets</div>
             <button id="btn-start">START BUILDING</button>
         </div>
 
@@ -134,6 +159,7 @@ game_html = """
         <div id="hud">
             <span id="hud-planet">Earth</span><br>
             ALT: <span id="val-alt">0</span> m<br>
+            BEST: <span id="val-best">0</span> m<br>
             VEL: <span id="val-vel">0</span> m/s<br>
             FUEL: <span id="val-fuel" style="color:#00ffcc">100</span>%<br>
             <span id="hud-space">★ IN SPACE ★</span>
@@ -146,6 +172,14 @@ game_html = """
         </div>
         <button id="btn-stage">STAGE</button>
         <button id="btn-legs">LEGS: UP</button>
+
+        <div id="planet-info">
+            <h2 id="pi-name">Earth</h2>
+            <div class="fact" id="pi-fact"></div>
+            <div class="row"><span>Gravity</span><span id="pi-gravity"></span></div>
+            <div class="row"><span>Atmosphere</span><span id="pi-atmo"></span></div>
+            <div class="row"><span>Best altitude</span><span id="pi-best"></span></div>
+        </div>
 
         <div id="status-msg"></div>
         <button id="btn-rebuild">REBUILD 🔄</button>
@@ -179,7 +213,9 @@ game_html = """
                 x: Math.random() * W,
                 y: Math.random() * H,
                 size: Math.random() * 1.7 + 0.4,
-                a: 0.35 + Math.random() * 0.65
+                a: 0.35 + Math.random() * 0.65,
+                phase: Math.random() * Math.PI * 2,
+                speed: 0.6 + Math.random() * 1.6
             });
         }
     }
@@ -217,11 +253,16 @@ game_html = """
         legs:         { w: 24, h: 20, m: 100,  f: 0,    t: 0 }
     };
 
+    /* ------- ALL 8 PLANETS ------- */
     const planetsDB = {
-        "Earth":   { ground: "#2e4a2e", g: 9.81,  color: "#4a90e2", sky: [135, 206, 235], atmo: 9000 },
-        "Moon":    { ground: "#555555", g: 1.62,  color: "#9ca3af", sky: [0, 0, 0],       atmo: 0    },
-        "Mars":    { ground: "#8a2be2", g: 3.71,  color: "#ea580c", sky: [224, 150, 110], atmo: 6000 },
-        "Jupiter": { ground: "#8b4513", g: 24.79, color: "#d4a373", sky: [216, 170, 130], atmo: 15000 }
+        "Mercury": { ground: "#7a6f5c", g: 3.70,  color: "#b0a89c", sky: [55, 50, 55],    atmo: 0,     radius: 12, fact: "Smallest planet · no atmosphere" },
+        "Venus":   { ground: "#b88a4a", g: 8.87,  color: "#e6c88a", sky: [235, 200, 140], atmo: 14000, radius: 18, fact: "Hottest planet · thick clouds" },
+        "Earth":   { ground: "#2e4a2e", g: 9.81,  color: "#4a90e2", sky: [135, 206, 235], atmo: 9000,  radius: 18, fact: "Our home · the blue marble" },
+        "Mars":    { ground: "#8a2be2", g: 3.71,  color: "#ea580c", sky: [224, 150, 110], atmo: 6000,  radius: 15, fact: "The red planet · thin air" },
+        "Jupiter": { ground: "#8b4513", g: 24.79, color: "#d4a373", sky: [216, 170, 130], atmo: 18000, radius: 30, fact: "Largest planet · gas giant" },
+        "Saturn":  { ground: "#c4a778", g: 10.44, color: "#e0c890", sky: [200, 180, 130], atmo: 16000, radius: 26, fact: "Famous for its rings" },
+        "Uranus":  { ground: "#4a8a9a", g: 8.69,  color: "#7ac8d4", sky: [150, 200, 220], atmo: 11000, radius: 20, fact: "Tilted ice giant" },
+        "Neptune": { ground: "#1e3a6e", g: 11.15, color: "#4a6ec8", sky: [60, 80, 180],   atmo: 12000, radius: 20, fact: "Farthest planet · icy winds" }
     };
 
     function makeSurface(seed) {
@@ -257,14 +298,20 @@ game_html = """
         cameraX: 0, cameraY: 0,
         lastTime: performance.now(),
         particles: [],
-        shake: 0
+        shake: 0,
+        records: {}   /* best altitude per planet */
     };
+
+    /* init records */
+    Object.keys(planetsDB).forEach(function (k) { state.records[k] = 0; });
 
     const throttleFill = document.getElementById('throttle-fill');
     const statusEl = document.getElementById('status-msg');
     const rebuildBtn = document.getElementById('btn-rebuild');
     const mapOverlay = document.getElementById('map-overlay');
+    const infoCard = document.getElementById('planet-info');
     let statusTimer = null;
+    let infoTimer = null;
 
     function showStatus(text, color, seconds) {
         statusEl.innerText = text;
@@ -274,6 +321,18 @@ game_html = """
         if (seconds) {
             statusTimer = setTimeout(function () { statusEl.style.display = 'none'; }, seconds * 1000);
         }
+    }
+
+    function showPlanetInfo(name, seconds) {
+        const p = planetsDB[name];
+        document.getElementById('pi-name').innerText = name;
+        document.getElementById('pi-fact').innerText = p.fact;
+        document.getElementById('pi-gravity').innerText = p.g.toFixed(2) + " m/s²";
+        document.getElementById('pi-atmo').innerText = p.atmo > 0 ? (p.atmo / 1000).toFixed(0) + " km" : "None";
+        document.getElementById('pi-best').innerText = Math.floor(state.records[name]) + " m";
+        infoCard.style.display = 'block';
+        if (infoTimer) { clearTimeout(infoTimer); infoTimer = null; }
+        infoTimer = setTimeout(function () { infoCard.style.display = 'none'; }, (seconds || 3.5) * 1000);
     }
 
     function rocketMaxY() {
@@ -429,13 +488,11 @@ game_html = """
 
         if (!type) return;
 
-        /* dropped on trash? */
         const tr = trashCan.getBoundingClientRect();
         const overTrash = (e.clientX >= tr.left && e.clientX <= tr.right &&
                            e.clientY >= tr.top  && e.clientY <= tr.bottom);
         if (overTrash) { updateStats(); return; }
 
-        /* tapped on an existing part = delete */
         const moved = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
         if (fromCanvas && moved < 12) {
             updateStats();
@@ -488,8 +545,8 @@ game_html = """
     let leftPressed = false;
     let rightPressed = false;
 
-    const TURN_ACCEL = 280;   /* deg/s^2 */
-    const TURN_MAX   = 150;   /* deg/s   */
+    const TURN_ACCEL = 280;
+    const TURN_MAX   = 150;
 
     const throttleZone = document.getElementById('throttle-zone');
 
@@ -572,62 +629,89 @@ game_html = """
     };
 
     /* =========================
-       MAP / WARP
+       MAP / WARP - 8 planets in 2 rows
        ========================= */
     const planetsMap = [
-        { name: "Earth",   color: "#4a90e2", x: 0.20 },
-        { name: "Moon",    color: "#9ca3af", x: 0.40 },
-        { name: "Mars",    color: "#ea580c", x: 0.60 },
-        { name: "Jupiter", color: "#d4a373", x: 0.80 }
+        { name: "Mercury", color: "#b0a89c", x: 0.15, row: 0 },
+        { name: "Venus",   color: "#e6c88a", x: 0.38, row: 0 },
+        { name: "Earth",   color: "#4a90e2", x: 0.62, row: 0 },
+        { name: "Mars",    color: "#ea580c", x: 0.85, row: 0 },
+        { name: "Jupiter", color: "#d4a373", x: 0.15, row: 1 },
+        { name: "Saturn",  color: "#e0c890", x: 0.38, row: 1 },
+        { name: "Uranus",  color: "#7ac8d4", x: 0.62, row: 1 },
+        { name: "Neptune", color: "#4a6ec8", x: 0.85, row: 1 }
     ];
+
+    function mapRowY(row) { return row === 0 ? mapCanvas.height * 0.32 : mapCanvas.height * 0.68; }
 
     function drawMap() {
         mapCtx.setTransform(1, 0, 0, 1, 0, 0);
         mapCtx.fillStyle = "#000511";
         mapCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
 
+        /* stars */
         mapCtx.fillStyle = "#ffffff";
-        for (let i = 0; i < 140; i++) {
+        for (let i = 0; i < 180; i++) {
             const sx = (i * 137.508) % mapCanvas.width;
             const sy = (i * 91.7) % mapCanvas.height;
-            mapCtx.globalAlpha = 0.15 + ((i * 37) % 100) / 180;
+            mapCtx.globalAlpha = 0.15 + ((i * 37) % 100) / 220;
             mapCtx.fillRect(sx, sy, 1.5, 1.5);
         }
         mapCtx.globalAlpha = 1;
 
-        mapCtx.strokeStyle = "rgba(255,255,255,0.15)";
+        /* row separators */
+        mapCtx.strokeStyle = "rgba(0,255,204,0.12)";
         mapCtx.lineWidth = 1;
+        mapCtx.setLineDash([4, 8]);
         mapCtx.beginPath();
-        mapCtx.moveTo(0, mapCanvas.height / 2);
-        mapCtx.lineTo(mapCanvas.width, mapCanvas.height / 2);
+        mapCtx.moveTo(20, mapCanvas.height * 0.5);
+        mapCtx.lineTo(mapCanvas.width - 20, mapCanvas.height * 0.5);
         mapCtx.stroke();
+        mapCtx.setLineDash([]);
+
+        /* row labels */
+        mapCtx.fillStyle = "rgba(0,255,204,0.55)";
+        mapCtx.font = "11px Arial";
+        mapCtx.textAlign = "left";
+        mapCtx.fillText("INNER PLANETS", 20, mapCanvas.height * 0.32 - 55);
+        mapCtx.fillText("OUTER PLANETS", 20, mapCanvas.height * 0.68 - 55);
 
         mapCtx.textAlign = "center";
         planetsMap.forEach(function (p) {
             const cx = p.x * mapCanvas.width;
-            const cy = mapCanvas.height / 2;
+            const cy = mapRowY(p.row);
+            const rad = planetsDB[p.name].radius;
 
-            const g = mapCtx.createRadialGradient(cx - 9, cy - 9, 3, cx, cy, 26);
+            /* Saturn ring */
+            if (p.name === "Saturn") {
+                mapCtx.strokeStyle = "rgba(230,220,180,0.75)";
+                mapCtx.lineWidth = 3;
+                mapCtx.beginPath();
+                mapCtx.ellipse(cx, cy, rad + 14, rad * 0.35, -0.35, 0, Math.PI * 2);
+                mapCtx.stroke();
+            }
+
+            const g = mapCtx.createRadialGradient(cx - rad * 0.35, cy - rad * 0.35, 2, cx, cy, rad + 2);
             g.addColorStop(0, "#ffffff");
             g.addColorStop(0.25, p.color);
             g.addColorStop(1, p.color);
 
             mapCtx.fillStyle = g;
             mapCtx.beginPath();
-            mapCtx.arc(cx, cy, 24, 0, Math.PI * 2);
+            mapCtx.arc(cx, cy, rad, 0, Math.PI * 2);
             mapCtx.fill();
 
             if (p.name === state.currentPlanet) {
                 mapCtx.strokeStyle = "#00ffcc";
                 mapCtx.lineWidth = 3;
                 mapCtx.beginPath();
-                mapCtx.arc(cx, cy, 33, 0, Math.PI * 2);
+                mapCtx.arc(cx, cy, rad + 8, 0, Math.PI * 2);
                 mapCtx.stroke();
             }
 
             mapCtx.fillStyle = "#ffffff";
-            mapCtx.font = "16px Arial";
-            mapCtx.fillText(p.name, cx, cy + 52);
+            mapCtx.font = "14px Arial";
+            mapCtx.fillText(p.name, cx, cy + rad + 22);
         });
     }
 
@@ -648,8 +732,8 @@ game_html = """
 
         planetsMap.forEach(function (p) {
             const cx = p.x * mapCanvas.width;
-            const cy = mapCanvas.height / 2;
-            if (Math.hypot(mx - cx, my - cy) < 48) {
+            const cy = mapRowY(p.row);
+            if (Math.hypot(mx - cx, my - cy) < 44) {
                 warpTravel(p.name);
             }
         });
@@ -704,7 +788,7 @@ game_html = """
         }
 
         document.getElementById('hud-planet').innerText = name;
-        showStatus("WARPED TO " + name.toUpperCase(), "#00ffcc", 2.5);
+        showPlanetInfo(name, 3.5);
     }
 
     document.getElementById('btn-launch').onclick = function (e) {
@@ -766,6 +850,7 @@ game_html = """
         document.getElementById('btn-legs').innerText = "LEGS: UP";
         document.getElementById('btn-legs').classList.remove('deployed');
 
+        showPlanetInfo("Earth", 3.5);
         updateHUD();
     };
 
@@ -780,7 +865,7 @@ game_html = """
             const p = state.particles[i];
             p.x += p.vx * dt;
             p.y += p.vy * dt;
-            p.vy -= 45 * dt;                       /* light downward drift */
+            p.vy -= 45 * dt;
             p.vx *= Math.pow(0.45, dt);
             p.vy *= Math.pow(0.55, dt);
             p.life -= dt * 1.25;
@@ -837,7 +922,6 @@ game_html = """
         }
         if (gameState !== "flight") return;
 
-        /* ---- rotation (responsive) ---- */
         if (leftPressed) state.angularVelocity -= TURN_ACCEL * dt;
         if (rightPressed) state.angularVelocity += TURN_ACCEL * dt;
         if (!leftPressed && !rightPressed) {
@@ -874,7 +958,6 @@ game_html = """
             const cosA = Math.cos(rad);
             const sinA = Math.sin(rad);
 
-            /* exhaust particles spawn at true nozzle position, aligned with rocket */
             rocketParts.forEach(function (eng) {
                 if (eng.type.indexOf("engine") === -1) return;
 
@@ -964,6 +1047,11 @@ game_html = """
         state.cameraX += (state.x - state.cameraX) * Math.min(1, 8 * dt);
         state.cameraY += (state.y - state.cameraY) * Math.min(1, 8 * dt);
 
+        /* update best altitude record */
+        if (state.y > state.records[state.currentPlanet]) {
+            state.records[state.currentPlanet] = state.y;
+        }
+
         if (state.legsDeployed && state.legsProgress < 1) state.legsProgress = Math.min(1, state.legsProgress + 2 * dt);
         if (!state.legsDeployed && state.legsProgress > 0) state.legsProgress = Math.max(0, state.legsProgress - 2 * dt);
 
@@ -973,6 +1061,7 @@ game_html = """
 
     function updateHUD() {
         document.getElementById('val-alt').innerText = state.y.toFixed(1);
+        document.getElementById('val-best').innerText = Math.floor(state.records[state.currentPlanet] || 0);
         document.getElementById('val-vel').innerText = Math.hypot(state.vx, state.vy).toFixed(1);
 
         const fp = state.maxFuel > 0 ? (state.currentFuel / state.maxFuel) * 100 : 0;
@@ -1047,7 +1136,6 @@ game_html = """
                 const flameLen = (50 + 100 * th) * flick;
                 const nozzleY = h / 2;
 
-                /* glow halo */
                 const glow = ctx.createRadialGradient(0, nozzleY, 2, 0, nozzleY, flameLen * 0.75);
                 glow.addColorStop(0, "rgba(255,245,190,0.85)");
                 glow.addColorStop(0.45, "rgba(255,150,20,0.35)");
@@ -1057,7 +1145,6 @@ game_html = """
                 ctx.arc(0, nozzleY, flameLen * 0.75, 0, Math.PI * 2);
                 ctx.fill();
 
-                /* outer flame */
                 const fg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + flameLen);
                 fg.addColorStop(0, "rgba(255,255,255,1)");
                 fg.addColorStop(0.25, "rgba(255,225,60,0.95)");
@@ -1070,7 +1157,6 @@ game_html = """
                 ctx.lineTo(0, nozzleY + flameLen);
                 ctx.fill();
 
-                /* inner core */
                 const coreLen = flameLen * 0.55;
                 const cg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + coreLen);
                 cg.addColorStop(0, "rgba(255,255,255,1)");
@@ -1152,15 +1238,31 @@ game_html = """
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, W, H);
 
+        /* sun glow when high enough */
+        if (t > 0.35) {
+            const sunAlpha = Math.min(1, (t - 0.35) / 0.5);
+            const sx = W * 0.85, sy = H * 0.15;
+            const sg = ctx.createRadialGradient(sx, sy, 4, sx, sy, 140);
+            sg.addColorStop(0, "rgba(255,255,230," + (sunAlpha) + ")");
+            sg.addColorStop(0.15, "rgba(255,235,140," + (sunAlpha * 0.85) + ")");
+            sg.addColorStop(0.45, "rgba(255,200,80," + (sunAlpha * 0.35) + ")");
+            sg.addColorStop(1, "rgba(255,150,50,0)");
+            ctx.fillStyle = sg;
+            ctx.fillRect(sx - 150, sy - 150, 300, 300);
+        }
+
+        /* twinkling stars */
         if (t > 0.04) {
             const px = state.cameraX * 0.04;
             const py = state.cameraY * 0.04;
+            const now = performance.now();
             ctx.fillStyle = "#ffffff";
             for (let i = 0; i < stars.length; i++) {
                 const s = stars[i];
                 const sx = ((s.x - px) % W + W) % W;
                 const sy = ((s.y + py) % H + H) % H;
-                ctx.globalAlpha = t * s.a;
+                const tw = 0.65 + 0.35 * Math.sin(now * 0.0012 * s.speed + s.phase);
+                ctx.globalAlpha = t * s.a * tw;
                 ctx.beginPath();
                 ctx.arc(sx, sy, s.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -1213,7 +1315,6 @@ game_html = """
         }
 
         if (gameState !== "crashed") {
-            /* rotate around centre of mass — flame is drawn inside this transform, so it follows the rocket */
             ctx.save();
             ctx.translate(state.x, -(state.y + state.rocketCenterY));
             ctx.rotate(state.angle * Math.PI / 180);
