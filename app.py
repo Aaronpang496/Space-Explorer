@@ -24,15 +24,63 @@ game_html = """
         canvas { display: block; }
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
 
-        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000000; padding: 0 20px; box-sizing: border-box; }
+        #start-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 1000000; padding: 0 20px; box-sizing: border-box; }
         #btn-start { background: #00ffcc; color: #000; border: none; padding: 20px 50px; font-size: 28px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 0 20px #00ffcc; }
         .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 12px; text-shadow: 0 0 20px #4a90e2; text-align: center; }
-        .subtitle { color: #7ab; font-size: 14px; margin-bottom: 40px; text-align: center; }
+        .subtitle { color: #7ab; font-size: 13px; margin-bottom: 20px; text-align: center; max-width: 320px; line-height: 1.6;}
+        .gold-guide { color: #ffcc44; font-size: 12px; margin-bottom: 30px; text-align: center; line-height: 1.7; max-width: 320px; background: rgba(255,204,68,0.08); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(255,204,68,0.3); }
 
-        #vab-menu { position: absolute; top: 10px; left: 10px; width: 100px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; display: none; flex-direction: column; align-items: center; padding: 10px 0; pointer-events: auto; max-height: 80vh; overflow-y: auto; z-index: 100000;}
+        #vab-menu {
+            position: absolute; top: 10px; left: 10px; width: 100px;
+            background: rgba(0,0,0,0.9); border: 2px solid #555; border-radius: 10px;
+            display: none; flex-direction: column; align-items: center;
+            padding: 10px 0; pointer-events: auto;
+            max-height: 82vh; overflow-y: auto; overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            touch-action: pan-y;
+            z-index: 100000;
+            scrollbar-width: thin;
+            scrollbar-color: #00ffcc #222;
+        }
+        #vab-menu::-webkit-scrollbar { width: 6px; }
+        #vab-menu::-webkit-scrollbar-track { background: #111; border-radius: 3px; }
+        #vab-menu::-webkit-scrollbar-thumb { background: #00ffcc; border-radius: 3px; }
+
+        #vab-scroll-hint {
+            position: absolute; left: 10px; width: 100px;
+            text-align: center; font-size: 14px; color: #00ffcc;
+            pointer-events: none; z-index: 100001;
+            display: none; opacity: 0.9;
+            text-shadow: 0 0 6px #00ffcc;
+        }
+        #vab-scroll-hint.up   { top: 4px; }
+        #vab-scroll-hint.down { bottom: 4px; }
+        #vab-scroll-hint.visible { display: block; }
+
         .part-btn { width: 80px; height: 45px; margin: 3px 0; background: #1a1a1a; border: 2px solid #444; border-radius: 5px; cursor: grab; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; touch-action: none;}
         .part-btn.active { border-color: #00ffcc; background: #114444; }
-        .part-btn span { font-size: 8px; color: #aaa; position: absolute; bottom: 2px;}
+        .part-btn span { font-size: 8px; color: #aaa; position: absolute; bottom: 2px; font-weight: bold;}
+        .part-btn.locked { opacity: 0.6; filter: grayscale(0.7); cursor: pointer; border-color: #886622;}
+        .part-btn.locked span { color: #ffcc44; }
+        .part-btn.locked::before {
+            content: "🔒";
+            position: absolute;
+            top: 1px; right: 2px;
+            font-size: 11px;
+            color: #ffcc44;
+            text-shadow: 0 0 4px #000;
+            z-index: 2;
+        }
+        .part-btn.locked::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.25);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        .part-section { width: 88px; margin: 8px 0 4px 0; padding: 6px 0 4px 0; border-top: 2px solid #ffcc44; font-size: 9px; color: #ffcc44; text-align: center; letter-spacing: 1px; font-weight: bold; }
 
         .m-pod { width: 16px; height: 20px; background: #888; clip-path: polygon(50% 0%, 100% 100%, 0% 100%);}
         .m-chute { width: 20px; height: 12px; background: #f44; border-radius: 10px 10px 0 0;}
@@ -47,10 +95,19 @@ game_html = """
         .m-booster { width: 12px; height: 25px; background: #ddd; border-radius: 5px 5px 0 0;}
         .m-legs { width: 16px; height: 10px; background: #555; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%);}
 
-        #vab-stats { position: absolute; top: 10px; right: 10px; width: 155px; background: rgba(0,0,0,0.85); border: 2px solid #555; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
+        .m-gyro { width: 16px; height: 10px; background: #fa4; border-radius: 5px; box-shadow: 0 0 6px #fa4; }
+        .m-heat { width: 28px; height: 8px; background: #844; clip-path: polygon(0 0, 100% 0, 80% 100%, 20% 100%); box-shadow: 0 0 4px #f84; }
+        .m-booster-l { width: 14px; height: 38px; background: #fdd; border: 1px solid #e88; border-radius: 5px 5px 0 0; }
+        .m-tank-xl { width: 26px; height: 46px; background: linear-gradient(90deg,#d8c8ee,#fff,#a890cc); border: 2px solid #a890cc; }
+        .m-engine-ion { width: 18px; height: 14px; background: #3af; clip-path: polygon(30% 0%, 70% 0%, 100% 100%, 0% 100%); box-shadow: 0 0 8px #3af; }
+        .m-engine-xl { width: 26px; height: 20px; background: #222; clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%); box-shadow: inset 0 -3px 0 #f90; }
+
+        #vab-stats { position: absolute; top: 10px; right: 10px; width: 175px; background: rgba(0,0,0,0.88); border: 2px solid #555; border-radius: 10px; padding: 10px; color: white; display: none; flex-direction: column; z-index: 100000; pointer-events: none;}
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px;}
         .stat-val { color: #00ffcc; font-weight: bold;}
-        .stat-hint { margin-top: 8px; padding-top: 8px; border-top: 1px solid #333; font-size: 10px; color: #8ab; line-height: 1.35; }
+        .stat-gold { color: #ffcc44 !important; font-size: 16px;}
+        .stat-hint { margin-top: 8px; padding-top: 8px; border-top: 1px solid #333; font-size: 10px; color: #8ab; line-height: 1.55; }
+        .stat-hint b { color: #ffcc44; }
 
         #trash-can { position: absolute; bottom: 20px; right: 20px; width: 68px; height: 68px; background: rgba(255,0,0,0.3); border: 2px dashed #ff4444; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 32px; pointer-events: auto; z-index: 100000; transition: all 0.2s; }
         #trash-can.hover { background: rgba(255,0,0,0.85); border-style: solid; transform: scale(1.12); }
@@ -58,7 +115,7 @@ game_html = """
         #top-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
         .top-btn { background: #1e3a8a; color: white; border: 2px solid #60a5fa; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer;}
 
-        #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.65); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000; line-height: 1.5;}
+        #hud { position: absolute; top: 10px; right: 10px; color: #fff; font-size: 12px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; text-align: right; border-left: 3px solid #00ffcc; display: none; z-index: 100000; line-height: 1.5;}
         #hud-planet { color: #ffcc44; font-weight: bold; font-size: 14px;}
         #hud-space { color: #00ffcc; font-weight: bold; display: none; }
 
@@ -73,6 +130,7 @@ game_html = """
         #btn-legs { position: absolute; top: 55%; right: 75px; width: 70px; height: 45px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
         #btn-legs.deployed { border-color: #00ffcc; color: #00ffcc; }
         #btn-map { position: absolute; top: 10px; left: 15px; width: 60px; height: 40px; background: rgba(255,255,255,0.15); border: 2px solid #fff; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px);}
+        #btn-exit { position: absolute; top: 10px; left: 85px; width: 60px; height: 40px; background: rgba(180,40,40,0.75); border: 2px solid #ff6666; color: white; border-radius: 5px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); cursor: pointer; }
 
         #minimap-container { position: absolute; top: 100px; right: 15px; width: 80px; height: 80px; border: 2px solid #555; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000;}
 
@@ -81,26 +139,15 @@ game_html = """
         #map-title { position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold;}
         #map-hint { position: absolute; bottom: 24px; left: 0; width: 100%; text-align: center; color: #9ab; font-size: 13px; }
 
-        #status-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 36px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000;}
+        #status-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 32px; font-weight: bold; text-align: center; display: none; text-shadow: 2px 2px 5px #000; pointer-events: none; z-index: 1000000; max-width: 90%;}
 
         #btn-rebuild { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; padding: 15px 30px; background: #1e3a8a; color: #fff; border: 2px solid #60a5fa; border-radius: 8px; font-size: 16px; font-weight: bold; pointer-events: auto; z-index: 100000; cursor: pointer;}
 
-        /* PLANET INFO CARD */
         #planet-info {
-            position: absolute;
-            top: 22%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 15, 35, 0.94);
-            border: 2px solid #00ffcc;
-            border-radius: 12px;
-            padding: 16px 24px;
-            color: white;
-            text-align: center;
-            display: none;
-            z-index: 1000000;
-            pointer-events: none;
-            min-width: 240px;
+            position: absolute; top: 22%; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 15, 35, 0.94); border: 2px solid #00ffcc; border-radius: 12px;
+            padding: 16px 24px; color: white; text-align: center; display: none;
+            z-index: 1000000; pointer-events: none; min-width: 240px;
             box-shadow: 0 0 40px rgba(0,255,204,0.35);
         }
         #planet-info h2 { margin: 0 0 6px 0; color: #00ffcc; font-size: 26px; letter-spacing: 1px;}
@@ -112,6 +159,11 @@ game_html = """
             background: radial-gradient(circle, #ffffff 0%, #aaddff 40%, rgba(0,0,20,0) 100%);
             opacity: 0; pointer-events: none; z-index: 500000; transition: opacity 0.3s ease-out; }
         #warp-flash.active { opacity: 1; }
+
+        #gold-popup { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 40px; font-weight: bold; color: #ffcc44; text-shadow: 0 0 20px #ffcc44, 2px 2px 4px #000;
+            pointer-events: none; z-index: 2000000; opacity: 0; transition: opacity 0.4s, transform 0.4s; }
+        #gold-popup.show { opacity: 1; transform: translate(-50%, -70%); }
     </style>
 </head>
 <body>
@@ -120,7 +172,14 @@ game_html = """
     <div id="ui-layer">
         <div id="start-screen">
             <div class="title">SPACE EXPLORER</div>
-            <div class="subtitle">Build a rocket · Launch · Explore all 8 planets</div>
+            <div class="subtitle">All 12 base parts are yours.<br>Unlock 6 advanced parts with gold.</div>
+            <div class="gold-guide">
+                🪙 <b>How to earn gold:</b><br>
+                +5 per 500m altitude record<br>
+                +25 first safe landing on a planet<br>
+                &nbsp;&nbsp;&nbsp;(transport drops you in orbit — land to earn!)<br>
+                +50 first time reaching space
+            </div>
             <button id="btn-start">START BUILDING</button>
         </div>
 
@@ -137,13 +196,28 @@ game_html = """
             <div class="part-btn" data-type="decoupler"><div class="m-decoupler"></div><span>Decoupler</span></div>
             <div class="part-btn" data-type="booster"><div class="m-booster"></div><span>Booster</span></div>
             <div class="part-btn" data-type="legs"><div class="m-legs"></div><span>Legs</span></div>
+
+            <div class="part-section">⚡ ADVANCED ⚡</div>
+            <div class="part-btn locked" data-type="gyroscope"><div class="m-gyro"></div><span>Gyro · 60🪙</span></div>
+            <div class="part-btn locked" data-type="heat_shield"><div class="m-heat"></div><span>Heat Sh · 80🪙</span></div>
+            <div class="part-btn locked" data-type="booster_large"><div class="m-booster-l"></div><span>Booster L · 100🪙</span></div>
+            <div class="part-btn locked" data-type="tank_xl"><div class="m-tank-xl"></div><span>Tank XL · 150🪙</span></div>
+            <div class="part-btn locked" data-type="engine_ion"><div class="m-engine-ion"></div><span>Ion Eng · 200🪙</span></div>
+            <div class="part-btn locked" data-type="engine_xl"><div class="m-engine-xl"></div><span>Engine XL · 250🪙</span></div>
         </div>
 
+        <div id="vab-scroll-hint" class="up">▲</div>
+        <div id="vab-scroll-hint" class="down">▼</div>
+
         <div id="vab-stats">
+            <div class="stat-row"><span style="color:#ffcc44">🪙 Gold:</span> <span class="stat-val stat-gold" id="stat-gold">0</span></div>
             <div class="stat-row"><span>Mass:</span> <span class="stat-val" id="stat-mass">0 kg</span></div>
             <div class="stat-row"><span>Fuel:</span> <span class="stat-val" id="stat-fuel">0 kg</span></div>
             <div class="stat-row"><span>Thrust:</span> <span class="stat-val" id="stat-thrust">0 kN</span></div>
-            <div class="stat-hint">Tap a part to <b style="color:#ff6666">delete</b><br>Drag to move · drop on 🗑️ to remove</div>
+            <div class="stat-hint">
+                Tap part to <b>delete</b> · Tap 🔒 to <b>unlock</b><br>
+                🪙 <b>+5</b>/500m · <b>+25</b>/landing · <b>+50</b>/space
+            </div>
         </div>
 
         <div id="trash-can">🗑️</div>
@@ -154,6 +228,7 @@ game_html = """
         </div>
 
         <button id="btn-map">MAP</button>
+        <button id="btn-exit">EXIT</button>
         <div id="minimap-container"><canvas id="minimap" width="80" height="80"></canvas></div>
 
         <div id="hud">
@@ -162,6 +237,7 @@ game_html = """
             BEST: <span id="val-best">0</span> m<br>
             VEL: <span id="val-vel">0</span> m/s<br>
             FUEL: <span id="val-fuel" style="color:#00ffcc">100</span>%<br>
+            🪙 <span id="val-gold" style="color:#ffcc44">0</span><br>
             <span id="hud-space">★ IN SPACE ★</span>
         </div>
 
@@ -182,6 +258,7 @@ game_html = """
         </div>
 
         <div id="status-msg"></div>
+        <div id="gold-popup"></div>
         <button id="btn-rebuild">REBUILD 🔄</button>
     </div>
 
@@ -236,6 +313,7 @@ game_html = """
 
     const GRID = 10;
     let rocketParts = [];
+    let vabRocket = [];
     let currentSelectedPart = "pod";
 
     const P = {
@@ -250,10 +328,38 @@ game_html = """
         engine_large: { w: 20, h: 32, m: 2000, f: 0,    t: 3000 },
         decoupler:    { w: 20, h: 6,  m: 100,  f: 0,    t: 0 },
         booster:      { w: 14, h: 50, m: 600,  f: 1800, t: 600 },
-        legs:         { w: 24, h: 20, m: 100,  f: 0,    t: 0 }
+        legs:         { w: 24, h: 20, m: 100,  f: 0,    t: 0 },
+        gyroscope:    { w: 16, h: 10, m: 200,  f: 0,    t: 0,    gyro: true },
+        heat_shield:  { w: 30, h: 10, m: 500,  f: 0,    t: 0,    heatShield: true },
+        booster_large:{ w: 16, h: 80, m: 1500, f: 5000, t: 1800 },
+        tank_xl:      { w: 26, h: 120, m: 4000, f: 18000, t: 0 },
+        engine_ion:   { w: 22, h: 20, m: 500,  f: 0,    t: 150,  ion: true, fuelRate: 0.12 },
+        engine_xl:    { w: 26, h: 40, m: 3500, f: 0,    t: 6000, fuelRate: 1.0 }
     };
 
-    /* ------- ALL 8 PLANETS ------- */
+    const partLabels = {
+        pod: "Pod", chute: "Chute", nose: "Nose",
+        tank_small: "Tank S", tank_med: "Tank M", tank_large: "Tank L",
+        engine_small: "Engine S", engine_med: "Engine M", engine_large: "Engine L",
+        decoupler: "Decoupler", booster: "Booster", legs: "Legs",
+        gyroscope: "Gyro", heat_shield: "Heat Sh",
+        booster_large: "Booster L", tank_xl: "Tank XL",
+        engine_ion: "Ion Eng", engine_xl: "Engine XL"
+    };
+
+    const partCosts = {
+        pod: 0, chute: 0, nose: 0,
+        tank_small: 0, tank_med: 0, tank_large: 0,
+        engine_small: 0, engine_med: 0, engine_large: 0,
+        decoupler: 0, booster: 0, legs: 0,
+        gyroscope: 60, heat_shield: 80, booster_large: 100,
+        tank_xl: 150, engine_ion: 200, engine_xl: 250
+    };
+
+    const baseParts = ["pod","chute","nose","tank_small","tank_med","tank_large",
+                       "engine_small","engine_med","engine_large","decoupler","booster","legs"];
+    const advancedParts = ["gyroscope","heat_shield","booster_large","tank_xl","engine_ion","engine_xl"];
+
     const planetsDB = {
         "Mercury": { ground: "#7a6f5c", g: 3.70,  color: "#b0a89c", sky: [55, 50, 55],    atmo: 0,     radius: 12, fact: "Smallest planet · no atmosphere" },
         "Venus":   { ground: "#b88a4a", g: 8.87,  color: "#e6c88a", sky: [235, 200, 140], atmo: 14000, radius: 18, fact: "Hottest planet · thick clouds" },
@@ -299,19 +405,31 @@ game_html = """
         lastTime: performance.now(),
         particles: [],
         shake: 0,
-        records: {}   /* best altitude per planet */
+        records: {},
+        landedPlanets: {},
+        gold: 0,
+        goldEarnedFromAltitude: {},
+        reachedSpace: {},
+        unlocked: {}
     };
 
-    /* init records */
-    Object.keys(planetsDB).forEach(function (k) { state.records[k] = 0; });
+    Object.keys(planetsDB).forEach(function (k) {
+        state.records[k] = 0;
+        state.goldEarnedFromAltitude[k] = 0;
+        state.reachedSpace[k] = false;
+    });
+    baseParts.forEach(function (p) { state.unlocked[p] = true; });
+    advancedParts.forEach(function (p) { state.unlocked[p] = false; });
 
     const throttleFill = document.getElementById('throttle-fill');
     const statusEl = document.getElementById('status-msg');
+    const goldPopup = document.getElementById('gold-popup');
     const rebuildBtn = document.getElementById('btn-rebuild');
     const mapOverlay = document.getElementById('map-overlay');
     const infoCard = document.getElementById('planet-info');
     let statusTimer = null;
     let infoTimer = null;
+    let goldTimer = null;
 
     function showStatus(text, color, seconds) {
         statusEl.innerText = text;
@@ -321,6 +439,23 @@ game_html = """
         if (seconds) {
             statusTimer = setTimeout(function () { statusEl.style.display = 'none'; }, seconds * 1000);
         }
+    }
+
+    function showGoldGain(amount) {
+        if (amount <= 0) return;
+        goldPopup.innerText = "+" + amount + " 🪙";
+        goldPopup.classList.add('show');
+        if (goldTimer) clearTimeout(goldTimer);
+        goldTimer = setTimeout(function () {
+            goldPopup.classList.remove('show');
+        }, 900);
+    }
+
+    function addGold(amount, silent) {
+        if (amount <= 0) return;
+        state.gold += amount;
+        updateStats();
+        if (!silent) showGoldGain(amount);
     }
 
     function showPlanetInfo(name, seconds) {
@@ -381,6 +516,7 @@ game_html = """
         addPart("pod", 0, 96);
         addPart("chute", 0, 114);
         updateStats();
+        updateScrollHints();
     };
 
     function updateStats() {
@@ -393,11 +529,11 @@ game_html = """
         document.getElementById('stat-mass').innerText = (mass + fuel).toLocaleString() + " kg";
         document.getElementById('stat-fuel').innerText = fuel.toLocaleString() + " kg";
         document.getElementById('stat-thrust').innerText = thrust.toLocaleString() + " kN";
+        document.getElementById('stat-gold').innerText = state.gold;
+        const gEl = document.getElementById('val-gold');
+        if (gEl) gEl.innerText = state.gold;
     }
 
-    /* =========================
-       DRAG & DELETE
-       ========================= */
     let isDraggingPart = false;
     let draggedType = null;
     let dragGhost = null;
@@ -407,11 +543,69 @@ game_html = """
     document.querySelectorAll('.part-btn').forEach(function (item) {
         item.addEventListener('pointerdown', function (e) {
             if (gameState !== "vab") return;
-            e.preventDefault();
-            document.querySelectorAll('.part-btn').forEach(function (b) { b.classList.remove('active'); });
-            item.classList.add('active');
-            currentSelectedPart = item.dataset.type;
-            startDrag(currentSelectedPart, e.clientX, e.clientY, false);
+            const type = item.dataset.type;
+
+            if (!state.unlocked[type]) {
+                e.preventDefault();
+                const cost = partCosts[type];
+                if (state.gold >= cost) {
+                    state.gold -= cost;
+                    state.unlocked[type] = true;
+                    item.classList.remove('locked');
+                    const lbl = item.querySelector('span');
+                    if (lbl) lbl.innerText = partLabels[type];
+                    updateStats();
+                    showStatus("UNLOCKED " + partLabels[type].toUpperCase() + "  −" + cost + "🪙", "#ffcc44", 2);
+                } else {
+                    showStatus("NEED " + (cost - state.gold) + " MORE 🪙", "#ff4444", 2);
+                }
+                return;
+            }
+
+            const startX = e.clientX, startY = e.clientY;
+            let armed = false;
+
+            function onMove(ev) {
+                const dx = ev.clientX - startX;
+                const dy = ev.clientY - startY;
+                if (!armed && Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) {
+                    cleanup();
+                    return;
+                }
+                if (!armed && Math.hypot(dx, dy) > 6) {
+                    armed = true;
+                    document.querySelectorAll('.part-btn').forEach(function (b) { b.classList.remove('active'); });
+                    item.classList.add('active');
+                    currentSelectedPart = type;
+                    startDrag(type, ev.clientX, ev.clientY, false);
+                }
+                if (armed && dragGhost) {
+                    const v = vabView();
+                    const gw = P[type].w * v.sc;
+                    const gh = P[type].h * v.sc;
+                    dragGhost.style.left = (ev.clientX - gw / 2) + 'px';
+                    dragGhost.style.top = (ev.clientY - gh / 2) + 'px';
+                }
+            }
+
+            function cleanup() {
+                window.removeEventListener('pointermove', onMove);
+                window.removeEventListener('pointerup', onUp);
+                window.removeEventListener('pointercancel', cleanup);
+            }
+
+            function onUp(ev) {
+                cleanup();
+                if (armed && isDraggingPart) {
+                    window.dispatchEvent(new PointerEvent('pointerup', {
+                        clientX: ev.clientX, clientY: ev.clientY, bubbles: true
+                    }));
+                }
+            }
+
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', onUp, { once: true });
+            window.addEventListener('pointercancel', cleanup);
         });
     });
 
@@ -494,10 +688,7 @@ game_html = """
         if (overTrash) { updateStats(); return; }
 
         const moved = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
-        if (fromCanvas && moved < 12) {
-            updateStats();
-            return;
-        }
+        if (fromCanvas && moved < 12) { updateStats(); return; }
 
         if (gameState !== "vab") { updateStats(); return; }
 
@@ -538,9 +729,6 @@ game_html = """
         rocketParts.push({ type: type, x: x, y: y });
     }
 
-    /* =========================
-       FLIGHT CONTROLS
-       ========================= */
     let isDraggingThrottle = false;
     let leftPressed = false;
     let rightPressed = false;
@@ -586,16 +774,12 @@ game_html = """
         });
     }
 
-    bindHold(
-        document.getElementById('joy-left'),
-        function () { leftPressed = true; },
-        function () { leftPressed = false; }
-    );
-    bindHold(
-        document.getElementById('joy-right'),
-        function () { rightPressed = true; },
-        function () { rightPressed = false; }
-    );
+    bindHold(document.getElementById('joy-left'),
+             function () { leftPressed = true; },
+             function () { leftPressed = false; });
+    bindHold(document.getElementById('joy-right'),
+             function () { rightPressed = true; },
+             function () { rightPressed = false; });
 
     document.getElementById('btn-legs').onclick = function () {
         state.legsDeployed = !state.legsDeployed;
@@ -628,9 +812,38 @@ game_html = """
         updateStats();
     };
 
-    /* =========================
-       MAP / WARP - 8 planets in 2 rows
-       ========================= */
+    document.getElementById('btn-exit').onclick = function () {
+        if (gameState !== "flight" && gameState !== "crashed") return;
+
+        rocketParts = JSON.parse(JSON.stringify(vabRocket));
+        computeRocketCenter();
+
+        gameState = "vab";
+
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('minimap-container').style.display = 'none';
+        document.getElementById('throttle-zone').style.display = 'none';
+        document.getElementById('arrow-zone').style.display = 'none';
+        document.getElementById('btn-legs').style.display = 'none';
+        document.getElementById('btn-stage').style.display = 'none';
+        document.getElementById('btn-map').style.display = 'none';
+        document.getElementById('btn-exit').style.display = 'none';
+
+        document.getElementById('vab-menu').style.display = 'flex';
+        document.getElementById('top-bar').style.display = 'flex';
+        document.getElementById('vab-stats').style.display = 'flex';
+        document.getElementById('trash-can').style.display = 'flex';
+
+        statusEl.style.display = 'none';
+        rebuildBtn.style.display = 'none';
+        mapOverlay.style.display = 'none';
+        infoCard.style.display = 'none';
+
+        updateStats();
+        updateScrollHints();
+        showStatus("BACK IN BUILD MODE", "#00ffcc", 2);
+    };
+
     const planetsMap = [
         { name: "Mercury", color: "#b0a89c", x: 0.15, row: 0 },
         { name: "Venus",   color: "#e6c88a", x: 0.38, row: 0 },
@@ -649,7 +862,6 @@ game_html = """
         mapCtx.fillStyle = "#000511";
         mapCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
 
-        /* stars */
         mapCtx.fillStyle = "#ffffff";
         for (let i = 0; i < 180; i++) {
             const sx = (i * 137.508) % mapCanvas.width;
@@ -659,7 +871,6 @@ game_html = """
         }
         mapCtx.globalAlpha = 1;
 
-        /* row separators */
         mapCtx.strokeStyle = "rgba(0,255,204,0.12)";
         mapCtx.lineWidth = 1;
         mapCtx.setLineDash([4, 8]);
@@ -669,7 +880,6 @@ game_html = """
         mapCtx.stroke();
         mapCtx.setLineDash([]);
 
-        /* row labels */
         mapCtx.fillStyle = "rgba(0,255,204,0.55)";
         mapCtx.font = "11px Arial";
         mapCtx.textAlign = "left";
@@ -682,7 +892,6 @@ game_html = """
             const cy = mapRowY(p.row);
             const rad = planetsDB[p.name].radius;
 
-            /* Saturn ring */
             if (p.name === "Saturn") {
                 mapCtx.strokeStyle = "rgba(230,220,180,0.75)";
                 mapCtx.lineWidth = 3;
@@ -700,6 +909,12 @@ game_html = """
             mapCtx.beginPath();
             mapCtx.arc(cx, cy, rad, 0, Math.PI * 2);
             mapCtx.fill();
+
+            if (state.landedPlanets[p.name]) {
+                mapCtx.fillStyle = "#00ffcc";
+                mapCtx.font = "10px Arial";
+                mapCtx.fillText("✓ LANDED", cx, cy - rad - 10);
+            }
 
             if (p.name === state.currentPlanet) {
                 mapCtx.strokeStyle = "#00ffcc";
@@ -754,22 +969,30 @@ game_html = """
         }, 380);
     }
 
+    /* ===========================
+       TRAVEL — arrive IN ORBIT, not on ground
+       =========================== */
     function travelTo(name) {
         state.currentPlanet = name;
+
+        /* Arrive 300m above the surface, gently descending */
         state.x = 0;
-        state.y = 0;
+        state.y = 300;
         state.vx = 0;
-        state.vy = 0;
+        state.vy = -2;
         state.angle = 0;
         state.angularVelocity = 0;
         state.throttle = 0;
         state.chuteDeployed = false;
-        state.hasLiftedOff = false;
-        state.onGround = true;
+
+        /* KEY: transport is treated as a real flight, so landing counts */
+        state.hasLiftedOff = true;
+        state.onGround = false;
+
         state.legsDeployed = false;
         state.legsProgress = 0;
         state.cameraX = 0;
-        state.cameraY = 0;
+        state.cameraY = 300;
         state.particles = [];
         state.shake = 0;
 
@@ -785,10 +1008,13 @@ game_html = """
             gameState = "flight";
             rebuildBtn.style.display = 'none';
             statusEl.style.display = 'none';
+        } else {
+            gameState = "flight";
         }
 
         document.getElementById('hud-planet').innerText = name;
         showPlanetInfo(name, 3.5);
+        showStatus("ARRIVING AT " + name.toUpperCase() + " — LAND TO EARN 🪙", "#00ffcc", 3);
     }
 
     document.getElementById('btn-launch').onclick = function (e) {
@@ -799,6 +1025,8 @@ game_html = """
             showStatus("BUILD A ROCKET FIRST", "#ff4444", 2);
             return;
         }
+
+        vabRocket = JSON.parse(JSON.stringify(rocketParts));
 
         let minY = Infinity;
         rocketParts.forEach(function (p) { minY = Math.min(minY, p.y - P[p.type].h / 2); });
@@ -841,6 +1069,7 @@ game_html = """
         document.getElementById('btn-legs').style.display = 'block';
         document.getElementById('btn-stage').style.display = 'block';
         document.getElementById('btn-map').style.display = 'block';
+        document.getElementById('btn-exit').style.display = 'block';
 
         throttleFill.style.height = '0%';
         statusEl.style.display = 'none';
@@ -851,15 +1080,13 @@ game_html = """
         document.getElementById('btn-legs').classList.remove('deployed');
 
         showPlanetInfo("Earth", 3.5);
+        updateStats();
         updateHUD();
     };
 
     document.getElementById('btn-reset').onclick = function () { window.location.reload(); };
     rebuildBtn.onclick = function () { window.location.reload(); };
 
-    /* =========================
-       PARTICLES
-       ========================= */
     function updateParticles(dt) {
         for (let i = state.particles.length - 1; i >= 0; i--) {
             const p = state.particles[i];
@@ -909,9 +1136,6 @@ game_html = """
         rebuildBtn.style.display = 'block';
     }
 
-    /* =========================
-       PHYSICS
-       ========================= */
     function updatePhysics(dt) {
         if (gameState === "crashed") {
             updateParticles(dt);
@@ -922,16 +1146,27 @@ game_html = """
         }
         if (gameState !== "flight") return;
 
-        if (leftPressed) state.angularVelocity -= TURN_ACCEL * dt;
-        if (rightPressed) state.angularVelocity += TURN_ACCEL * dt;
+        const hasGyro = rocketParts.some(function (p) { return p.type === 'gyroscope'; });
+        const turnBoost = hasGyro ? 1.9 : 1.0;
+
+        if (leftPressed) state.angularVelocity -= TURN_ACCEL * turnBoost * dt;
+        if (rightPressed) state.angularVelocity += TURN_ACCEL * turnBoost * dt;
         if (!leftPressed && !rightPressed) {
-            state.angularVelocity *= Math.pow(0.12, dt);
+            state.angularVelocity *= Math.pow(hasGyro ? 0.05 : 0.12, dt);
         }
-        state.angularVelocity = Math.max(-TURN_MAX, Math.min(TURN_MAX, state.angularVelocity));
+        const maxTurn = TURN_MAX * turnBoost;
+        state.angularVelocity = Math.max(-maxTurn, Math.min(maxTurn, state.angularVelocity));
         state.angle += state.angularVelocity * dt;
 
         let thrust = 0;
-        rocketParts.forEach(function (p) { thrust += P[p.type].t; });
+        let fuelRate = 1.0;
+        let hasHeatShield = false;
+
+        rocketParts.forEach(function (p) {
+            thrust += P[p.type].t;
+            if (p.type === 'heat_shield') hasHeatShield = true;
+            if (P[p.type].fuelRate) fuelRate = Math.min(fuelRate, P[p.type].fuelRate);
+        });
 
         state.totalMass = state.dryMass + state.currentFuel;
         const g = planetsDB[state.currentPlanet].g;
@@ -947,7 +1182,8 @@ game_html = """
             ax += a * Math.sin(rad);
             ay += a * Math.cos(rad);
 
-            state.currentFuel -= 50 * state.throttle * dt;
+            const fuelBurn = 50 * state.throttle * fuelRate * dt;
+            state.currentFuel -= fuelBurn;
             if (state.currentFuel <= 0) {
                 state.currentFuel = 0;
                 state.throttle = 0;
@@ -970,18 +1206,23 @@ game_html = """
                 const wx = state.x + dxRot;
                 const wy = state.y + state.rocketCenterY - dyRot;
 
-                const exV = 240 + 140 * state.throttle;
+                const isIon = eng.type === 'engine_ion';
+                const exV = (isIon ? 180 : 240) + 140 * state.throttle;
 
                 for (let i = 0; i < 4; i++) {
                     const spread = (Math.random() - 0.5) * 0.55;
                     const ca = Math.cos(rad + spread);
                     const sa = Math.sin(rad + spread);
 
-                    const r = Math.random();
                     let col = "255,150,0";
-                    if (r > 0.66) col = "255,240,150";
-                    else if (r > 0.33) col = "255,170,40";
-                    else col = "255,90,10";
+                    if (isIon) {
+                        col = "80,200,255";
+                    } else {
+                        const r = Math.random();
+                        if (r > 0.66) col = "255,240,150";
+                        else if (r > 0.33) col = "255,170,40";
+                        else col = "255,90,10";
+                    }
 
                     state.particles.push({
                         x: wx + (Math.random() - 0.5) * hw * 0.6,
@@ -1022,7 +1263,11 @@ game_html = """
                 const impact = Math.abs(state.vy);
                 const safeSpeed = state.chuteDeployed ? 999 : (state.legsDeployed ? 15 : 8);
 
-                if (state.hasLiftedOff && impact > safeSpeed) {
+                if (state.hasLiftedOff && impact > safeSpeed && !hasHeatShield) {
+                    state.vy = 0;
+                    state.vx = 0;
+                    crash();
+                } else if (state.hasLiftedOff && impact > safeSpeed && hasHeatShield && impact > 30) {
                     state.vy = 0;
                     state.vx = 0;
                     crash();
@@ -1032,7 +1277,13 @@ game_html = """
                     state.throttle = 0;
                     throttleFill.style.height = '0%';
                     if (state.hasLiftedOff) {
-                        showStatus("🏆 LANDED SAFELY", "#00ffcc", 3);
+                        let bonus = "";
+                        if (!state.landedPlanets[state.currentPlanet]) {
+                            state.landedPlanets[state.currentPlanet] = true;
+                            addGold(25);
+                            bonus = "  +25🪙";
+                        }
+                        showStatus("🏆 LANDED SAFELY" + bonus, "#00ffcc", 3);
                         rebuildBtn.style.display = 'block';
                     }
                 }
@@ -1047,9 +1298,26 @@ game_html = """
         state.cameraX += (state.x - state.cameraX) * Math.min(1, 8 * dt);
         state.cameraY += (state.y - state.cameraY) * Math.min(1, 8 * dt);
 
-        /* update best altitude record */
-        if (state.y > state.records[state.currentPlanet]) {
+        const oldRec = state.records[state.currentPlanet] || 0;
+        if (state.y > oldRec) {
+            const oldBucket = Math.floor(oldRec / 500);
+            const newBucket = Math.floor(state.y / 500);
+            if (newBucket > oldBucket) {
+                const gained = (newBucket - oldBucket) * 5;
+                state.goldEarnedFromAltitude[state.currentPlanet] += gained;
+                addGold(gained);
+            }
             state.records[state.currentPlanet] = state.y;
+        }
+
+        if (!state.reachedSpace[state.currentPlanet]) {
+            const planet = planetsDB[state.currentPlanet];
+            const isSpace = planet.atmo === 0 ? state.y > 500 : state.y > planet.atmo;
+            if (isSpace && state.hasLiftedOff) {
+                state.reachedSpace[state.currentPlanet] = true;
+                addGold(50);
+                showStatus("★ REACHED SPACE  +50🪙", "#00ffcc", 3);
+            }
         }
 
         if (state.legsDeployed && state.legsProgress < 1) state.legsProgress = Math.min(1, state.legsProgress + 2 * dt);
@@ -1069,6 +1337,8 @@ game_html = """
         fuelEl.innerText = fp.toFixed(1);
         fuelEl.style.color = fp < 20 ? "#ff4444" : "#00ffcc";
 
+        document.getElementById('val-gold').innerText = state.gold;
+
         const planet = planetsDB[state.currentPlanet];
         const spaceEl = document.getElementById('hud-space');
         if (planet.atmo === 0 || state.y > planet.atmo) {
@@ -1078,9 +1348,6 @@ game_html = """
         }
     }
 
-    /* =========================
-       DRAWING
-       ========================= */
     function drawPart(p, py) {
         const w = P[p.type].w, h = P[p.type].h;
         ctx.save();
@@ -1114,12 +1381,47 @@ game_html = """
             ctx.fill();
 
         } else if (p.type.indexOf("tank") !== -1) {
+            let c1 = "#aaa", c2 = "#fff", c3 = "#888";
+            if (p.type === "tank_xl") { c1 = "#c8b8ee"; c2 = "#f0e8ff"; c3 = "#9c88c8"; }
             const grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
-            grad.addColorStop(0, "#aaa");
-            grad.addColorStop(0.5, "#fff");
-            grad.addColorStop(1, "#888");
+            grad.addColorStop(0, c1);
+            grad.addColorStop(0.5, c2);
+            grad.addColorStop(1, c3);
             ctx.fillStyle = grad;
             ctx.fillRect(-w / 2, -h / 2, w, h);
+
+        } else if (p.type === "engine_ion") {
+            ctx.fillStyle = "#1a2a4a";
+            ctx.beginPath();
+            ctx.moveTo(-w / 3, -h / 2);
+            ctx.lineTo(w / 3, -h / 2);
+            ctx.lineTo(w / 2, h / 2);
+            ctx.lineTo(-w / 2, h / 2);
+            ctx.fill();
+
+            if (state.throttle > 0 && state.currentFuel > 0 && gameState === "flight") {
+                const flameLen = (35 + 80 * state.throttle) * (0.9 + Math.random() * 0.2);
+                const nozzleY = h / 2;
+                const glow = ctx.createRadialGradient(0, nozzleY, 2, 0, nozzleY, flameLen * 0.8);
+                glow.addColorStop(0, "rgba(180,240,255,0.9)");
+                glow.addColorStop(0.5, "rgba(80,180,255,0.4)");
+                glow.addColorStop(1, "rgba(50,100,255,0)");
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(0, nozzleY, flameLen * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                const fg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + flameLen);
+                fg.addColorStop(0, "rgba(255,255,255,1)");
+                fg.addColorStop(0.4, "rgba(150,230,255,0.9)");
+                fg.addColorStop(1, "rgba(50,120,255,0)");
+                ctx.fillStyle = fg;
+                ctx.beginPath();
+                ctx.moveTo(-w / 2.4, nozzleY);
+                ctx.lineTo(w / 2.4, nozzleY);
+                ctx.lineTo(0, nozzleY + flameLen);
+                ctx.fill();
+            }
 
         } else if (p.type.indexOf("engine") !== -1) {
             ctx.fillStyle = "#222";
@@ -1174,13 +1476,40 @@ game_html = """
             ctx.fillStyle = "#5c3a21";
             ctx.fillRect(-w / 2, -h / 2, w, h);
 
-        } else if (p.type === "booster") {
-            ctx.fillStyle = "#ddd";
+        } else if (p.type === "booster" || p.type === "booster_large") {
+            const col = p.type === 'booster_large' ? '#fdd' : '#ddd';
+            ctx.fillStyle = col;
             ctx.fillRect(-w / 2, -h / 2, w, h);
+            if (p.type === 'booster_large') {
+                ctx.strokeStyle = "#e88";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(-w / 2, -h / 2, w, h);
+            }
 
         } else if (p.type === "legs") {
             ctx.fillStyle = "#555";
             ctx.fillRect(-w / 2, -h / 2, w, h);
+
+        } else if (p.type === "gyroscope") {
+            ctx.fillStyle = "#fa4";
+            ctx.beginPath();
+            ctx.arc(0, 0, w / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = "#ffa";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+        } else if (p.type === "heat_shield") {
+            ctx.fillStyle = "#844";
+            ctx.beginPath();
+            ctx.moveTo(-w / 2, -h / 2);
+            ctx.lineTo(w / 2, -h / 2);
+            ctx.lineTo(w / 2.8, h / 2);
+            ctx.lineTo(-w / 2.8, h / 2);
+            ctx.fill();
+            ctx.strokeStyle = "#f84";
+            ctx.lineWidth = 1;
+            ctx.stroke();
         }
 
         ctx.restore();
@@ -1238,12 +1567,11 @@ game_html = """
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, W, H);
 
-        /* sun glow when high enough */
         if (t > 0.35) {
             const sunAlpha = Math.min(1, (t - 0.35) / 0.5);
             const sx = W * 0.85, sy = H * 0.15;
             const sg = ctx.createRadialGradient(sx, sy, 4, sx, sy, 140);
-            sg.addColorStop(0, "rgba(255,255,230," + (sunAlpha) + ")");
+            sg.addColorStop(0, "rgba(255,255,230," + sunAlpha + ")");
             sg.addColorStop(0.15, "rgba(255,235,140," + (sunAlpha * 0.85) + ")");
             sg.addColorStop(0.45, "rgba(255,200,80," + (sunAlpha * 0.35) + ")");
             sg.addColorStop(1, "rgba(255,150,50,0)");
@@ -1251,7 +1579,6 @@ game_html = """
             ctx.fillRect(sx - 150, sy - 150, 300, 300);
         }
 
-        /* twinkling stars */
         if (t > 0.04) {
             const px = state.cameraX * 0.04;
             const py = state.cameraY * 0.04;
@@ -1392,6 +1719,26 @@ game_html = """
         if (gameState === "vab") drawVAB();
         else drawFlight();
     }
+
+    const vabMenuEl = document.getElementById('vab-menu');
+    const hintUp = document.querySelector('#vab-scroll-hint.up');
+    const hintDown = document.querySelector('#vab-scroll-hint.down');
+
+    function updateScrollHints() {
+        if (!vabMenuEl || vabMenuEl.style.display === 'none') {
+            hintUp.classList.remove('visible');
+            hintDown.classList.remove('visible');
+            return;
+        }
+        const canUp = vabMenuEl.scrollTop > 4;
+        const canDown = vabMenuEl.scrollTop + vabMenuEl.clientHeight < vabMenuEl.scrollHeight - 4;
+        hintUp.classList.toggle('visible', canUp);
+        hintDown.classList.toggle('visible', canDown);
+    }
+
+    vabMenuEl.addEventListener('scroll', updateScrollHints);
+    window.addEventListener('resize', updateScrollHints);
+    setInterval(updateScrollHints, 400);
 
     function loop(time) {
         let dt = (time - state.lastTime) / 1000;
