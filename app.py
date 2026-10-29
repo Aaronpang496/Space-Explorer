@@ -210,6 +210,26 @@ game_html = """
         "Jupiter": { ground: "#8b4513", g: 24.79, color: "#d4a373", sky: [216, 170, 130], atmo: 15000 }
     };
 
+    /* ---- terrain marks, seeded per planet ---- */
+    function makeSurface(seed) {
+        const arr = [];
+        let s = seed >>> 0;
+        function rnd() { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }
+        for (let i = 0; i < 46; i++) {
+            arr.push({
+                x: (rnd() - 0.5) * 6000,
+                w: 20 + rnd() * 80,
+                h: 4 + rnd() * 10,
+                a: 0.06 + rnd() * 0.10,
+                light: rnd() > 0.5
+            });
+        }
+        return arr;
+    }
+    Object.keys(planetsDB).forEach(function (k, i) {
+        planetsDB[k].surface = makeSurface(1234 + i * 97);
+    });
+
     let state = {
         x: 0, y: 0, vx: 0, vy: 0,
         angle: 0, angularVelocity: 0,
@@ -238,21 +258,23 @@ game_html = """
         statusEl.style.display = 'block';
         if (statusTimer) { clearTimeout(statusTimer); statusTimer = null; }
         if (seconds) {
-            statusTimer = setTimeout(() => { statusEl.style.display = 'none'; }, seconds * 1000);
+            statusTimer = setTimeout(function () { statusEl.style.display = 'none'; }, seconds * 1000);
         }
     }
 
     function rocketMaxY() {
         let m = 0;
-        rocketParts.forEach(p => { if (p.y > m) m = p.y; });
+        rocketParts.forEach(function (p) { if (p.y > m) m = p.y; });
         return m;
     }
 
+    /* ---- VAB view: rocket is vertically CENTERED on screen ---- */
     function vabView() {
         const maxY = rocketMaxY();
         const rh = Math.max(maxY, 60);
-        const sc = Math.min(1.2, (H * 0.62) / rh);
-        return { ox: W / 2, oy: H * 0.85, sc: sc };
+        const sc = Math.max(0.35, Math.min(2.2, (H * 0.55) / rh));
+        const oy = H * 0.5 + (rh * sc) / 2;
+        return { ox: W / 2, oy: oy, sc: sc };
     }
 
     function screenToBuild(clientX, clientY) {
@@ -281,7 +303,7 @@ game_html = """
 
     function updateStats() {
         let mass = 0, fuel = 0, thrust = 0;
-        rocketParts.forEach(p => {
+        rocketParts.forEach(function (p) {
             mass += P[p.type].m;
             fuel += P[p.type].f;
             thrust += P[p.type].t;
@@ -295,18 +317,18 @@ game_html = """
     let draggedType = null;
     let dragGhost = null;
 
-    document.querySelectorAll('.part-btn').forEach(item => {
-        item.addEventListener('pointerdown', (e) => {
+    document.querySelectorAll('.part-btn').forEach(function (item) {
+        item.addEventListener('pointerdown', function (e) {
             if (gameState !== "vab") return;
             e.preventDefault();
-            document.querySelectorAll('.part-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.part-btn').forEach(function (b) { b.classList.remove('active'); });
             item.classList.add('active');
             currentSelectedPart = item.dataset.type;
             startDrag(currentSelectedPart, e.clientX, e.clientY);
         });
     });
 
-    canvas.addEventListener('pointerdown', (e) => {
+    canvas.addEventListener('pointerdown', function (e) {
         if (gameState !== "vab" || isDraggingPart) return;
         const b = screenToBuild(e.clientX, e.clientY);
 
@@ -348,7 +370,7 @@ game_html = """
         document.body.appendChild(dragGhost);
     }
 
-    window.addEventListener('pointermove', (e) => {
+    window.addEventListener('pointermove', function (e) {
         if (isDraggingPart && dragGhost) {
             const v = vabView();
             const gw = P[draggedType].w * v.sc;
@@ -359,10 +381,10 @@ game_html = """
     });
 
     const trashCan = document.getElementById('trash-can');
-    trashCan.addEventListener('pointerenter', () => trashCan.classList.add('hover'));
-    trashCan.addEventListener('pointerleave', () => trashCan.classList.remove('hover'));
+    trashCan.addEventListener('pointerenter', function () { trashCan.classList.add('hover'); });
+    trashCan.addEventListener('pointerleave', function () { trashCan.classList.remove('hover'); });
 
-    window.addEventListener('pointerup', (e) => {
+    window.addEventListener('pointerup', function (e) {
         if (!isDraggingPart) return;
 
         if (dragGhost) { dragGhost.remove(); dragGhost = null; }
@@ -393,7 +415,7 @@ game_html = """
         const nw = P[type].w;
         const nh = P[type].h;
 
-        rocketParts.forEach(p => {
+        rocketParts.forEach(function (p) {
             const pw = P[p.type].w;
             const ph = P[p.type].h;
             const cand = [
@@ -402,7 +424,7 @@ game_html = """
                 { d: Math.hypot(b.x - (p.x + pw / 2), b.y - p.y), x: p.x + pw / 2 + nw / 2, y: p.y },
                 { d: Math.hypot(b.x - (p.x - pw / 2), b.y - p.y), x: p.x - pw / 2 - nw / 2, y: p.y }
             ];
-            cand.forEach(c => {
+            cand.forEach(function (c) {
                 if (c.d < best) { best = c.d; snapX = c.x; snapY = c.y; }
             });
         });
@@ -421,17 +443,17 @@ game_html = """
 
     const throttleZone = document.getElementById('throttle-zone');
 
-    throttleZone.addEventListener('pointerdown', (e) => {
+    throttleZone.addEventListener('pointerdown', function (e) {
         isDraggingThrottle = true;
         try { throttleZone.setPointerCapture(e.pointerId); } catch (err) {}
         setThrottleFromEvent(e);
     });
-    throttleZone.addEventListener('pointermove', (e) => {
+    throttleZone.addEventListener('pointermove', function (e) {
         if (!isDraggingThrottle) return;
         setThrottleFromEvent(e);
     });
-    throttleZone.addEventListener('pointerup', () => { isDraggingThrottle = false; });
-    throttleZone.addEventListener('pointercancel', () => { isDraggingThrottle = false; });
+    throttleZone.addEventListener('pointerup', function () { isDraggingThrottle = false; });
+    throttleZone.addEventListener('pointercancel', function () { isDraggingThrottle = false; });
 
     function setThrottleFromEvent(e) {
         const rect = throttleZone.getBoundingClientRect();
@@ -443,12 +465,12 @@ game_html = """
         throttleFill.style.height = percent + '%';
     }
 
-    document.getElementById('joy-left').addEventListener('pointerdown', () => { leftPressed = true; });
-    document.getElementById('joy-left').addEventListener('pointerup', () => { leftPressed = false; });
-    document.getElementById('joy-left').addEventListener('pointerleave', () => { leftPressed = false; });
-    document.getElementById('joy-right').addEventListener('pointerdown', () => { rightPressed = true; });
-    document.getElementById('joy-right').addEventListener('pointerup', () => { rightPressed = false; });
-    document.getElementById('joy-right').addEventListener('pointerleave', () => { rightPressed = false; });
+    document.getElementById('joy-left').addEventListener('pointerdown', function () { leftPressed = true; });
+    document.getElementById('joy-left').addEventListener('pointerup', function () { leftPressed = false; });
+    document.getElementById('joy-left').addEventListener('pointerleave', function () { leftPressed = false; });
+    document.getElementById('joy-right').addEventListener('pointerdown', function () { rightPressed = true; });
+    document.getElementById('joy-right').addEventListener('pointerup', function () { rightPressed = false; });
+    document.getElementById('joy-right').addEventListener('pointerleave', function () { rightPressed = false; });
 
     document.getElementById('btn-legs').onclick = function () {
         state.legsDeployed = !state.legsDeployed;
@@ -460,20 +482,20 @@ game_html = """
     document.getElementById('btn-stage').onclick = function () {
         if (gameState !== "flight") return;
 
-        const sideDecouplers = rocketParts.filter(p => p.type === 'decoupler' && Math.abs(p.x) > 10);
+        const sideDecouplers = rocketParts.filter(function (p) { return p.type === 'decoupler' && Math.abs(p.x) > 10; });
         if (sideDecouplers.length > 0) {
             const dropX = sideDecouplers[0].x;
-            rocketParts = rocketParts.filter(p => Math.abs(p.x - dropX) >= 5);
+            rocketParts = rocketParts.filter(function (p) { return Math.abs(p.x - dropX) >= 5; });
         } else {
-            const centerDec = rocketParts.filter(p => p.type === 'decoupler');
+            const centerDec = rocketParts.filter(function (p) { return p.type === 'decoupler'; });
             if (centerDec.length === 0) return;
-            centerDec.sort((a, b) => a.y - b.y);
+            centerDec.sort(function (a, b) { return a.y - b.y; });
             const lowest = centerDec[0];
-            rocketParts = rocketParts.filter(p => p.y >= lowest.y);
+            rocketParts = rocketParts.filter(function (p) { return p.y >= lowest.y; });
         }
 
         let m = 0, f = 0;
-        rocketParts.forEach(p => { m += P[p.type].m; f += P[p.type].f; });
+        rocketParts.forEach(function (p) { m += P[p.type].m; f += P[p.type].f; });
         state.dryMass = m;
         state.maxFuel = f;
         if (state.currentFuel > state.maxFuel) state.currentFuel = state.maxFuel;
@@ -509,11 +531,17 @@ game_html = """
         mapCtx.stroke();
 
         mapCtx.textAlign = "center";
-        planetsMap.forEach(p => {
+        planetsMap.forEach(function (p) {
             const cx = p.x * mapCanvas.width;
             const cy = mapCanvas.height / 2;
 
-            mapCtx.fillStyle = p.color;
+            /* sphere shading */
+            const g = mapCtx.createRadialGradient(cx - 9, cy - 9, 3, cx, cy, 26);
+            g.addColorStop(0, "#ffffff");
+            g.addColorStop(0.25, p.color);
+            g.addColorStop(1, p.color);
+
+            mapCtx.fillStyle = g;
             mapCtx.beginPath();
             mapCtx.arc(cx, cy, 24, 0, Math.PI * 2);
             mapCtx.fill();
@@ -542,12 +570,12 @@ game_html = """
         }
     };
 
-    mapCanvas.addEventListener('pointerdown', (e) => {
+    mapCanvas.addEventListener('pointerdown', function (e) {
         const rect = mapCanvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
 
-        planetsMap.forEach(p => {
+        planetsMap.forEach(function (p) {
             const cx = p.x * mapCanvas.width;
             const cy = mapCanvas.height / 2;
             if (Math.hypot(mx - cx, my - cy) < 48) {
@@ -556,22 +584,23 @@ game_html = """
         });
     });
 
+    /* ---- transport: land the rocket ON the surface of the new planet ---- */
     function travelTo(name) {
         state.currentPlanet = name;
         state.x = 0;
-        state.y = 200;
+        state.y = 0;                 /* ON the ground, not floating */
         state.vx = 0;
         state.vy = 0;
         state.angle = 0;
         state.angularVelocity = 0;
         state.throttle = 0;
         state.chuteDeployed = false;
-        state.hasLiftedOff = true;
-        state.onGround = false;
+        state.hasLiftedOff = false;  /* prevents auto-parachute */
+        state.onGround = true;
         state.legsDeployed = false;
         state.legsProgress = 0;
         state.cameraX = 0;
-        state.cameraY = 200;
+        state.cameraY = 0;
         state.particles = [];
         state.shake = 0;
 
@@ -601,8 +630,8 @@ game_html = """
         }
 
         let minY = Infinity;
-        rocketParts.forEach(p => { minY = Math.min(minY, p.y - P[p.type].h / 2); });
-        rocketParts.forEach(p => { p.y -= minY; });
+        rocketParts.forEach(function (p) { minY = Math.min(minY, p.y - P[p.type].h / 2); });
+        rocketParts.forEach(function (p) { p.y -= minY; });
 
         gameState = "flight";
 
@@ -620,7 +649,7 @@ game_html = """
         state.particles = [];
 
         let m = 0, f = 0;
-        rocketParts.forEach(p => { m += P[p.type].m; f += P[p.type].f; });
+        rocketParts.forEach(function (p) { m += P[p.type].m; f += P[p.type].f; });
         state.dryMass = m;
         state.maxFuel = f;
         state.currentFuel = f;
@@ -650,8 +679,8 @@ game_html = """
         updateHUD();
     };
 
-    document.getElementById('btn-reset').onclick = () => window.location.reload();
-    rebuildBtn.onclick = () => window.location.reload();
+    document.getElementById('btn-reset').onclick = function () { window.location.reload(); };
+    rebuildBtn.onclick = function () { window.location.reload(); };
 
     function updateParticles(dt) {
         for (let i = state.particles.length - 1; i >= 0; i--) {
@@ -721,7 +750,7 @@ game_html = """
         state.angle += state.angularVelocity * dt;
 
         let thrust = 0;
-        rocketParts.forEach(p => { thrust += P[p.type].t; });
+        rocketParts.forEach(function (p) { thrust += P[p.type].t; });
 
         state.totalMass = state.dryMass + state.currentFuel;
         const g = planetsDB[state.currentPlanet].g;
@@ -748,7 +777,7 @@ game_html = """
             const cosA = Math.cos(rad);
             const sinA = Math.sin(rad);
 
-            rocketParts.forEach(eng => {
+            rocketParts.forEach(function (eng) {
                 if (eng.type.indexOf("engine") === -1) return;
 
                 const hw = P[eng.type].w;
@@ -775,8 +804,9 @@ game_html = """
             });
         }
 
+        /* auto-parachute only AFTER flying under power */
         if (state.hasLiftedOff && state.y < 3000 && state.vy < -10 && !state.chuteDeployed) {
-            if (rocketParts.some(p => p.type === 'chute')) {
+            if (rocketParts.some(function (p) { return p.type === 'chute'; })) {
                 state.chuteDeployed = true;
             }
         }
@@ -947,7 +977,7 @@ game_html = """
         ctx.fillStyle = "#444";
         ctx.fillRect(-220, 0, 440, 10);
 
-        rocketParts.forEach(p => drawPart(p, -p.y));
+        rocketParts.forEach(function (p) { drawPart(p, -p.y); });
         ctx.restore();
     }
 
@@ -956,6 +986,7 @@ game_html = """
 
         const planet = planetsDB[state.currentPlanet];
 
+        /* ---------- sky ---------- */
         const alt = Math.max(0, state.y);
         let t = planet.atmo > 0 ? Math.min(1, alt / planet.atmo) : 1;
         t = Math.pow(t, 0.6);
@@ -974,6 +1005,7 @@ game_html = """
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, W, H);
 
+        /* ---------- stars ---------- */
         if (t > 0.04) {
             const px = state.cameraX * 0.04;
             const py = state.cameraY * 0.04;
@@ -990,6 +1022,7 @@ game_html = """
             ctx.globalAlpha = 1;
         }
 
+        /* ---------- world ---------- */
         const zoom = Math.max(0.55, 1.1 - state.y / 25000);
 
         ctx.save();
@@ -997,12 +1030,35 @@ game_html = """
         ctx.scale(zoom, zoom);
         ctx.translate(-state.cameraX, state.cameraY);
 
-        const R = 200000;
+        /* planet body: giant sphere whose north pole is at y = 0 */
+        const R = 50000;
         ctx.fillStyle = planet.ground;
         ctx.beginPath();
         ctx.arc(0, R, R, 0, Math.PI * 2);
         ctx.fill();
 
+        /* surface terrain marks (craters / rocks) */
+        if (planet.surface) {
+            for (let i = 0; i < planet.surface.length; i++) {
+                const f = planet.surface[i];
+                const sy = R - Math.sqrt(Math.max(0, R * R - f.x * f.x));
+                ctx.fillStyle = f.light
+                    ? "rgba(255,255,255," + f.a + ")"
+                    : "rgba(0,0,0," + f.a + ")";
+                ctx.beginPath();
+                ctx.ellipse(f.x, sy + f.h * 0.5, f.w * 0.5, f.h * 0.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        /* subtle horizon highlight */
+        ctx.strokeStyle = "rgba(255,255,255,0.18)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, R, R, -Math.PI / 2 - 0.35, -Math.PI / 2 + 0.35);
+        ctx.stroke();
+
+        /* particles */
         for (let i = 0; i < state.particles.length; i++) {
             const p = state.particles[i];
             const life = Math.max(0, p.life);
@@ -1012,12 +1068,13 @@ game_html = """
             ctx.fill();
         }
 
+        /* rocket */
         if (gameState !== "crashed") {
             ctx.save();
             ctx.translate(state.x, -state.y);
             ctx.rotate(state.angle * Math.PI / 180);
 
-            rocketParts.forEach(p => drawPart(p, -p.y));
+            rocketParts.forEach(function (p) { drawPart(p, -p.y); });
 
             if (state.legsProgress > 0) {
                 const legLen = 22 * state.legsProgress;
