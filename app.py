@@ -28,7 +28,7 @@ game_html = """
         #btn-start { background: #00ffcc; color: #000; border: none; padding: 20px 50px; font-size: 28px; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 0 20px #00ffcc; }
         .title { color: white; font-size: 48px; font-weight: bold; margin-bottom: 12px; text-shadow: 0 0 20px #4a90e2; text-align: center; }
         .subtitle { color: #7ab; font-size: 13px; margin-bottom: 20px; text-align: center; max-width: 320px; line-height: 1.6;}
-        .gold-guide { color: #ffcc44; font-size: 12px; margin-bottom: 30px; text-align: center; line-height: 1.7; max-width: 320px; background: rgba(255,204,68,0.08); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(255,204,68,0.3); }
+        .gold-guide { color: #ffcc44; font-size: 12px; margin-bottom: 30px; text-align: center; line-height: 1.75; max-width: 320px; background: rgba(255,204,68,0.08); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(255,204,68,0.3); }
 
         #vab-menu {
             position: absolute; top: 10px; left: 10px; width: 100px;
@@ -175,10 +175,12 @@ game_html = """
             <div class="subtitle">All 12 base parts are yours.<br>Unlock 6 advanced parts with gold.</div>
             <div class="gold-guide">
                 🪙 <b>How to earn gold:</b><br>
-                +5 per 500m altitude record<br>
-                +25 first safe landing on a planet<br>
-                &nbsp;&nbsp;&nbsp;(transport drops you in orbit — land to earn!)<br>
-                +50 first time reaching space
+                +25 &nbsp;first safe landing on a planet<br>
+                +50 &nbsp;first time reaching space<br>
+                +10 &nbsp;reach 1 km (once per planet)<br>
+                +25 &nbsp;reach 5 km (once per planet)<br>
+                +50 &nbsp;reach 10 km (once per planet)<br>
+                +100 reach 25 km (once per planet)
             </div>
             <button id="btn-start">START BUILDING</button>
         </div>
@@ -216,7 +218,7 @@ game_html = """
             <div class="stat-row"><span>Thrust:</span> <span class="stat-val" id="stat-thrust">0 kN</span></div>
             <div class="stat-hint">
                 Tap part to <b>delete</b> · Tap 🔒 to <b>unlock</b><br>
-                🪙 <b>+5</b>/500m · <b>+25</b>/landing · <b>+50</b>/space
+                🪙 +25 landing · +50 space · +10/+25/+50/+100 altitude
             </div>
         </div>
 
@@ -360,6 +362,9 @@ game_html = """
                        "engine_small","engine_med","engine_large","decoupler","booster","legs"];
     const advancedParts = ["gyroscope","heat_shield","booster_large","tank_xl","engine_ion","engine_xl"];
 
+    const MILESTONES = [1000, 5000, 10000, 25000];
+    const MILESTONE_GOLD = [10, 25, 50, 100];
+
     const planetsDB = {
         "Mercury": { ground: "#7a6f5c", g: 3.70,  color: "#b0a89c", sky: [55, 50, 55],    atmo: 0,     radius: 12, fact: "Smallest planet · no atmosphere" },
         "Venus":   { ground: "#b88a4a", g: 8.87,  color: "#e6c88a", sky: [235, 200, 140], atmo: 14000, radius: 18, fact: "Hottest planet · thick clouds" },
@@ -398,6 +403,7 @@ game_html = """
         rocketCenterY: 0,
         hasLiftedOff: false,
         onGround: true,
+        beenOnGround: true,
         legsDeployed: false, legsProgress: 0,
         chuteDeployed: false,
         currentPlanet: "Earth",
@@ -408,15 +414,15 @@ game_html = """
         records: {},
         landedPlanets: {},
         gold: 0,
-        goldEarnedFromAltitude: {},
         reachedSpace: {},
+        altitudeMilestones: {},
         unlocked: {}
     };
 
     Object.keys(planetsDB).forEach(function (k) {
         state.records[k] = 0;
-        state.goldEarnedFromAltitude[k] = 0;
         state.reachedSpace[k] = false;
+        state.altitudeMilestones[k] = MILESTONES.map(function () { return false; });
     });
     baseParts.forEach(function (p) { state.unlocked[p] = true; });
     advancedParts.forEach(function (p) { state.unlocked[p] = false; });
@@ -439,6 +445,11 @@ game_html = """
         if (seconds) {
             statusTimer = setTimeout(function () { statusEl.style.display = 'none'; }, seconds * 1000);
         }
+    }
+
+    function hideGoldPopup() {
+        goldPopup.classList.remove('show');
+        if (goldTimer) { clearTimeout(goldTimer); goldTimer = null; }
     }
 
     function showGoldGain(amount) {
@@ -838,6 +849,7 @@ game_html = """
         rebuildBtn.style.display = 'none';
         mapOverlay.style.display = 'none';
         infoCard.style.display = 'none';
+        hideGoldPopup();
 
         updateStats();
         updateScrollHints();
@@ -969,13 +981,12 @@ game_html = """
         }, 380);
     }
 
-    /* ===========================
-       TRAVEL — arrive IN ORBIT, not on ground
-       =========================== */
+    /* ==================================================
+       TRAVEL — arrive in orbit, no auto gold, no lingering popup
+       ================================================== */
     function travelTo(name) {
         state.currentPlanet = name;
 
-        /* Arrive 300m above the surface, gently descending */
         state.x = 0;
         state.y = 300;
         state.vx = 0;
@@ -985,9 +996,10 @@ game_html = """
         state.throttle = 0;
         state.chuteDeployed = false;
 
-        /* KEY: transport is treated as a real flight, so landing counts */
         state.hasLiftedOff = true;
         state.onGround = false;
+        /* KEY: forces player to actually land before space bonus can fire */
+        state.beenOnGround = false;
 
         state.legsDeployed = false;
         state.legsProgress = 0;
@@ -1011,6 +1023,9 @@ game_html = """
         } else {
             gameState = "flight";
         }
+
+        /* clear any lingering +50 popup from before transport */
+        hideGoldPopup();
 
         document.getElementById('hud-planet').innerText = name;
         showPlanetInfo(name, 3.5);
@@ -1045,6 +1060,7 @@ game_html = """
         state.chuteDeployed = false;
         state.hasLiftedOff = false;
         state.onGround = true;
+        state.beenOnGround = true;   /* launched from ground → space bonus OK */
         state.cameraX = 0; state.cameraY = 0;
         state.shake = 0;
         state.particles = [];
@@ -1075,6 +1091,7 @@ game_html = """
         statusEl.style.display = 'none';
         rebuildBtn.style.display = 'none';
         mapOverlay.style.display = 'none';
+        hideGoldPopup();
 
         document.getElementById('btn-legs').innerText = "LEGS: UP";
         document.getElementById('btn-legs').classList.remove('deployed');
@@ -1256,6 +1273,7 @@ game_html = """
 
         if (state.y <= 0) {
             state.y = 0;
+            state.beenOnGround = true;
 
             if (!state.onGround) {
                 state.onGround = true;
@@ -1298,21 +1316,25 @@ game_html = """
         state.cameraX += (state.x - state.cameraX) * Math.min(1, 8 * dt);
         state.cameraY += (state.y - state.cameraY) * Math.min(1, 8 * dt);
 
-        const oldRec = state.records[state.currentPlanet] || 0;
-        if (state.y > oldRec) {
-            const oldBucket = Math.floor(oldRec / 500);
-            const newBucket = Math.floor(state.y / 500);
-            if (newBucket > oldBucket) {
-                const gained = (newBucket - oldBucket) * 5;
-                state.goldEarnedFromAltitude[state.currentPlanet] += gained;
-                addGold(gained);
-            }
+        /* track best altitude (display only) */
+        if (state.y > state.records[state.currentPlanet]) {
             state.records[state.currentPlanet] = state.y;
         }
 
-        if (!state.reachedSpace[state.currentPlanet]) {
+        /* ---- ALTITUDE MILESTONES (once per planet) ---- */
+        const pName = state.currentPlanet;
+        for (let i = 0; i < MILESTONES.length; i++) {
+            if (state.y >= MILESTONES[i] && !state.altitudeMilestones[pName][i]) {
+                state.altitudeMilestones[pName][i] = true;
+                addGold(MILESTONE_GOLD[i]);
+                showStatus("🏔 " + (MILESTONES[i] / 1000) + " KM  +" + MILESTONE_GOLD[i] + "🪙", "#ffcc44", 2.5);
+            }
+        }
+
+        /* ---- SPACE BONUS (once per planet, requires beenOnGround) ---- */
+        if (!state.reachedSpace[state.currentPlanet] && state.beenOnGround) {
             const planet = planetsDB[state.currentPlanet];
-            const isSpace = planet.atmo === 0 ? state.y > 500 : state.y > planet.atmo;
+            const isSpace = planet.atmo === 0 ? state.y > 1000 : state.y > planet.atmo;
             if (isSpace && state.hasLiftedOff) {
                 state.reachedSpace[state.currentPlanet] = true;
                 addGold(50);
@@ -1341,7 +1363,8 @@ game_html = """
 
         const planet = planetsDB[state.currentPlanet];
         const spaceEl = document.getElementById('hud-space');
-        if (planet.atmo === 0 || state.y > planet.atmo) {
+        const isSpace = planet.atmo === 0 ? state.y > 1000 : state.y > planet.atmo;
+        if (isSpace) {
             spaceEl.style.display = 'block';
         } else {
             spaceEl.style.display = 'none';
