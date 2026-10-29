@@ -30,7 +30,6 @@ game_html = """
         .subtitle { color: #7ab; font-size: 13px; margin-bottom: 20px; text-align: center; max-width: 320px; line-height: 1.6;}
         .gold-guide { color: #ffcc44; font-size: 12px; margin-bottom: 30px; text-align: center; line-height: 1.75; max-width: 320px; background: rgba(255,204,68,0.08); padding: 12px 18px; border-radius: 8px; border: 1px solid rgba(255,204,68,0.3); }
 
-        /* SFS Style Menus & UI */
         #vab-menu {
             position: absolute; top: 10px; left: 10px; width: 100px;
             background: rgba(20, 30, 40, 0.95); border: 2px solid #34495e; border-radius: 10px;
@@ -45,14 +44,8 @@ game_html = """
         #vab-menu::-webkit-scrollbar-track { background: #111; border-radius: 3px; }
         #vab-menu::-webkit-scrollbar-thumb { background: #4a90e2; border-radius: 3px; }
 
-        .vab-scroll-hint {
-            position: absolute; left: 10px; width: 100px;
-            text-align: center; font-size: 14px; color: #00ffcc;
-            pointer-events: none; z-index: 100001;
-            display: none; opacity: 0.9;
-            text-shadow: 0 0 6px #00ffcc;
-        }
-        .vab-scroll-hint.up   { top: 4px; }
+        .vab-scroll-hint { position: absolute; left: 10px; width: 100px; text-align: center; font-size: 14px; color: #00ffcc; pointer-events: none; z-index: 100001; display: none; opacity: 0.9; text-shadow: 0 0 6px #00ffcc; }
+        .vab-scroll-hint.up { top: 4px; }
         .vab-scroll-hint.down { bottom: 4px; }
         .vab-scroll-hint.visible { display: block; }
 
@@ -96,7 +89,6 @@ game_html = """
 
         #top-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
         
-        /* SFS Styled Buttons */
         .top-btn { background: #2c3e50; color: white; border: 2px solid #4a90e2; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
         .top-btn:active { background: #4a90e2; }
 
@@ -114,14 +106,16 @@ game_html = """
 
         #heat-ui { position: absolute; bottom: 20px; left: 20px; display: none; z-index: 100000; color: #ff8844; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000;}
 
-        #throttle-zone { position: absolute; right: 15px; top: 60%; width: 35px; height: 160px; background: rgba(44, 62, 80, 0.4); border: 2px solid #7f8c8d; border-radius: 20px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        /* Moved Throttle and Buttons to avoid overlap */
+        #throttle-zone { position: absolute; right: 15px; bottom: 100px; width: 35px; height: 150px; background: rgba(44, 62, 80, 0.4); border: 2px solid #7f8c8d; border-radius: 20px; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
         #throttle-fill { position: absolute; bottom: 0; width: 100%; height: 0%; background: #fff; border-radius: 18px;}
 
-        #arrow-zone { position: absolute; left: 15px; bottom: 15px; display: none; gap: 10px; pointer-events: auto; z-index: 100000;}
-        .arrow-btn { width: 65px; height: 65px; background: rgba(44, 62, 80, 0.6); border: none; border-radius: 8px; color: #fff; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); touch-action: none; transition: transform 0.05s, background 0.05s; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        /* Centered Arrow Buttons */
+        #arrow-zone { position: absolute; left: 50%; transform: translateX(-50%); bottom: 20px; display: none; gap: 20px; pointer-events: auto; z-index: 100000;}
+        .arrow-btn { width: 65px; height: 60px; background: rgba(44, 62, 80, 0.6); border: none; border-radius: 8px; color: #fff; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); touch-action: none; transition: transform 0.05s, background 0.05s; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
         .arrow-btn:active { background: rgba(52, 152, 219, 0.8); transform: scale(0.94); }
 
-        #btn-stage { position: absolute; bottom: 15px; right: 70px; width: 60px; height: 65px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        #btn-stage { position: absolute; bottom: 20px; right: 70px; width: 60px; height: 60px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
         #btn-legs { position: absolute; bottom: 90px; right: 70px; width: 60px; height: 40px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
         #btn-legs.deployed { color: #00ffcc; }
         
@@ -229,7 +223,6 @@ game_html = """
         <button id="btn-exit">Exit</button>
         <div id="minimap-container"><canvas id="minimap" width="80" height="80"></canvas></div>
 
-        <!-- SFS STYLE HUD -->
         <div id="hud">
             <span id="hud-space">★ IN SPACE ★</span>
             <span id="hud-planet" style="display:none;">Earth</span>
@@ -240,7 +233,6 @@ game_html = """
             <span style="color:#ffcc44; margin-top:5px; display:inline-block;">🪙 <span id="val-gold">0</span></span>
         </div>
 
-        <!-- SFS STYLE FUEL GAUGES -->
         <div id="fuel-gauges">
             <div class="fuel-row">
                 <div class="fuel-text">Liquid fuel:</div>
@@ -250,10 +242,12 @@ game_html = """
         <div id="heat-ui">Heat Shield: <span id="val-heat">0</span>°C</div>
 
         <div id="throttle-zone"><div id="throttle-fill"></div></div>
+        
         <div id="arrow-zone">
             <div class="arrow-btn" id="joy-left">◀</div>
             <div class="arrow-btn" id="joy-right">▶</div>
         </div>
+        
         <button id="btn-stage">Stage</button>
         <button id="btn-legs">Legs</button>
 
@@ -336,7 +330,7 @@ game_html = """
 
     const GRID = 10;
     let rocketParts = [];
-    let debrisParts = []; // NEW: For staging visuals
+    let debrisParts = [];
     let vabRocket = [];
     let currentSelectedPart = "pod";
 
@@ -788,8 +782,8 @@ game_html = """
         const rect = throttleZone.getBoundingClientRect();
         let y = e.clientY - rect.top;
         if (y < 0) y = 0;
-        if (y > 160) y = 160;
-        const percent = 100 - (y / 160) * 100;
+        if (y > 150) y = 150;
+        const percent = 100 - (y / 150) * 100;
         state.throttle = percent / 100;
         throttleFill.style.height = percent + '%';
     }
@@ -841,14 +835,12 @@ game_html = """
             rocketParts = rocketParts.filter(function (p) { return p.y >= lowest.y; });
         }
 
-        // Move dropped parts into debris array for visual falling
         if (droppedParts.length > 0) {
             const rad = state.angle * Math.PI / 180;
             const cosA = Math.cos(rad);
             const sinA = Math.sin(rad);
             
             droppedParts.forEach(p => {
-                // Calculate world position of the part
                 const dxScreen = p.x;
                 const dyScreen = state.rocketCenterY - p.y;
                 const dxRot = dxScreen * cosA - dyScreen * sinA;
@@ -1001,19 +993,16 @@ game_html = """
             mapCtx.fillText(p.name, cx, cy + rad + 22);
         });
 
-        // SFS Style Trajectory Line
         if (gameState === "flight" || gameState === "crashed") {
             mapCtx.strokeStyle = "rgba(255,255,255,0.7)";
             mapCtx.lineWidth = 1.5;
             mapCtx.setLineDash([6, 6]);
             
-            // Find current planet on map
             const currentP = planetsMap.find(p => p.name === state.currentPlanet);
             if (currentP) {
                 let simX = currentP.x * mapCanvas.width;
                 let simY = mapRowY(currentP.row);
                 
-                // Fake orbital mechanics simulation for visualization
                 let simVX = Math.sin(state.angle * Math.PI/180) * (state.vx * 0.1);
                 let simVY = -Math.cos(state.angle * Math.PI/180) * (state.vy * 0.1);
                 if (simVX === 0 && simVY === 0) { simVX = 2; simVY = -2; }
@@ -1023,7 +1012,7 @@ game_html = """
                 for(let i=0; i<50; i++) {
                     simX += simVX;
                     simY += simVY;
-                    simVY += 0.5; // Gravity curve
+                    simVY += 0.5;
                     mapCtx.lineTo(simX, simY);
                 }
                 mapCtx.stroke();
@@ -1247,7 +1236,6 @@ game_html = """
             d.y += d.vy * dt;
             d.angle += d.angularVelocity * dt;
             
-            // Simple ground collision for debris
             if (d.y < 0) {
                 d.y = 0;
                 d.vy = -d.vy * 0.3;
@@ -1256,7 +1244,6 @@ game_html = """
                 if (Math.abs(d.vy) < 2) { d.vy = 0; d.vx = 0; d.angularVelocity = 0; }
             }
 
-            // Remove off-screen debris
             if (Math.abs(d.x - state.cameraX) > W * 2 || d.y < -200) {
                 debrisParts.splice(i, 1);
             }
@@ -1382,11 +1369,16 @@ game_html = """
             if (state.vy < -8) state.vy = Math.min(-8, state.vy + 60 * dt);
             state.vx *= Math.pow(0.25, dt);
         }
+        
+        // Legs add aerodynamic drag
+        if (state.legsDeployed && state.y < planetsDB[state.currentPlanet].atmo) {
+            if (state.vy < -2) state.vy += 3 * dt; // slows falling
+            state.vx *= Math.pow(0.96, dt);
+        }
 
         state.x += state.vx * dt;
         state.y += state.vy * dt;
 
-        // Re-entry heat logic
         const isInAtmo = state.y < planetsDB[state.currentPlanet].atmo;
         const speed = Math.hypot(state.vx, state.vy);
         if (isInAtmo && speed > 500) {
@@ -1487,11 +1479,9 @@ game_html = """
     }
 
     function updateHUD() {
-        // SFS Format
         const alt = state.y;
         const vel = Math.hypot(state.vx, state.vy);
         
-        // Format height nicely (m or km)
         let altStr = alt > 1000 ? (alt/1000).toFixed(1) + "km" : alt.toFixed(1) + "m";
         let velStr = vel > 1000 ? (vel/1000).toFixed(1) + "km/s" : vel.toFixed(1) + "m/s";
         
@@ -1560,27 +1550,44 @@ game_html = """
         }
 
         if (p.type === "pod") {
+            // Realistic Pod Shape
             const grad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
-            grad.addColorStop(0, "#444"); grad.addColorStop(0.5, "#999"); grad.addColorStop(1, "#333");
+            grad.addColorStop(0, "#444"); grad.addColorStop(0.3, "#aaa"); grad.addColorStop(0.7, "#ddd"); grad.addColorStop(1, "#555");
             ctx.fillStyle = grad;
+            
             ctx.beginPath();
             ctx.moveTo(-w / 2, h / 2);
-            ctx.lineTo(w / 2, h / 2);
+            ctx.quadraticCurveTo(-w / 2.5, h / 4, -w / 3, -h / 2);
             ctx.lineTo(w / 3, -h / 2);
-            ctx.lineTo(-w / 3, -h / 2);
+            ctx.quadraticCurveTo(w / 2.5, h / 4, w / 2, h / 2);
+            ctx.closePath();
             ctx.fill();
-            
+
+            // Top Rim (Docking Port)
+            ctx.fillStyle = "#888";
+            ctx.fillRect(-w / 3, -h / 2 - 4, w / 1.5, 6);
+
+            // Heat Shield Base
+            ctx.fillStyle = "#222";
+            ctx.beginPath();
+            ctx.ellipse(0, h / 2, w / 2, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Window
             ctx.fillStyle = "#111";
             ctx.beginPath();
-            ctx.arc(0, 0, w / 4, 0, Math.PI * 2);
+            ctx.arc(0, -h / 6, w / 2.8, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = "#4a90e2";
             ctx.beginPath();
-            ctx.arc(0, 0, w / 5, 0, Math.PI * 2);
+            ctx.arc(0, -h / 6, w / 3.5, 0, Math.PI * 2);
             ctx.fill();
-
-            ctx.fillStyle = "#ddd";
-            ctx.fillRect(-w/2, h/2 - 3, w, 3);
+            
+            // Window Reflection
+            ctx.fillStyle = "rgba(255,255,255,0.6)";
+            ctx.beginPath();
+            ctx.arc(-w / 8, -h / 4, w / 8, 0, Math.PI * 2);
+            ctx.fill();
 
         } else if (p.type === "chute") {
             if (!state.chuteDeployed) {
@@ -1618,36 +1625,42 @@ game_html = """
 
             if (state.throttle > 0 && state.currentFuel > 0 && (gameState === "flight" || gameState === "crashed")) {
                 const th = state.throttle;
-                const flick = 0.85 + Math.random() * 0.3;
-                const flameLen = (50 + 100 * th) * flick;
+                const flick = 0.9 + Math.random() * 0.2;
+                const flameLen = (60 + 120 * th) * flick;
                 const nozzleY = h / 2;
+                const nozzleW = w / 1.6;
 
-                const glow = ctx.createRadialGradient(0, nozzleY, 2, 0, nozzleY, flameLen * 0.75);
-                glow.addColorStop(0, isIon ? "rgba(180,240,255,0.9)" : "rgba(255,245,190,0.85)");
-                glow.addColorStop(0.45, isIon ? "rgba(80,180,255,0.4)" : "rgba(255,150,20,0.35)");
-                glow.addColorStop(1, "rgba(0,0,0,0)");
-                ctx.fillStyle = glow;
+                // Outer flame (Orange/Red)
+                const outerGrad = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + flameLen);
+                outerGrad.addColorStop(0, "rgba(255, 100, 0, 0.8)");
+                outerGrad.addColorStop(1, "rgba(255, 0, 0, 0)");
+                ctx.fillStyle = outerGrad;
                 ctx.beginPath();
-                ctx.arc(0, nozzleY, flameLen * 0.75, 0, Math.PI * 2);
+                ctx.moveTo(-nozzleW / 2, nozzleY);
+                ctx.lineTo(nozzleW / 2, nozzleY);
+                ctx.quadraticCurveTo(nozzleW / 2, nozzleY + flameLen * 0.5, 0, nozzleY + flameLen);
+                ctx.quadraticCurveTo(-nozzleW / 2, nozzleY + flameLen * 0.5, -nozzleW / 2, nozzleY);
                 ctx.fill();
 
-                const fg = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + flameLen);
-                if (isIon) {
-                    fg.addColorStop(0, "rgba(255,255,255,1)");
-                    fg.addColorStop(0.5, "rgba(80,200,255,0.8)");
-                    fg.addColorStop(1, "rgba(50,100,255,0)");
-                } else {
-                    fg.addColorStop(0, "rgba(255,255,255,1)");
-                    fg.addColorStop(0.25, "rgba(255,225,60,0.95)");
-                    fg.addColorStop(0.6, "rgba(255,120,0,0.7)");
-                    fg.addColorStop(1, "rgba(255,0,0,0)");
-                }
-                
-                ctx.fillStyle = fg;
+                // Inner flame (Yellow/White)
+                const innerGrad = ctx.createLinearGradient(0, nozzleY, 0, nozzleY + flameLen * 0.6);
+                innerGrad.addColorStop(0, "rgba(255, 255, 200, 1)");
+                innerGrad.addColorStop(1, "rgba(255, 200, 0, 0)");
+                ctx.fillStyle = innerGrad;
                 ctx.beginPath();
-                ctx.moveTo(-w / 2.2, nozzleY);
-                ctx.lineTo(w / 2.2, nozzleY);
-                ctx.lineTo(0, nozzleY + flameLen);
+                ctx.moveTo(-nozzleW / 4, nozzleY);
+                ctx.lineTo(nozzleW / 4, nozzleY);
+                ctx.quadraticCurveTo(nozzleW / 4, nozzleY + flameLen * 0.3, 0, nozzleY + flameLen * 0.6);
+                ctx.quadraticCurveTo(-nozzleW / 4, nozzleY + flameLen * 0.3, -nozzleW / 4, nozzleY);
+                ctx.fill();
+
+                // Glow
+                const glow = ctx.createRadialGradient(0, nozzleY, 2, 0, nozzleY, flameLen * 0.8);
+                glow.addColorStop(0, "rgba(255, 150, 50, 0.4)");
+                glow.addColorStop(1, "rgba(255, 0, 0, 0)");
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(0, nozzleY, flameLen * 0.8, 0, Math.PI * 2);
                 ctx.fill();
             }
 
@@ -1773,15 +1786,14 @@ game_html = """
             ctx.globalAlpha = 1;
         }
 
-        // ** HUGE ROCKET ZOOM **
-        const zoom = Math.max(0.6, 2.2 - state.y / 15000);
+        // Adjusted Zoom to make Rocket bigger
+        const zoom = Math.max(0.55, 1.6 - state.y / 15000);
 
         ctx.save();
         if (state.shake > 0) {
             ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
         }
         
-        // Camera Follows Rocket Center
         ctx.translate(W / 2, H * 0.65);
         ctx.scale(zoom, zoom);
         ctx.translate(-state.cameraX, state.cameraY);
@@ -1811,12 +1823,10 @@ game_html = """
         ctx.arc(0, R, R, -Math.PI / 2 - 0.35, -Math.PI / 2 + 0.35);
         ctx.stroke();
 
-        // Draw Debris
         debrisParts.forEach(function(d) {
             ctx.save();
             ctx.translate(d.x, -d.y);
             ctx.rotate(d.angle * Math.PI / 180);
-            // Draw as a generic chunk
             ctx.fillStyle = "#666";
             ctx.fillRect(-10, -20, 20, 40);
             ctx.restore();
@@ -1831,13 +1841,11 @@ game_html = """
             ctx.fill();
         }
 
-        // Re-entry Plasma Effect
         if (state.heat > 0 && gameState !== "crashed") {
             ctx.save();
             ctx.translate(state.x, -(state.y + state.rocketCenterY));
             ctx.rotate(state.angle * Math.PI / 180);
             
-            // Draw plasma trail behind rocket
             const plasmaLen = 200 * (state.heat / 1137);
             const plasmaGrad = ctx.createLinearGradient(0, 0, 0, plasmaLen);
             plasmaGrad.addColorStop(0, `rgba(255, 100, 0, ${state.heat/1137})`);
@@ -1879,28 +1887,29 @@ game_html = """
             if (state.chuteDeployed) {
                 const chutePart = rocketParts.find(p => p.type === 'chute');
                 if (chutePart) {
-                    const chuteTop = -(chutePart.y - state.rocketCenterY + 80);
-                    const chuteRadius = 45;
-                    
-                    ctx.strokeStyle = "rgba(255,255,255,0.6)";
-                    ctx.lineWidth = 1;
-                    for (let i = -3; i <= 3; i++) {
+                    const localChuteY = -(chutePart.y - state.rocketCenterY);
+                    const canopyY = localChuteY - 70;
+                    const canopyRadius = 45;
+
+                    ctx.strokeStyle = "rgba(200,200,200,0.8)";
+                    ctx.lineWidth = 1.5;
+                    for (let i = -4; i <= 4; i++) {
                         ctx.beginPath();
-                        ctx.moveTo(i * 5, chuteTop);
-                        ctx.lineTo(0, -(chutePart.y - state.rocketCenterY));
+                        ctx.moveTo(i * 10, canopyY);
+                        ctx.lineTo(0, localChuteY);
                         ctx.stroke();
                     }
 
                     ctx.fillStyle = "#eeeeee";
                     ctx.beginPath();
-                    ctx.arc(0, chuteTop, chuteRadius, Math.PI, 0);
+                    ctx.arc(0, canopyY, canopyRadius, Math.PI, 0);
                     ctx.fill();
                     
                     ctx.fillStyle = "#dd3333";
                     for (let i = -2; i <= 2; i++) {
                         ctx.beginPath();
-                        ctx.moveTo(0, chuteTop);
-                        ctx.arc(0, chuteTop, chuteRadius, Math.PI + (i * 0.3) - 0.1, Math.PI + (i * 0.3) + 0.1);
+                        ctx.moveTo(0, canopyY);
+                        ctx.arc(0, canopyY, canopyRadius, Math.PI + (i * 0.25) - 0.1, Math.PI + (i * 0.25) + 0.1);
                         ctx.fill();
                     }
                 }
