@@ -111,6 +111,10 @@ game_html = """
         .arrow-btn { width: 65px; height: 60px; background: rgba(44, 62, 80, 0.6); border: none; border-radius: 8px; color: #fff; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); touch-action: none; transition: transform 0.05s, background 0.05s; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
         .arrow-btn:active { background: rgba(52, 152, 219, 0.8); transform: scale(0.94); }
 
+        /* Flight Buttons - Chute, Stage, Legs */
+        #btn-chute { position: absolute; bottom: 140px; right: 70px; width: 60px; height: 40px; background: rgba(200, 50, 50, 0.6); border: none; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
+        #btn-chute.deployed { color: #00ffcc; background: rgba(44, 62, 80, 0.6); }
+        
         #btn-stage { position: absolute; bottom: 20px; right: 70px; width: 60px; height: 60px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 8px; font-size: 12px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
         #btn-legs { position: absolute; bottom: 90px; right: 70px; width: 60px; height: 40px; background: rgba(44, 62, 80, 0.6); border: none; color: white; border-radius: 8px; font-size: 11px; font-weight: bold; pointer-events: auto; display: none; z-index: 100000; backdrop-filter: blur(5px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
         #btn-legs.deployed { color: #00ffcc; }
@@ -257,6 +261,7 @@ game_html = """
             <div class="arrow-btn" id="joy-right">▶</div>
         </div>
         
+        <button id="btn-chute">CHUTE</button>
         <button id="btn-stage">Stage</button>
         <button id="btn-legs">Legs</button>
 
@@ -884,6 +889,15 @@ game_html = """
         else this.classList.remove('deployed');
     };
 
+    document.getElementById('btn-chute').onclick = function () {
+        if (gameState !== "flight") return;
+        if (rocketParts.some(function (p) { return p.type === 'chute'; })) {
+            state.chuteDeployed = true;
+            this.innerText = "DEPLOYED";
+            this.classList.add('deployed');
+        }
+    };
+
     document.getElementById('btn-stage').onclick = function () {
         if (gameState !== "flight") return;
 
@@ -950,6 +964,7 @@ game_html = """
         document.getElementById('heat-ui').style.display = 'none';
         document.getElementById('btn-legs').style.display = 'none';
         document.getElementById('btn-stage').style.display = 'none';
+        document.getElementById('btn-chute').style.display = 'none';
         document.getElementById('btn-map').style.display = 'none';
         document.getElementById('btn-exit').style.display = 'none';
 
@@ -1205,6 +1220,10 @@ game_html = """
         const legsBtn = document.getElementById('btn-legs');
         legsBtn.innerText = "Legs";
         legsBtn.classList.remove('deployed');
+        
+        const chuteBtn = document.getElementById('btn-chute');
+        chuteBtn.innerText = "CHUTE";
+        chuteBtn.classList.remove('deployed');
 
         if (gameState === "crashed") {
             gameState = "flight";
@@ -1277,6 +1296,13 @@ game_html = """
         document.getElementById('btn-stage').style.display = 'block';
         document.getElementById('btn-map').style.display = 'block';
         document.getElementById('btn-exit').style.display = 'block';
+        
+        // Show Chute button ONLY if rocket has a chute
+        if (rocketParts.some(function (p) { return p.type === 'chute'; })) {
+            document.getElementById('btn-chute').style.display = 'block';
+        } else {
+            document.getElementById('btn-chute').style.display = 'none';
+        }
 
         throttleFill.style.height = '0%';
         statusEl.style.display = 'none';
@@ -1286,6 +1312,8 @@ game_html = """
 
         document.getElementById('btn-legs').innerText = "Legs";
         document.getElementById('btn-legs').classList.remove('deployed');
+        document.getElementById('btn-chute').innerText = "CHUTE";
+        document.getElementById('btn-chute').classList.remove('deployed');
 
         showPlanetInfo("Earth", 3.5);
         updateStats();
@@ -1491,12 +1519,6 @@ game_html = """
                     });
                 }
             });
-        }
-
-        if (state.hasLiftedOff && state.y < 3000 && state.vy < -10 && state.vy > -50 && !state.chuteDeployed) {
-            if (rocketParts.some(function (p) { return p.type === 'chute'; })) {
-                state.chuteDeployed = true;
-            }
         }
 
         state.vx += ax * dt;
