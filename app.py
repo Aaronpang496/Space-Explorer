@@ -121,9 +121,10 @@ game_html = """
         #minimap-container { position: absolute; top: 60px; right: 15px; width: 80px; height: 80px; border: 2px solid #34495e; border-radius: 50%; background: rgba(0,0,0,0.8); overflow: hidden; display: none; z-index: 100000; box-shadow: 0 4px 12px rgba(0,0,0,0.5);}
 
         #map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 5, 15, 0.97); display: none; pointer-events: auto; z-index: 200000;}
-        #map-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #map-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: grab;}
+        #map-canvas:active { cursor: grabbing; }
         #map-title { position: absolute; top: 20px; left: 80px; color: white; font-size: 24px; font-weight: bold;}
-        #map-hint { position: absolute; bottom: 24px; left: 0; width: 100%; text-align: center; color: #9ab; font-size: 13px; }
+        #map-hint { position: absolute; bottom: 24px; left: 0; width: 100%; text-align: center; color: #9ab; font-size: 13px; pointer-events: none;}
 
         #btn-map-exit { position: absolute; top: 20px; left: 20px; background: #2c3e50; color: white; border: 2px solid #4a90e2; padding: 10px 20px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; z-index: 200001; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
         #btn-map-exit:active { background: #4a90e2; }
@@ -280,7 +281,7 @@ game_html = """
             <div id="map-target-name"></div>
             <div id="map-target-dist"></div>
         </div>
-        <div id="map-hint">Tap a planet to warp there</div>
+        <div id="map-hint">Drag to pan · Tap planet to warp</div>
     </div>
 
     <div id="warp-flash"></div>
@@ -347,22 +348,57 @@ game_html = """
     let vabRocket = [];
     let currentSelectedPart = "pod";
 
-    // Camera Panning
+    // Camera Panning (VAB)
     let vabPanX = 0;
     let vabPanY = 0;
     let isPanning = false;
     let panStartX = 0;
     let panStartY = 0;
 
-    // Map Animation State
+    // Map State
+    let mapPanX = 0;
+    let mapPanY = 0;
+    let isDraggingMap = false;
+    let mapDragStartX = 0;
+    let mapDragStartY = 0;
+    let mapDragMoved = false;
+    
     let mapTarget = null;
     let mapDist = 0;
     let mapProgress = 0;
     let mapAnimating = false;
-    const planetDistances = {
-        "Mercury": 91.7, "Venus": 41.4, "Earth": 0, "Mars": 78.3,
-        "Jupiter": 628, "Saturn": 1270, "Uranus": 2720, "Neptune": 4350
+
+    const planetsDB = {
+        "Mercury": { ground: "#7a6f5c", g: 3.70,  color: "#b0a89c", sky: [55, 50, 55],    atmo: 0,     radius: 12, fact: "Smallest planet · no atmosphere", dist: 60 },
+        "Venus":   { ground: "#b88a4a", g: 8.87,  color: "#e6c88a", sky: [235, 200, 140], atmo: 14000, radius: 18, fact: "Hottest planet · thick clouds", dist: 100 },
+        "Earth":   { ground: "#2e4a2e", g: 9.81,  color: "#4a90e2", sky: [135, 206, 235], atmo: 9000,  radius: 18, fact: "Our home · the blue marble", dist: 150 },
+        "Mars":    { ground: "#8a2be2", g: 3.71,  color: "#ea580c", sky: [224, 150, 110], atmo: 6000,  radius: 15, fact: "The red planet · thin air", dist: 200 },
+        "Jupiter": { ground: "#8b4513", g: 24.79, color: "#d4a373", sky: [216, 170, 130], atmo: 18000, radius: 30, fact: "Largest planet · gas giant", dist: 300 },
+        "Saturn":  { ground: "#c4a778", g: 10.44, color: "#e0c890", sky: [200, 180, 130], atmo: 16000, radius: 26, fact: "Famous for its rings", dist: 400 },
+        "Uranus":  { ground: "#4a8a9a", g: 8.69,  color: "#7ac8d4", sky: [150, 200, 220], atmo: 11000, radius: 20, fact: "Tilted ice giant", dist: 500 },
+        "Neptune": { ground: "#1e3a6e", g: 11.15, color: "#4a6ec8", sky: [60, 80, 180],   atmo: 12000, radius: 20, fact: "Farthest planet · icy winds", dist: 600 }
     };
+
+    const planetKeys = Object.keys(planetsDB);
+
+    function makeSurface(seed) {
+        const arr = [];
+        let s = seed >>> 0;
+        function rnd() { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }
+        for (let i = 0; i < 46; i++) {
+            arr.push({
+                x: (rnd() - 0.5) * 6000,
+                w: 20 + rnd() * 80,
+                h: 4 + rnd() * 10,
+                a: 0.06 + rnd() * 0.10,
+                light: rnd() > 0.5
+            });
+        }
+        return arr;
+    }
+    planetKeys.forEach(function (k, i) {
+        planetsDB[k].surface = makeSurface(1234 + i * 97);
+    });
 
     const P = {
         pod:          { w: 20, h: 24, m: 1500, f: 0,    t: 0 },
@@ -411,36 +447,6 @@ game_html = """
     const MILESTONES = [1000, 5000, 10000, 25000];
     const MILESTONE_GOLD = [10, 25, 50, 100];
 
-    const planetsDB = {
-        "Mercury": { ground: "#7a6f5c", g: 3.70,  color: "#b0a89c", sky: [55, 50, 55],    atmo: 0,     radius: 12, fact: "Smallest planet · no atmosphere" },
-        "Venus":   { ground: "#b88a4a", g: 8.87,  color: "#e6c88a", sky: [235, 200, 140], atmo: 14000, radius: 18, fact: "Hottest planet · thick clouds" },
-        "Earth":   { ground: "#2e4a2e", g: 9.81,  color: "#4a90e2", sky: [135, 206, 235], atmo: 9000,  radius: 18, fact: "Our home · the blue marble" },
-        "Mars":    { ground: "#8a2be2", g: 3.71,  color: "#ea580c", sky: [224, 150, 110], atmo: 6000,  radius: 15, fact: "The red planet · thin air" },
-        "Jupiter": { ground: "#8b4513", g: 24.79, color: "#d4a373", sky: [216, 170, 130], atmo: 18000, radius: 30, fact: "Largest planet · gas giant" },
-        "Saturn":  { ground: "#c4a778", g: 10.44, color: "#e0c890", sky: [200, 180, 130], atmo: 16000, radius: 26, fact: "Famous for its rings" },
-        "Uranus":  { ground: "#4a8a9a", g: 8.69,  color: "#7ac8d4", sky: [150, 200, 220], atmo: 11000, radius: 20, fact: "Tilted ice giant" },
-        "Neptune": { ground: "#1e3a6e", g: 11.15, color: "#4a6ec8", sky: [60, 80, 180],   atmo: 12000, radius: 20, fact: "Farthest planet · icy winds" }
-    };
-
-    function makeSurface(seed) {
-        const arr = [];
-        let s = seed >>> 0;
-        function rnd() { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }
-        for (let i = 0; i < 46; i++) {
-            arr.push({
-                x: (rnd() - 0.5) * 6000,
-                w: 20 + rnd() * 80,
-                h: 4 + rnd() * 10,
-                a: 0.06 + rnd() * 0.10,
-                light: rnd() > 0.5
-            });
-        }
-        return arr;
-    }
-    Object.keys(planetsDB).forEach(function (k, i) {
-        planetsDB[k].surface = makeSurface(1234 + i * 97);
-    });
-
     let state = {
         x: 0, y: 0, vx: 0, vy: 0,
         angle: 0, angularVelocity: 0,
@@ -466,7 +472,7 @@ game_html = """
         heat: 0
     };
 
-    Object.keys(planetsDB).forEach(function (k) {
+    planetKeys.forEach(function (k) {
         state.records[k] = 0;
         state.reachedSpace[k] = false;
         state.altitudeMilestones[k] = MILESTONES.map(function () { return false; });
@@ -969,138 +975,7 @@ game_html = """
     };
     rebuildBtn.onclick = function () { returnToVAB("GOLD KEPT 🪙 — BACK TO VAB"); };
 
-    const planetsMap = [
-        { name: "Mercury", color: "#b0a89c", x: 0.15, row: 0 },
-        { name: "Venus",   color: "#e6c88a", x: 0.38, row: 0 },
-        { name: "Earth",   color: "#4a90e2", x: 0.62, row: 0 },
-        { name: "Mars",    color: "#ea580c", x: 0.85, row: 0 },
-        { name: "Jupiter", color: "#d4a373", x: 0.15, row: 1 },
-        { name: "Saturn",  color: "#e0c890", x: 0.38, row: 1 },
-        { name: "Uranus",  color: "#7ac8d4", x: 0.62, row: 1 },
-        { name: "Neptune", color: "#4a6ec8", x: 0.85, row: 1 }
-    ];
-
-    function mapRowY(row) { return row === 0 ? mapCanvas.height * 0.32 : mapCanvas.height * 0.68; }
-
-    function drawMap() {
-        mapCtx.setTransform(1, 0, 0, 1, 0, 0);
-        mapCtx.fillStyle = "#000511";
-        mapCtx.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
-
-        mapCtx.fillStyle = "#ffffff";
-        for (let i = 0; i < 180; i++) {
-            const sx = (i * 137.508) % mapCanvas.width;
-            const sy = (i * 91.7) % mapCanvas.height;
-            mapCtx.globalAlpha = 0.15 + ((i * 37) % 100) / 220;
-            mapCtx.fillRect(sx, sy, 1.5, 1.5);
-        }
-        mapCtx.globalAlpha = 1;
-
-        mapCtx.strokeStyle = "rgba(0,255,204,0.12)";
-        mapCtx.lineWidth = 1;
-        mapCtx.setLineDash([4, 8]);
-        mapCtx.beginPath();
-        mapCtx.moveTo(20, mapCanvas.height * 0.5);
-        mapCtx.lineTo(mapCanvas.width - 20, mapCanvas.height * 0.5);
-        mapCtx.stroke();
-        mapCtx.setLineDash([]);
-
-        mapCtx.fillStyle = "rgba(0,255,204,0.55)";
-        mapCtx.font = "11px Arial";
-        mapCtx.textAlign = "left";
-        mapCtx.fillText("INNER PLANETS", 20, mapCanvas.height * 0.32 - 55);
-        mapCtx.fillText("OUTER PLANETS", 20, mapCanvas.height * 0.68 - 55);
-
-        mapCtx.textAlign = "center";
-        planetsMap.forEach(function (p) {
-            const cx = p.x * mapCanvas.width;
-            const cy = mapRowY(p.row);
-            const rad = planetsDB[p.name].radius;
-
-            if (p.name === "Saturn") {
-                mapCtx.strokeStyle = "rgba(230,220,180,0.75)";
-                mapCtx.lineWidth = 3;
-                mapCtx.beginPath();
-                mapCtx.ellipse(cx, cy, rad + 14, rad * 0.35, -0.35, 0, Math.PI * 2);
-                mapCtx.stroke();
-            }
-
-            const g = mapCtx.createRadialGradient(cx - rad * 0.35, cy - rad * 0.35, 2, cx, cy, rad + 2);
-            g.addColorStop(0, "#ffffff");
-            g.addColorStop(0.25, p.color);
-            g.addColorStop(1, p.color);
-
-            mapCtx.fillStyle = g;
-            mapCtx.beginPath();
-            mapCtx.arc(cx, cy, rad, 0, Math.PI * 2);
-            mapCtx.fill();
-
-            if (state.landedPlanets[p.name]) {
-                mapCtx.fillStyle = "#00ffcc";
-                mapCtx.font = "10px Arial";
-                mapCtx.fillText("✓ LANDED", cx, cy - rad - 10);
-            }
-
-            if (p.name === state.currentPlanet) {
-                mapCtx.strokeStyle = "#00ffcc";
-                mapCtx.lineWidth = 3;
-                mapCtx.beginPath();
-                mapCtx.arc(cx, cy, rad + 8, 0, Math.PI * 2);
-                mapCtx.stroke();
-            }
-
-            mapCtx.fillStyle = "#ffffff";
-            mapCtx.font = "14px Arial";
-            mapCtx.fillText(p.name, cx, cy + rad + 22);
-        });
-
-        // Draw Warp Animation
-        if (mapTarget) {
-            const curP = planetsMap.find(p => p.name === state.currentPlanet);
-            const tarP = planetsMap.find(p => p.name === mapTarget);
-            if (curP && tarP) {
-                const sx = curP.x * mapCanvas.width;
-                const sy = mapRowY(curP.row);
-                const ex = tarP.x * mapCanvas.width;
-                const ey = mapRowY(tarP.row);
-                
-                // Dashed line
-                mapCtx.beginPath();
-                mapCtx.setLineDash([5, 5]);
-                mapCtx.strokeStyle = "rgba(255,255,255,0.5)";
-                mapCtx.lineWidth = 2;
-                mapCtx.moveTo(sx, sy);
-                mapCtx.lineTo(ex, ey);
-                mapCtx.stroke();
-                mapCtx.setLineDash([]);
-
-                // Moving arrow
-                const ax = sx + (ex - sx) * mapProgress;
-                const ay = sy + (ey - sy) * mapProgress;
-                const angle = Math.atan2(ey - sy, ex - sx);
-                
-                mapCtx.save();
-                mapCtx.translate(ax, ay);
-                mapCtx.rotate(angle);
-                mapCtx.fillStyle = "#00ffcc";
-                mapCtx.beginPath();
-                mapCtx.moveTo(12, 0);
-                mapCtx.lineTo(-8, -6);
-                mapCtx.lineTo(-8, 6);
-                mapCtx.closePath();
-                mapCtx.fill();
-                
-                // Ship glow
-                mapCtx.fillStyle = "rgba(0,255,204,0.3)";
-                mapCtx.beginPath();
-                mapCtx.arc(0, 0, 15, 0, Math.PI*2);
-                mapCtx.fill();
-                
-                mapCtx.restore();
-            }
-        }
-    }
-
+    // --- MAP LOGIC ---
     document.getElementById('btn-map').onclick = function () {
         if (gameState !== "flight") return;
         if (mapOverlay.style.display === 'block') {
@@ -1109,6 +984,8 @@ game_html = """
             mapOverlay.style.display = 'block';
             mapTarget = null;
             mapAnimating = false;
+            mapPanX = 0;
+            mapPanY = 0;
             document.getElementById('map-warp-info').style.display = 'none';
             drawMap();
         }
@@ -1123,28 +1000,178 @@ game_html = """
 
     mapCanvas.addEventListener('pointerdown', function (e) {
         if (mapAnimating) return;
-        const rect = mapCanvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
+        isDraggingMap = true;
+        mapDragMoved = false;
+        mapDragStartX = e.clientX - mapPanX;
+        mapDragStartY = e.clientY - mapPanY;
+    });
 
-        planetsMap.forEach(function (p) {
-            const cx = p.x * mapCanvas.width;
-            const cy = mapRowY(p.row);
-            if (Math.hypot(mx - cx, my - cy) < 44) {
-                if (p.name === state.currentPlanet) {
-                    showStatus("ALREADY HERE", "#ffaa00", 1.5);
-                    return;
+    window.addEventListener('pointermove', function (e) {
+        if (isDraggingMap) {
+            const newX = e.clientX - mapDragStartX;
+            const newY = e.clientY - mapDragStartY;
+            if (Math.hypot(newX - mapPanX, newY - mapPanY) > 5) {
+                mapDragMoved = true;
+            }
+            mapPanX = newX;
+            mapPanY = newY;
+        }
+    });
+
+    window.addEventListener('pointerup', function (e) {
+        if (!isDraggingMap) return;
+        isDraggingMap = false;
+        
+        // Handle click if not dragged
+        if (!mapDragMoved) {
+            const rect = mapCanvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            const cx = W/2 + mapPanX;
+            const cy = H/2 + mapPanY;
+
+            planetKeys.forEach(function (name) {
+                const p = planetsDB[name];
+                // Simple fixed angles for planets
+                const ang = (planetKeys.indexOf(name) / planetKeys.length) * Math.PI * 2;
+                const px = cx + Math.cos(ang) * p.dist * 1.5;
+                const py = cy + Math.sin(ang) * p.dist * 1.5;
+                
+                if (Math.hypot(mx - px, my - py) < 30) {
+                    if (name === state.currentPlanet && state.y < 10) {
+                        showStatus("ALREADY HERE", "#ffaa00", 1.5);
+                        return;
+                    }
+                    mapTarget = name;
+                    mapDist = Math.abs(p.dist - planetsDB[state.currentPlanet].dist);
+                    mapProgress = 0;
+                    mapAnimating = true;
+                    document.getElementById('map-target-name').innerText = "Destination: " + name;
+                    document.getElementById('map-target-dist').innerText = "Distance: " + (mapDist * 10.5).toFixed(1) + "M km";
+                    document.getElementById('map-warp-info').style.display = 'block';
                 }
-                mapTarget = p.name;
-                mapDist = Math.abs(planetDistances[mapTarget] - planetDistances[state.currentPlanet]);
-                mapProgress = 0;
-                mapAnimating = true;
-                document.getElementById('map-target-name').innerText = "Destination: " + mapTarget;
-                document.getElementById('map-target-dist').innerText = "Distance: " + mapDist.toFixed(1) + "M km";
-                document.getElementById('map-warp-info').style.display = 'block';
+            });
+        }
+    });
+
+    function drawMap() {
+        mapCtx.setTransform(1, 0, 0, 1, 0, 0);
+        mapCtx.fillStyle = "#000511";
+        mapCtx.fillRect(0, 0, W, H);
+
+        mapCtx.fillStyle = "#ffffff";
+        for (let i = 0; i < 180; i++) {
+            const sx = (i * 137.508) % W;
+            const sy = (i * 91.7) % H;
+            mapCtx.globalAlpha = 0.15 + ((i * 37) % 100) / 220;
+            mapCtx.fillRect(sx, sy, 1.5, 1.5);
+        }
+        mapCtx.globalAlpha = 1;
+
+        const cx = W/2 + mapPanX;
+        const cy = H/2 + mapPanY;
+
+        // Sun
+        const sunG = mapCtx.createRadialGradient(cx, cy, 5, cx, cy, 40);
+        sunG.addColorStop(0, "#ffffff");
+        sunG.addColorStop(0.5, "#ffcc44");
+        sunG.addColorStop(1, "rgba(255,100,0,0)");
+        mapCtx.fillStyle = sunG;
+        mapCtx.beginPath();
+        mapCtx.arc(cx, cy, 40, 0, Math.PI*2);
+        mapCtx.fill();
+
+        // Orbits & Planets
+        planetKeys.forEach(function (name, i) {
+            const p = planetsDB[name];
+            const ringRad = p.dist * 1.5;
+            const ang = (i / planetKeys.length) * Math.PI * 2;
+            const px = cx + Math.cos(ang) * ringRad;
+            const py = cy + Math.sin(ang) * ringRad;
+
+            // Draw Orbit
+            mapCtx.strokeStyle = "rgba(255,255,255,0.1)";
+            mapCtx.lineWidth = 1;
+            mapCtx.beginPath();
+            mapCtx.arc(cx, cy, ringRad, 0, Math.PI*2);
+            mapCtx.stroke();
+
+            // Draw Planet
+            const g = mapCtx.createRadialGradient(px - p.radius * 0.3, py - p.radius * 0.3, 2, px, py, p.radius);
+            g.addColorStop(0, "#fff");
+            g.addColorStop(0.3, p.color);
+            g.addColorStop(1, p.color);
+            mapCtx.fillStyle = g;
+            mapCtx.beginPath();
+            mapCtx.arc(px, py, p.radius, 0, Math.PI*2);
+            mapCtx.fill();
+
+            // Labels
+            mapCtx.fillStyle = "#fff";
+            mapCtx.font = "12px Arial";
+            mapCtx.textAlign = "center";
+            mapCtx.fillText(name, px, py + p.radius + 14);
+
+            if (state.landedPlanets[name]) {
+                mapCtx.fillStyle = "#00ffcc";
+                mapCtx.font = "10px Arial";
+                mapCtx.fillText("✓ LANDED", px, py - p.radius - 10);
             }
         });
-    });
+
+        // Draw Player Position Arrow
+        const curP = planetsDB[state.currentPlanet];
+        const curIdx = planetKeys.indexOf(state.currentPlanet);
+        const curAng = (curIdx / planetKeys.length) * Math.PI * 2;
+        const playerX = cx + Math.cos(curAng) * curP.dist * 1.5;
+        const playerY = cy + Math.sin(curAng) * curP.dist * 1.5;
+
+        mapCtx.save();
+        mapCtx.translate(playerX, playerY - 30); // Offset above planet
+        mapCtx.fillStyle = "#00ffcc";
+        mapCtx.beginPath();
+        mapCtx.moveTo(0, 10);
+        mapCtx.lineTo(-6, -5);
+        mapCtx.lineTo(6, -5);
+        mapCtx.closePath();
+        mapCtx.fill();
+        mapCtx.restore();
+
+        // Warp Animation
+        if (mapTarget) {
+            const tarP = planetsDB[mapTarget];
+            const tarIdx = planetKeys.indexOf(mapTarget);
+            const tarAng = (tarIdx / planetKeys.length) * Math.PI * 2;
+            const ex = cx + Math.cos(tarAng) * tarP.dist * 1.5;
+            const ey = cy + Math.sin(tarAng) * tarP.dist * 1.5;
+            
+            mapCtx.beginPath();
+            mapCtx.setLineDash([5, 5]);
+            mapCtx.strokeStyle = "rgba(0,255,204,0.8)";
+            mapCtx.lineWidth = 2;
+            mapCtx.moveTo(playerX, playerY);
+            mapCtx.lineTo(ex, ey);
+            mapCtx.stroke();
+            mapCtx.setLineDash([]);
+
+            const ax = playerX + (ex - playerX) * mapProgress;
+            const ay = playerY + (ey - playerY) * mapProgress;
+            
+            mapCtx.save();
+            mapCtx.translate(ax, ay);
+            const angle = Math.atan2(ey - playerY, ex - playerX);
+            mapCtx.rotate(angle);
+            mapCtx.fillStyle = "#00ffcc";
+            mapCtx.beginPath();
+            mapCtx.moveTo(12, 0);
+            mapCtx.lineTo(-8, -6);
+            mapCtx.lineTo(-8, 6);
+            mapCtx.closePath();
+            mapCtx.fill();
+            mapCtx.restore();
+        }
+    }
+    // --- END MAP LOGIC ---
 
     function travelTo(name) {
         state.currentPlanet = name;
@@ -1152,7 +1179,7 @@ game_html = """
         state.x = 0;
         state.y = 500; // High drop
         state.vx = 0;
-        state.vy = -120; // Fast drop (crashes if they don't slow down)
+        state.vy = -120; // Fast drop
         state.angle = 0;
         state.angularVelocity = 0;
         state.throttle = 0;
@@ -1280,13 +1307,12 @@ game_html = """
 
     function crash() {
         gameState = "crashed";
-        state.shake = 60; // Massive shake
+        state.shake = 60; 
         
         const rad = state.angle * Math.PI / 180;
         const cosA = Math.cos(rad);
         const sinA = Math.sin(rad);
         
-        // Break rocket into debris
         rocketParts.forEach(function(p) {
             const dxScreen = p.x;
             const dyScreen = state.rocketCenterY - p.y;
@@ -1305,9 +1331,8 @@ game_html = """
                 life: 1.0
             });
         });
-        rocketParts = []; // Rocket is destroyed
+        rocketParts = []; 
 
-        // Massive fireball
         for (let i = 0; i < 150; i++) {
             let col = "255,100,0";
             const r = Math.random();
@@ -1324,7 +1349,6 @@ game_html = """
                 color: col
             });
         }
-        // Smoke
         for (let i = 0; i < 80; i++) {
             state.particles.push({
                 x: state.x + (Math.random() - 0.5) * 60,
@@ -1661,22 +1685,24 @@ game_html = """
         }
 
         if (p.type === "pod") {
-            // Realistic Pod (No Window)
+            // SFS Style Command Pod
             const bodyGrad = ctx.createLinearGradient(-w/2, 0, w/2, 0);
             bodyGrad.addColorStop(0, "#111");
-            bodyGrad.addColorStop(0.3, "#555");
-            bodyGrad.addColorStop(0.7, "#333");
+            bodyGrad.addColorStop(0.3, "#666");
+            bodyGrad.addColorStop(0.7, "#444");
             bodyGrad.addColorStop(1, "#050505");
             ctx.fillStyle = bodyGrad;
 
+            // Main curved body
             ctx.beginPath();
-            ctx.moveTo(-w/3, -h/2 + 4);
-            ctx.bezierCurveTo(-w/1.8, -h/4, -w/1.8, h/4, -w/2.2, h/2 - 2);
-            ctx.lineTo(w/2.2, h/2 - 2);
-            ctx.bezierCurveTo(w/1.8, h/4, w/1.8, -h/4, w/3, -h/2 + 4);
+            ctx.moveTo(-w/2.2, h/2 - 2);
+            ctx.bezierCurveTo(-w/1.8, h/4, -w/2.2, -h/4, -w/3, -h/2 + 4);
+            ctx.lineTo(w/3, -h/2 + 4);
+            ctx.bezierCurveTo(w/2.2, -h/4, w/1.8, h/4, w/2.2, h/2 - 2);
             ctx.closePath();
             ctx.fill();
 
+            // Silver ribbed top band
             ctx.fillStyle = "#ccc";
             ctx.beginPath();
             ctx.moveTo(-w/3, -h/2 + 4);
@@ -1685,6 +1711,7 @@ game_html = """
             ctx.lineTo(-w/3 - 1, -h/2 + 8);
             ctx.fill();
 
+            // Ribbing lines
             ctx.strokeStyle = "#777";
             ctx.lineWidth = 1;
             for(let i=-3; i<=3; i++) {
@@ -1695,11 +1722,13 @@ game_html = """
                 ctx.stroke();
             }
 
+            // Top docking port
             ctx.fillStyle = "#999";
             ctx.beginPath();
             ctx.ellipse(0, -h/2 + 2, w/5, 2, 0, 0, Math.PI*2);
             ctx.fill();
 
+            // Base Rim
             ctx.fillStyle = "#777";
             ctx.beginPath();
             ctx.moveTo(-w/2.2, h/2 - 2);
@@ -1709,6 +1738,7 @@ game_html = """
             ctx.closePath();
             ctx.fill();
 
+            // Bottom Nozzle
             ctx.fillStyle = "#222";
             ctx.beginPath();
             ctx.moveTo(-w/4, h/2 + 1);
@@ -1969,7 +1999,6 @@ game_html = """
             ctx.save();
             ctx.translate(d.x, -d.y);
             ctx.rotate(d.angle * Math.PI / 180);
-            // Draw the actual part!
             drawPart({type: d.type, x: 0, y: 0}, 0);
             ctx.restore();
         });
