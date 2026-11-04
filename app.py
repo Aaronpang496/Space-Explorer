@@ -37,4 +37,8 @@ st.markdown(
 game_path = Path(__file__).parent / "game.html"
 game_html = game_path.read_text(encoding="utf-8")
 
+game_file = Path(__file__).with_name("game.html")
+if game_file.is_file():
+    game_html = game_file.read_text(encoding="utf-8")
+
 components.html(game_html, height=900, scrolling=False)
